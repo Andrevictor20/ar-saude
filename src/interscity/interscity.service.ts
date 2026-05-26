@@ -195,25 +195,45 @@ export class InterscityService implements OnModuleInit {
           this.maxRetries,
           this.retryBaseDelay,
           `InterSCity.registerCapability(${capability.name})`,
+          (error: any) => {
+            const status = error?.response?.status;
+            const errorMsg = error?.response?.data?.error;
+            if (
+              status === 409 ||
+              status === 422 ||
+              (status === 400 && errorMsg === 'Name has already been taken')
+            ) {
+              return false; // Não tenta novamente
+            }
+            return true;
+          },
         );
 
         this.logger.log(`  ✓ Capability "${capability.name}" registrada.`);
       } catch (error: unknown) {
-        // HTTP 409/422 indica que a capability já existe — ignoramos
-        const axiosError = error as { response?: { status?: number } };
+        // HTTP 409/422 ou 400 (Name taken) indica que a capability já existe
+        const axiosError = error as { response?: { status?: number; data?: any } };
+        const errorMsg = axiosError?.response?.data?.error;
+        
         if (
           axiosError?.response?.status === 409 ||
-          axiosError?.response?.status === 422
+          axiosError?.response?.status === 422 ||
+          (axiosError?.response?.status === 400 && errorMsg === 'Name has already been taken')
         ) {
           this.logger.log(
             `  ⏭️  Capability "${capability.name}" já existe, pulando.`,
           );
         } else {
+          const erroDetalhado = axiosError?.response?.data
+            ? JSON.stringify(axiosError.response.data)
+            : error instanceof Error
+              ? error.message
+              : String(error);
+
           this.logger.warn(
-            `  ❌ Erro ao registrar capability "${capability.name}": ${
-              error instanceof Error ? error.message : String(error)
-            }`,
+            `  ❌ Erro ao registrar capability "${capability.name}" (Status ${axiosError?.response?.status}): ${erroDetalhado}`,
           );
+          throw error;
         }
       }
     }
@@ -270,6 +290,11 @@ export class InterscityService implements OnModuleInit {
         this.maxRetries,
         this.retryBaseDelay,
         'InterSCity.registerResource',
+        (error: any) => {
+          const status = error?.response?.status;
+          if (status === 409 || status === 422) return false;
+          return true;
+        },
       );
 
       this.resourceUuid = response.data?.data?.uuid;

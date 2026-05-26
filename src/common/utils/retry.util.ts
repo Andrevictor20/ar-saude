@@ -30,6 +30,7 @@ export async function retryWithBackoff<T>(
   maxRetries: number = 5,
   baseDelayMs: number = 1000,
   context: string = 'retryWithBackoff',
+  shouldRetry?: (error: any) => boolean,
 ): Promise<T> {
   let lastError: Error | undefined;
 
@@ -37,6 +38,10 @@ export async function retryWithBackoff<T>(
     try {
       return await fn();
     } catch (error) {
+      if (shouldRetry && !shouldRetry(error)) {
+        throw error;
+      }
+
       lastError = error instanceof Error ? error : new Error(String(error));
 
       if (attempt === maxRetries) {
