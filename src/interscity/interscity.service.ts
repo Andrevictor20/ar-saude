@@ -58,8 +58,11 @@ export class InterscityService implements OnModuleInit {
   /** URL do catálogo InterSCity (registro de resources e capabilities) */
   private readonly catalogUrl: string;
 
-  /** URL do coletor InterSCity (envio de medições sensoriais) */
+  /** URL do coletor InterSCity (obtenção de medições sensoriais) */
   private readonly collectorUrl: string;
+
+  /** URL do adaptor InterSCity (envio de medições sensoriais) */
+  private readonly adaptorUrl: string;
 
   /** URL do Kong API Gateway (upstream para o coletor) */
   private readonly kongUrl: string;
@@ -131,6 +134,10 @@ export class InterscityService implements OnModuleInit {
     this.collectorUrl = this.configService.get<string>(
       'INTERSCITY_COLLECTOR_URL',
       'https://interscity.rasppi.cloud/collector',
+    );
+    this.adaptorUrl = this.configService.get<string>(
+      'INTERSCITY_ADAPTOR_URL',
+      'https://interscity.rasppi.cloud/adaptor',
     );
     this.kongUrl = this.configService.get<string>(
       'KONG_UPSTREAM_URL',
@@ -370,10 +377,10 @@ export class InterscityService implements OnModuleInit {
    *
    * ─── Roteamento via Kong Gateway ───
    *
-   * A requisição é enviada ao endpoint do Collector InterSCity:
-   *   POST {collectorUrl}/resources/{uuid}/data
+   * A requisição é enviada ao endpoint do Adaptor InterSCity:
+   *   POST {adaptorUrl}/resources/{uuid}/data
    *
-   * Em produção, o collectorUrl pode apontar para o Kong Gateway,
+   * Em produção, o adaptorUrl pode apontar para o Kong Gateway,
    * que faz o roteamento para o upstream correto do InterSCity.
    *
    * @param data Dados processados de qualidade do ar
@@ -443,7 +450,7 @@ export class InterscityService implements OnModuleInit {
       },
     };
 
-    const url = `${this.collectorUrl}/resources/${currentUuid}/data`;
+    const url = `${this.adaptorUrl}/resources/${currentUuid}/data`;
 
     this.logger.log(
       `📤 Enviando medição ao InterSCity — URL: ${url}`,

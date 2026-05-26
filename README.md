@@ -15,10 +15,10 @@ O **Microsserviço 1 (Coletor)** do projeto **Ar-Saúde** é um serviço em segu
   └───────────────┘                                   └─────────────────┘
 ```
 
-1. **Inicialização (`onModuleInit`)**: O microsserviço tenta registrar no Catálogo do InterSCity as **Capacidades** (poluentes e índices) e o **Recurso** (Estação de monitoramento de São Luís) caso ainda não estejam criados.
-2. **Coleta Agendada (`@Cron`)**: Periodicamente, o coletor consulta a API do Open-Meteo com as coordenadas fixas de São Luís, MA.
+1. **Inicialização (`onModuleInit`)**: O microsserviço tenta registrar no Catálogo do InterSCity as **Capacidades** (poluentes e índices) e dezenas de **Recursos** (um para cada Bairro monitorado em São Luís) caso ainda não estejam criados.
+2. **Coleta Agendada (`@Cron`)**: Periodicamente, o coletor consulta a API do Open-Meteo iterando pelas coordenadas geográficas exatas de cada bairro.
 3. **Resiliência (`retryWithBackoff`)**: Qualquer requisição HTTP falha é tratada com retry automático usando backoff exponencial e jitter.
-4. **Envio de Medições**: O microsserviço empacota as medições no formato exigido pelo InterSCity e envia para o gateway de API (Kong/Collector) via requisição POST.
+4. **Envio de Medições**: O microsserviço empacota as medições no formato exigido pelo InterSCity e envia para o gateway de API (Kong/Adaptor) via requisição POST.
 
 ---
 
@@ -68,12 +68,9 @@ PORT=3000
 # --- Open-Meteo (API pública de qualidade do ar) ---
 OPEN_METEO_BASE_URL=https://air-quality-api.open-meteo.com/v1/air-quality
 
-# Coordenadas fixas para São Luís, MA, Brasil
-LATITUDE=-2.5293
-LONGITUDE=-44.3028
-
 # --- InterSCity (Plataforma de Cidades Inteligentes) ---
 INTERSCITY_CATALOG_URL=https://interscity.rasppi.cloud/catalog
+INTERSCITY_ADAPTOR_URL=https://interscity.rasppi.cloud/adaptor
 INTERSCITY_COLLECTOR_URL=https://interscity.rasppi.cloud/collector
 
 # --- Kong API Gateway ---
@@ -152,17 +149,22 @@ Quando o Cron Job for ativado (conforme o intervalo configurado em `CRON_COLLECT
 
 ```text
 [Nest] 12345  - 25/05/2026, 23:00:00Z     LOG [CollectorService] ═══════════════════════════════════════════════════
-[Nest] 12345  - 25/05/2026, 23:00:00Z     LOG [CollectorService] 🔄 Execução #1 — Iniciando coleta de qualidade do ar...
+[Nest] 12345  - 25/05/2026, 23:00:00Z     LOG [CollectorService] 🔄 Execução #1 — Iniciando coleta de qualidade do ar por bairros...
 [Nest] 12345  - 25/05/2026, 23:00:00Z     LOG [CollectorService] ═══════════════════════════════════════════════════
+[Nest] 12345  - 25/05/2026, 23:00:00Z     LOG [CollectorService] 
+--- Bairro: Centro ---
 [Nest] 12345  - 25/05/2026, 23:00:00Z     LOG [CollectorService] [1/2] Coletando dados do Open-Meteo...
-[Nest] 12345  - 25/05/2026, 23:00:01Z     LOG [OpenMeteoService] Iniciando coleta de dados para lat=-2.5293, lon=-44.3028
+[Nest] 12345  - 25/05/2026, 23:00:01Z     LOG [OpenMeteoService] Iniciando coleta de dados para bairro Centro (lat=-2.5283, lon=-44.3044)
 [Nest] 12345  - 25/05/2026, 23:00:02Z     LOG [OpenMeteoService] ✅ Dados coletados com sucesso — AQI: 18 (Bom)
 [Nest] 12345  - 25/05/2026, 23:00:02Z     LOG [CollectorService] [1/2] ✅ Dados coletados — AQI: 18 (Bom) | PM10: 10.2 | PM2.5: 4.8 | NO₂: 5.1 | O₃: 36.8
 [Nest] 12345  - 25/05/2026, 23:00:02Z     LOG [CollectorService] [2/2] Enviando dados ao InterSCity...
-[Nest] 12345  - 25/05/2026, 23:00:02Z     LOG [InterscityService] 📤 Enviando medição ao InterSCity — URL: https://interscity.rasppi.cloud/collector/resources/f59d0421-2a6f-4428-98e3-e8470a1a5b82/data
-[Nest] 12345  - 25/05/2026, 23:00:03Z     LOG [InterscityService] ✅ Medição enviada com sucesso — AQI: 18 (Bom)
-[Nest] 12345  - 25/05/2026, 23:00:03Z     LOG [CollectorService] [2/2] ✅ Medição enviada com sucesso em 1024ms
-[Nest] 12345  - 25/05/2026, 23:00:03Z     LOG [CollectorService] 🏁 Execução #1 concluída com sucesso (1024ms)
+[Nest] 12345  - 25/05/2026, 23:00:02Z     LOG [InterscityService] 📤 Enviando medição ao InterSCity — URL: https://interscity.rasppi.cloud/adaptor/resources/f59d0421-2a6f-4428-98e3-e8470a1a5b82/data
+[Nest] 12345  - 25/05/2026, 23:00:03Z     LOG [InterscityService] ✅ Medição enviada com sucesso para Centro — AQI: 18 (Bom)
+[Nest] 12345  - 25/05/2026, 23:00:03Z     LOG [CollectorService] [2/2] ✅ Medição de Centro enviada com sucesso!
+[Nest] 12345  - 25/05/2026, 23:00:03Z     LOG [CollectorService] 
+--- Bairro: Renascença ---
+...
+[Nest] 12345  - 25/05/2026, 23:00:33Z     LOG [CollectorService] 🏁 Execução #1 concluída em 33230ms
 ```
 
 ---
@@ -203,66 +205,48 @@ curl -s https://interscity.rasppi.cloud/catalog/capabilities | grep -A 3 -B 1 '"
 
 ---
 
-### 3. Encontrar o UUID do Recurso Registrado
-Os dados no InterSCity são vinculados a um UUID (Identificador Único Universal) do recurso de monitoramento criado para São Luís. Vamos consultar a listagem de recursos e buscar o ID:
-```bash
-curl -s https://interscity.rasppi.cloud/catalog/resources | grep -B 1 -A 5 "Ar-Saúde"
-```
-**Resposta esperada:**
-```json
-{
-  "uuid": "f59d0421-2a6f-4428-98e3-e8470a1a5b82",
-  "description": "Estação de monitoramento de qualidade do ar — São Luís, MA, Brasil (Ar-Saúde)",
-  "capabilities": ["air_quality_index", "pm10", "pm2_5", "no2", "ozone", "air_quality_level"],
-  "status": "active",
-  "lat": -2.5293,
-  "lon": -44.3028
-}
-```
+### 3. Visualizar Dados Coletados por Bairro (Script Bash)
+Como o microsserviço agora registra múltiplos bairros (múltiplos UUIDs), você pode utilizar o script abaixo no seu terminal para iterar pelos recursos no Catálogo e automaticamente consultar os níveis de poluição de cada um deles no Coletor.
 
-> **IMPORTANTE:** Copie o valor do campo `"uuid"` correspondente à estação de São Luís (ex: `f59d0421-2a6f-4428-98e3-e8470a1a5b82`). Você o usará nas próximas requisições.
-
----
-
-### 4. Consultar os Dados Sensoriais Enviados (Dados Coletados)
-Para visualizar as medições enviadas com sucesso pelo cron job do microsserviço que estão salvas no banco do InterSCity, faça uma chamada HTTP ao Coletor usando o UUID do recurso obtido:
+Certifique-se de ter a ferramenta `jq` instalada (`sudo apt install jq` no Linux) e execute:
 
 ```bash
-# Substitua pelo UUID da sua estação de São Luís
-UUID="f59d0421-2a6f-4428-98e3-e8470a1a5b82"
-
-curl -s "https://interscity.rasppi.cloud/collector/resources/${UUID}/data"
+curl -s https://interscity.rasppi.cloud/catalog/resources | \
+jq -c '.resources[] | select(.description | contains("Ar-Saúde")) | {uuid: .uuid, name: (.description | sub("Monitoramento Ar-Saúde - Bairro: "; ""))}' | \
+while read -r item; do
+    UUID=$(echo "$item" | jq -r .uuid)
+    NAME=$(echo "$item" | jq -r .name)
+    echo "========================================"
+    echo "📍 Bairro: $NAME"
+    
+    # Busca os dados mais recentes do Collector
+    RESPONSE=$(curl -s "https://interscity.rasppi.cloud/collector/resources/${UUID}/data")
+    
+    # Checa se o bairro já possui dados coletados
+    HAS_DATA=$(echo "$RESPONSE" | jq '.resources[0].capabilities | length > 0')
+    
+    if [ "$HAS_DATA" == "true" ]; then
+        echo "📊 Última Medição:"
+        echo "$RESPONSE" | jq -r '.resources[0].capabilities | to_entries[] | "  - \(.key): \(.value[-1].value)"'
+    else
+        echo "⏳ Ainda não há dados coletados para este bairro (Aguarde a próxima execução do Cron)."
+    fi
+done
 ```
 
-**Resposta esperada contendo a série histórica de medições:**
-```json
-{
-  "resources": [
-    {
-      "uuid": "f59d0421-2a6f-4428-98e3-e8470a1a5b82",
-      "capabilities": {
-        "air_quality_index": [
-          { "value": 18, "timestamp": "2026-05-25T23:00:00Z" }
-        ],
-        "pm10": [
-          { "value": 10.2, "timestamp": "2026-05-25T23:00:00Z" }
-        ],
-        "pm2_5": [
-          { "value": 4.8, "timestamp": "2026-05-25T23:00:00Z" }
-        ],
-        "no2": [
-          { "value": 5.1, "timestamp": "2026-05-25T23:00:00Z" }
-        ],
-        "ozone": [
-          { "value": 36.8, "timestamp": "2026-05-25T23:00:00Z" }
-        ],
-        "air_quality_level": [
-          { "value": "Bom", "timestamp": "2026-05-25T23:00:00Z" }
-        ]
-      }
-    }
-  ]
-}
+**Resultado Esperado:**
+```text
+========================================
+📍 Bairro: Centro
+📊 Última Medição:
+  - air_quality_index: 23
+  - pm10: 10.6
+  - pm2_5: 7.2
+  - no2: 4.2
+  - ozone: 57
+  - air_quality_level: Moderado
+========================================
+...
 ```
 
 ### 5. Consultar Dados de uma Única Capability Específica
