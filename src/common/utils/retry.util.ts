@@ -1,30 +1,10 @@
-/**
- * =====================================================
- * Utilitário de Retry com Backoff Exponencial
- * =====================================================
- *
- * Implementa uma estratégia de retry genérica que pode ser
- * usada em qualquer chamada de rede (Open-Meteo, InterSCity).
- *
- * O backoff exponencial aumenta o intervalo entre tentativas
- * progressivamente: 1s → 2s → 4s → 8s → 16s (com jitter),
- * reduzindo a pressão sobre APIs públicas com rate limiting.
- */
+/** Retry com backoff exponencial e jitter. */
 
 import { Logger } from '@nestjs/common';
 
 const logger = new Logger('RetryUtil');
 
-/**
- * Executa uma função assíncrona com retry e backoff exponencial.
- *
- * @param fn       - Função assíncrona a ser executada.
- * @param maxRetries   - Número máximo de tentativas (padrão: 5).
- * @param baseDelayMs  - Delay base em milissegundos (padrão: 1000).
- * @param context      - Contexto textual para logging (ex.: "OpenMeteo.fetchAirQuality").
- * @returns O resultado da função fn quando bem-sucedida.
- * @throws O último erro após esgotar todas as tentativas.
- */
+/** Executa uma função assíncrona com retry e backoff exponencial. */
 export async function retryWithBackoff<T>(
   fn: () => Promise<T>,
   maxRetries: number = 5,
@@ -51,9 +31,9 @@ export async function retryWithBackoff<T>(
         throw lastError;
       }
 
-      // Backoff exponencial com jitter aleatório (±25%)
+      // Backoff exponencial com jitter (±25%)
       const exponentialDelay = baseDelayMs * Math.pow(2, attempt - 1);
-      const jitter = exponentialDelay * 0.25 * (Math.random() * 2 - 1); // -25% a +25%
+      const jitter = exponentialDelay * 0.25 * (Math.random() * 2 - 1);
       const delay = Math.round(exponentialDelay + jitter);
 
       logger.warn(
@@ -65,13 +45,10 @@ export async function retryWithBackoff<T>(
     }
   }
 
-  // Inalcançável, mas satisfaz o compilador TypeScript
+  // Satisfaz o compilador TypeScript
   throw lastError;
 }
 
-/**
- * Pausa a execução por um período determinado.
- */
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }

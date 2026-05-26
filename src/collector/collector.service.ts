@@ -6,27 +6,7 @@ import { OpenMeteoService } from '../open-meteo/open-meteo.service.js';
 import { InterscityService } from '../interscity/interscity.service.js';
 import { SAO_LUIS_NEIGHBORHOODS } from '../common/constants/neighborhoods.js';
 
-/**
- * =====================================================
- * CollectorService — Orquestrador de Coleta
- * =====================================================
- *
- * Este é o serviço central do Microsserviço 1 (Coletor).
- * Ele orquestra o fluxo completo de coleta de dados:
- *
- *   ┌─────────────┐     ┌──────────────────┐     ┌──────────────────┐
- *   │  Cron Job   │────▶│ OpenMeteoService  │────▶│ InterscityService│
- *   │ (agendado)  │     │ (coleta + retry)  │     │ (envio ao ISCITY)│
- *   └─────────────┘     └──────────────────┘     └──────────────────┘
- *
- * A cada execução do Cron Job:
- * 1. Busca dados de qualidade do ar na API Open-Meteo.
- * 2. Envia os dados processados para o InterSCity via Collector API.
- * 3. Registra logs detalhados de cada etapa (sucesso ou falha).
- *
- * O intervalo do cron é configurável via variável de ambiente
- * CRON_COLLECT_INTERVAL (padrão: a cada 30 minutos).
- */
+/** Orquestrador de coleta: Cron → Open-Meteo → InterSCity. */
 @Injectable()
 export class CollectorService {
   private readonly logger = new Logger(CollectorService.name);
@@ -40,20 +20,7 @@ export class CollectorService {
     private readonly configService: ConfigService,
   ) {}
 
-  /**
-   * Cron Job principal — coleta e envio de dados.
-   *
-   * Executa no intervalo definido pela variável de ambiente
-   * CRON_COLLECT_INTERVAL (expressão cron).
-   *
-   * Padrão: a cada 30 minutos (expressão cron: asterisco-barra-30).
-   *
-   * O decorator Cron aceita uma expressão cron padrão Unix
-   * (minuto hora dia mês dia_semana).
-   *
-   * Este método NAO lança exceções — todos os erros são
-   * capturados e logados para não interromper o agendador.
-   */
+  /** Cron Job principal — coleta e envio por bairro. */
   @Cron(process.env.CRON_COLLECT_INTERVAL ?? '* * * * *', {
     name: 'air-quality-collection',
     timeZone: 'America/Sao_Paulo',
@@ -77,7 +44,7 @@ export class CollectorService {
     for (const neighborhood of SAO_LUIS_NEIGHBORHOODS) {
       try {
         this.logger.log(`\n--- Bairro: ${neighborhood.name} ---`);
-        // ── Etapa 1: Coleta de dados na API Open-Meteo ──
+
         this.logger.log('[1/2] Coletando dados do Open-Meteo...');
         const airQualityData =
           await this.openMeteoService.fetchAirQuality(neighborhood);
@@ -89,7 +56,6 @@ export class CollectorService {
             `O₃: ${airQualityData.ozone}`,
         );
 
-        // ── Etapa 2: Envio dos dados ao InterSCity ──
         this.logger.log('[2/2] Enviando dados ao InterSCity...');
         await this.interscityService.sendMeasurement(airQualityData);
 
@@ -102,8 +68,6 @@ export class CollectorService {
             error instanceof Error ? error.message : String(error)
           }`,
         );
-        // Não jogamos (throw) o erro, permitimos que o laço continue
-        // processando os próximos bairros.
       }
     }
 
@@ -113,9 +77,7 @@ export class CollectorService {
     );
   }
 
-  /**
-   * Retorna o número de execuções realizadas (para healthcheck).
-   */
+  /** Número de execuções realizadas. */
   getExecutionCount(): number {
     return this.executionCount;
   }

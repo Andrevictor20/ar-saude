@@ -13,83 +13,25 @@ import {
 import { retryWithBackoff } from '../common/utils/retry.util.js';
 import { SAO_LUIS_NEIGHBORHOODS } from '../common/constants/neighborhoods.js';
 
-/**
- * =====================================================
- * InterscityService — Integração com InterSCity
- * =====================================================
- *
- * Este serviço é o adaptador entre o Microsserviço Coletor e a
- * plataforma de Cidades Inteligentes InterSCity. Ele gerencia:
- *
- * 1. Registro de Capacidades (Capabilities):
- *    Cada indicador ambiental é registrado como uma Capability
- *    do tipo "sensor" no catálogo do InterSCity. As capabilities
- *    definidas são:
- *      - air_quality_index → AQI europeu (inteiro)
- *      - pm10              → Partículas ≤10µm (µg/m³)
- *      - pm2_5             → Partículas ≤2.5µm (µg/m³)
- *      - no2               → Dióxido de Nitrogênio (µg/m³)
- *      - ozone             → Ozônio troposférico (µg/m³)
- *      - air_quality_level → Classificação textual (ex.: "Bom", "Moderado")
- *
- * 2. Registro de Recursos (Resources):
- *    No modelo InterSCity, cada estação de monitoramento (ou bairro)
- *    é um Resource que possui as capabilities acima.
- *
- * 3. Envio de Medições:
- *    Os dados coletados são enviados via POST ao InterSCity Collector,
- *    passando pelo Kong API Gateway. O payload segue a estrutura:
- *    { data: { [capability_name]: [{ value, timestamp }] } }
- *
- * ─── Fluxo via Kong Gateway ───
- *
- * As requisições ao Collector passam pelo Kong Gateway para
- * balanceamento de carga e controle de acesso:
- *
- *   Coletor → Kong (kong.rasppi.cloud) → InterSCity Collector
- *
- * As URLs base são configuráveis via variáveis de ambiente para
- * permitir diferentes ambientes (dev, staging, prod).
- */
+/** Adaptador de integração com a plataforma InterSCity (capabilities, resources, medições). */
 @Injectable()
 export class InterscityService implements OnModuleInit {
   private readonly logger = new Logger(InterscityService.name);
 
-  /** URL do catálogo InterSCity (registro de resources e capabilities) */
   private readonly catalogUrl: string;
 
-  /** URL do coletor InterSCity (obtenção de medições sensoriais) */
   private readonly collectorUrl: string;
 
-  /** URL do adaptor InterSCity (envio de medições sensoriais) */
   private readonly adaptorUrl: string;
 
-  /** URL do Kong API Gateway (upstream para o coletor) */
   private readonly kongUrl: string;
 
-  /** Configurações de retry */
   private readonly maxRetries: number;
   private readonly retryBaseDelay: number;
 
-  /**
-   * Mapa de UUIDs dos recursos registrados no InterSCity.
-   * Chave: neighborhoodId
-   * Valor: resourceUuid
-   */
+  /** Mapa neighborhoodId → resourceUuid */
   private readonly resourceUuids = new Map<string, string>();
 
-  /**
-   * Definição das Capacidades (Capabilities) do sistema Ar-Saúde.
-   *
-   * Cada capability mapeia um indicador ambiental que será
-   * enviado como dado sensorial ao InterSCity. O campo `name`
-   * deve ser único e em snake_case, pois é usado como chave
-   * no payload de medição.
-   *
-   * O `capability_type` é "sensor" pois todos os indicadores
-   * são dados de leitura (produzidos pelo microsserviço),
-   * e não comandos de atuação.
-   */
   private readonly capabilities: InterscityCapabilityPayload[] = [
     {
       name: 'air_quality_index',
@@ -150,16 +92,7 @@ export class InterscityService implements OnModuleInit {
     );
   }
 
-  /**
-   * Hook de inicialização do módulo NestJS.
-   *
-   * Ao iniciar a aplicação, registra automaticamente:
-   * 1. As capabilities (indicadores ambientais) no catálogo.
-   * 2. O recurso (estação de monitoramento) com as capabilities associadas.
-   *
-   * Se o registro falhar, loga o erro mas não impede a inicialização
-   * (o registro será reattempted na próxima execução do cron).
-   */
+  /** Registra capabilities e resources ao iniciar o módulo. */
   async onModuleInit(): Promise<void> {
     this.logger.log('🔧 Inicializando integração com InterSCity...');
 
@@ -178,14 +111,7 @@ export class InterscityService implements OnModuleInit {
     }
   }
 
-  /**
-   * Registra todas as capabilities definidas no catálogo InterSCity.
-   *
-   * Cada capability é registrada individualmente via POST.
-   * Se já existir (HTTP 409 ou 422), o erro é ignorado silenciosamente.
-   *
-   * Endpoint: POST {catalogUrl}/capabilities
-   */
+  /** Registra capabilities no catálogo (ignora duplicatas). */
   async ensureCapabilitiesRegistered(): Promise<void> {
     this.logger.log('Registrando capabilities no InterSCity...');
 
@@ -211,7 +137,7 @@ export class InterscityService implements OnModuleInit {
               status === 422 ||
               (status === 400 && errorMsg === 'Name has already been taken')
             ) {
-              return false; // Não tenta novamente
+              return false;
             }
             return true;
           },
@@ -219,7 +145,6 @@ export class InterscityService implements OnModuleInit {
 
         this.logger.log(`  ✓ Capability "${capability.name}" registrada.`);
       } catch (error: unknown) {
-        // HTTP 409/422 ou 400 (Name taken) indica que a capability já existe
         const axiosError = error as { response?: { status?: number; data?: any } };
         const errorMsg = axiosError?.response?.data?.error;
         
@@ -247,10 +172,7 @@ export class InterscityService implements OnModuleInit {
     }
   }
 
-  /**
-   * Garante que os recursos (bairros) estejam registrados
-   * no InterSCity. Se já existirem, busca os UUIDs existentes.
-   */
+  /** Garante que os recursos (bairros) estejam registrados. */
   async ensureResourcesRegistered(): Promise<void> {
     for (const neighborhood of SAO_LUIS_NEIGHBORHOODS) {
       if (this.resourceUuids.has(neighborhood.id)) {
@@ -309,9 +231,7 @@ export class InterscityService implements OnModuleInit {
     }
   }
 
-  /**
-   * Busca o UUID de um recurso específico já existente.
-   */
+  /** Busca UUID de um recurso já existente. */
   private async fetchExistingResourceUuid(neighborhoodId: string, neighborhoodName: string): Promise<void> {
     try {
       const response = await retryWithBackoff(
@@ -349,47 +269,10 @@ export class InterscityService implements OnModuleInit {
     }
   }
 
-  /**
-   * Envia uma medição de qualidade do ar para o InterSCity Collector.
-   *
-   * ─── Estrutura do Payload de Medição ───
-   *
-   * O payload segue o formato exigido pelo InterSCity Collector:
-   *
-   * {
-   *   "data": {
-   *     "<capability_name>": [
-   *       { "value": <valor_medido>, "timestamp": "<ISO 8601>" }
-   *     ],
-   *     ...
-   *   }
-   * }
-   *
-   * Cada chave no objeto `data` corresponde ao `name` de uma
-   * Capability registrada previamente. O valor é um array porque
-   * o InterSCity suporta envio em lote (múltiplas medições de
-   * timestamps diferentes). Neste caso, enviamos uma medição
-   * por vez (array com um único elemento).
-   *
-   * O campo `value` aceita tipos numéricos (para indicadores
-   * quantitativos como AQI, PM10, etc.) ou strings (para a
-   * classificação textual `air_quality_level`).
-   *
-   * ─── Roteamento via Kong Gateway ───
-   *
-   * A requisição é enviada ao endpoint do Adaptor InterSCity:
-   *   POST {adaptorUrl}/resources/{uuid}/data
-   *
-   * Em produção, o adaptorUrl pode apontar para o Kong Gateway,
-   * que faz o roteamento para o upstream correto do InterSCity.
-   *
-   * @param data Dados processados de qualidade do ar
-   * @throws Erro se o recurso não estiver registrado ou a requisição falhar
-   */
+  /** Envia medição de qualidade do ar ao InterSCity Adaptor. */
   async sendMeasurement(data: ProcessedAirQualityData): Promise<void> {
     const uuid = this.resourceUuids.get(data.neighborhoodId);
 
-    // Garante que o recurso esteja registrado antes do envio
     if (!uuid) {
       this.logger.warn(
         `Resource UUID não disponível para ${data.neighborhoodName}. Tentando re-registrar...`,
@@ -405,45 +288,28 @@ export class InterscityService implements OnModuleInit {
 
     const currentUuid = this.resourceUuids.get(data.neighborhoodId);
 
-    /**
-     * Monta o payload de medição.
-     *
-     * Cada capability é mapeada para um array contendo um objeto
-     * com o valor medido e o timestamp. As capabilities quantitativas
-     * (air_quality_index, pm10, pm2_5, no2, ozone) recebem valores
-     * numéricos, enquanto air_quality_level recebe uma string
-     * com a classificação textual do AQI.
-     */
     const measurementPayload: InterscityMeasurementPayload = {
       data: {
-        // Capability: Índice de Qualidade do Ar (valor inteiro do European AQI)
         air_quality_index: [
           { value: data.aqi, timestamp: data.timestamp },
         ],
 
-        // Capability: Concentração de PM10 em µg/m³
         pm10: [
           { value: data.pm10, timestamp: data.timestamp },
         ],
 
-        // Capability: Concentração de PM2.5 em µg/m³
         pm2_5: [
           { value: data.pm2_5, timestamp: data.timestamp },
         ],
 
-        // Capability: Concentração de NO₂ em µg/m³
         no2: [
           { value: data.no2, timestamp: data.timestamp },
         ],
 
-        // Capability: Concentração de O₃ em µg/m³
         ozone: [
           { value: data.ozone, timestamp: data.timestamp },
         ],
 
-        // Capability: Classificação textual do nível de qualidade do ar
-        // Valores possíveis: "Bom", "Moderado", "Ruim para grupos sensíveis",
-        //                    "Ruim", "Muito Ruim", "Perigoso", "Indisponível"
         air_quality_level: [
           { value: data.level, timestamp: data.timestamp },
         ],
@@ -476,9 +342,7 @@ export class InterscityService implements OnModuleInit {
     );
   }
 
-  /**
-   * Retorna o UUID do recurso registrado (para fins de debug/health).
-   */
+  /** Retorna mapa de UUIDs registrados. */
   getResourceUuids(): Record<string, string> {
     return Object.fromEntries(this.resourceUuids);
   }

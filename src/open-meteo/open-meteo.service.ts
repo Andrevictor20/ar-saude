@@ -11,35 +11,13 @@ import {
 import { retryWithBackoff } from '../common/utils/retry.util.js';
 import { Neighborhood } from '../common/constants/neighborhoods.js';
 
-/**
- * =====================================================
- * OpenMeteoService — Serviço de Coleta de Dados
- * =====================================================
- *
- * Responsável por:
- * 1. Consultar a API pública Open-Meteo (Air Quality API).
- * 2. Extrair as métricas de qualidade do ar (AQI, PM10, PM2.5, NO2, O3).
- * 3. Classificar o nível de qualidade do ar (Bom → Perigoso).
- * 4. Aplicar retry com backoff exponencial para resiliência.
- *
- * A API Open-Meteo é gratuita e não exige chave de API,
- * porém aplica rate limiting. O mecanismo de retry mitiga
- * eventuais bloqueios por excesso de requisições.
- *
- * Endpoint utilizado:
- *   GET https://air-quality-api.open-meteo.com/v1/air-quality
- *       ?latitude=-2.5293
- *       &longitude=-44.3028
- *       &current=european_aqi,pm10,pm2_5,nitrogen_dioxide,ozone
- */
+/** Serviço de coleta de dados de qualidade do ar via API Open-Meteo. */
 @Injectable()
 export class OpenMeteoService {
   private readonly logger = new Logger(OpenMeteoService.name);
 
-  /** URL base da API Open-Meteo (configurável via .env) */
   private readonly baseUrl: string;
 
-  /** Configurações de retry */
   private readonly maxRetries: number;
   private readonly retryBaseDelay: number;
 
@@ -58,26 +36,12 @@ export class OpenMeteoService {
     );
   }
 
-  /**
-   * Busca os dados atuais de qualidade do ar na API Open-Meteo.
-   *
-   * Utiliza o endpoint `current` para obter a medição mais recente,
-   * que inclui:
-   * - european_aqi: Índice de Qualidade do Ar Europeu
-   * - pm10: Material particulado ≤10µm (µg/m³)
-   * - pm2_5: Material particulado ≤2.5µm (µg/m³)
-   * - nitrogen_dioxide: NO₂ (µg/m³)
-   * - ozone: O₃ (µg/m³)
-   *
-   * @returns Dados processados de qualidade do ar com classificação.
-   * @throws Erro após esgotar todas as tentativas de retry.
-   */
+  /** Busca dados atuais de qualidade do ar para um bairro. */
   async fetchAirQuality(neighborhood: Neighborhood): Promise<ProcessedAirQualityData> {
     this.logger.log(
       `Iniciando coleta de dados para bairro ${neighborhood.name} (lat=${neighborhood.latitude}, lon=${neighborhood.longitude})`,
     );
 
-    // A chamada HTTP é encapsulada no retryWithBackoff para resiliência
     const rawData = await retryWithBackoff<AirQualityData>(
       () => this.callOpenMeteoApi(neighborhood.latitude, neighborhood.longitude),
       this.maxRetries,
@@ -85,7 +49,6 @@ export class OpenMeteoService {
       `OpenMeteo.fetchAirQuality(${neighborhood.id})`,
     );
 
-    // Processa e enriquece os dados com classificação e localização
     const processed: ProcessedAirQualityData = {
       ...rawData,
       level: this.classifyAqi(rawData.aqi),
@@ -102,10 +65,7 @@ export class OpenMeteoService {
     return processed;
   }
 
-  /**
-   * Realiza a chamada HTTP efetiva à API Open-Meteo.
-   * Método separado para facilitar o encapsulamento no retry.
-   */
+  /** Chamada HTTP efetiva à API Open-Meteo. */
   private async callOpenMeteoApi(latitude: number, longitude: number): Promise<AirQualityData> {
     const params = {
       latitude,
@@ -126,7 +86,6 @@ export class OpenMeteoService {
       );
     }
 
-    // Mapeia os campos da API para a interface interna
     const airQuality: AirQualityData = {
       timestamp: current.time ?? new Date().toISOString(),
       aqi: current.european_aqi ?? null,
@@ -139,22 +98,7 @@ export class OpenMeteoService {
     return airQuality;
   }
 
-  /**
-   * Classifica o nível de qualidade do ar com base no AQI europeu.
-   *
-   * Faixas (European AQI):
-   * | Faixa   | Classificação                |
-   * |---------|------------------------------|
-   * | 0–20    | Bom                          |
-   * | 21–40   | Moderado                     |
-   * | 41–60   | Ruim para grupos sensíveis   |
-   * | 61–80   | Ruim                         |
-   * | 81–100  | Muito Ruim                   |
-   * | >100    | Perigoso                     |
-   *
-   * @param aqi Valor do AQI europeu
-   * @returns Classificação textual em português
-   */
+  /** Classifica o nível de qualidade do ar com base no AQI europeu. */
   private classifyAqi(aqi: number | null): AirQualityLevel {
     if (aqi === null || aqi === undefined) return 'Indisponível';
     if (aqi <= 20) return 'Bom';
