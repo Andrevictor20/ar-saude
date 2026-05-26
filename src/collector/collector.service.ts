@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 
 import { OpenMeteoService } from '../open-meteo/open-meteo.service.js';
 import { InterscityService } from '../interscity/interscity.service.js';
+import { SAO_LUIS_NEIGHBORHOODS } from '../common/constants/neighborhoods.js';
 
 /**
  * =====================================================
@@ -65,7 +66,7 @@ export class CollectorService {
       `═══════════════════════════════════════════════════`,
     );
     this.logger.log(
-      `🔄 Execução #${executionId} — Iniciando coleta de qualidade do ar...`,
+      `🔄 Execução #${executionId} — Iniciando coleta de qualidade do ar por bairros...`,
     );
     this.logger.log(
       `═══════════════════════════════════════════════════`,
@@ -73,44 +74,43 @@ export class CollectorService {
 
     const startTime = Date.now();
 
-    try {
-      // ── Etapa 1: Coleta de dados na API Open-Meteo ──
-      this.logger.log('[1/2] Coletando dados do Open-Meteo...');
-      const airQualityData =
-        await this.openMeteoService.fetchAirQuality();
+    for (const neighborhood of SAO_LUIS_NEIGHBORHOODS) {
+      try {
+        this.logger.log(`\n--- Bairro: ${neighborhood.name} ---`);
+        // ── Etapa 1: Coleta de dados na API Open-Meteo ──
+        this.logger.log('[1/2] Coletando dados do Open-Meteo...');
+        const airQualityData =
+          await this.openMeteoService.fetchAirQuality(neighborhood);
 
-      this.logger.log(
-        `[1/2] ✅ Dados coletados — AQI: ${airQualityData.aqi} ` +
-          `(${airQualityData.level}) | PM10: ${airQualityData.pm10} | ` +
-          `PM2.5: ${airQualityData.pm2_5} | NO₂: ${airQualityData.no2} | ` +
-          `O₃: ${airQualityData.ozone}`,
-      );
+        this.logger.log(
+          `[1/2] ✅ Dados coletados — AQI: ${airQualityData.aqi} ` +
+            `(${airQualityData.level}) | PM10: ${airQualityData.pm10} | ` +
+            `PM2.5: ${airQualityData.pm2_5} | NO₂: ${airQualityData.no2} | ` +
+            `O₃: ${airQualityData.ozone}`,
+        );
 
-      // ── Etapa 2: Envio dos dados ao InterSCity ──
-      this.logger.log('[2/2] Enviando dados ao InterSCity...');
-      await this.interscityService.sendMeasurement(airQualityData);
+        // ── Etapa 2: Envio dos dados ao InterSCity ──
+        this.logger.log('[2/2] Enviando dados ao InterSCity...');
+        await this.interscityService.sendMeasurement(airQualityData);
 
-      const elapsed = Date.now() - startTime;
-      this.logger.log(
-        `[2/2] ✅ Medição enviada com sucesso em ${elapsed}ms`,
-      );
-
-      this.logger.log(
-        `🏁 Execução #${executionId} concluída com sucesso (${elapsed}ms)`,
-      );
-    } catch (error) {
-      const elapsed = Date.now() - startTime;
-      this.logger.error(
-        `❌ Execução #${executionId} falhou após ${elapsed}ms: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
-      );
-
-      // Log do stack trace para debugging
-      if (error instanceof Error && error.stack) {
-        this.logger.debug(error.stack);
+        this.logger.log(
+          `[2/2] ✅ Medição de ${neighborhood.name} enviada com sucesso!`,
+        );
+      } catch (error) {
+        this.logger.error(
+          `❌ Falha ao processar o bairro ${neighborhood.name}: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
+        // Não jogamos (throw) o erro, permitimos que o laço continue
+        // processando os próximos bairros.
       }
     }
+
+    const elapsed = Date.now() - startTime;
+    this.logger.log(
+      `🏁 Execução #${executionId} concluída em ${elapsed}ms`,
+    );
   }
 
   /**

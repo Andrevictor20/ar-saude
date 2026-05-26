@@ -52,6 +52,12 @@ export interface ProcessedAirQualityData extends AirQualityData {
   /** Classificação textual do AQI */
   level: AirQualityLevel;
 
+  /** Identificador do bairro */
+  neighborhoodId: string;
+
+  /** Nome do bairro */
+  neighborhoodName: string;
+
   /** Latitude da estação de medição */
   latitude: number;
 

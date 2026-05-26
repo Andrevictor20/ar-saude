@@ -9,6 +9,7 @@ import {
   ProcessedAirQualityData,
 } from '../common/interfaces/index.js';
 import { retryWithBackoff } from '../common/utils/retry.util.js';
+import { Neighborhood } from '../common/constants/neighborhoods.js';
 
 /**
  * =====================================================
@@ -38,10 +39,6 @@ export class OpenMeteoService {
   /** URL base da API Open-Meteo (configurável via .env) */
   private readonly baseUrl: string;
 
-  /** Coordenadas geográficas de São Luís, MA */
-  private readonly latitude: number;
-  private readonly longitude: number;
-
   /** Configurações de retry */
   private readonly maxRetries: number;
   private readonly retryBaseDelay: number;
@@ -54,8 +51,6 @@ export class OpenMeteoService {
       'OPEN_METEO_BASE_URL',
       'https://air-quality-api.open-meteo.com/v1/air-quality',
     );
-    this.latitude = this.configService.get<number>('LATITUDE', -2.5293);
-    this.longitude = this.configService.get<number>('LONGITUDE', -44.3028);
     this.maxRetries = this.configService.get<number>('MAX_RETRIES', 5);
     this.retryBaseDelay = this.configService.get<number>(
       'RETRY_BASE_DELAY_MS',
@@ -77,25 +72,27 @@ export class OpenMeteoService {
    * @returns Dados processados de qualidade do ar com classificação.
    * @throws Erro após esgotar todas as tentativas de retry.
    */
-  async fetchAirQuality(): Promise<ProcessedAirQualityData> {
+  async fetchAirQuality(neighborhood: Neighborhood): Promise<ProcessedAirQualityData> {
     this.logger.log(
-      `Iniciando coleta de dados para lat=${this.latitude}, lon=${this.longitude}`,
+      `Iniciando coleta de dados para bairro ${neighborhood.name} (lat=${neighborhood.latitude}, lon=${neighborhood.longitude})`,
     );
 
     // A chamada HTTP é encapsulada no retryWithBackoff para resiliência
     const rawData = await retryWithBackoff<AirQualityData>(
-      () => this.callOpenMeteoApi(),
+      () => this.callOpenMeteoApi(neighborhood.latitude, neighborhood.longitude),
       this.maxRetries,
       this.retryBaseDelay,
-      'OpenMeteo.fetchAirQuality',
+      `OpenMeteo.fetchAirQuality(${neighborhood.id})`,
     );
 
     // Processa e enriquece os dados com classificação e localização
     const processed: ProcessedAirQualityData = {
       ...rawData,
       level: this.classifyAqi(rawData.aqi),
-      latitude: this.latitude,
-      longitude: this.longitude,
+      neighborhoodId: neighborhood.id,
+      neighborhoodName: neighborhood.name,
+      latitude: neighborhood.latitude,
+      longitude: neighborhood.longitude,
     };
 
     this.logger.log(
@@ -109,10 +106,10 @@ export class OpenMeteoService {
    * Realiza a chamada HTTP efetiva à API Open-Meteo.
    * Método separado para facilitar o encapsulamento no retry.
    */
-  private async callOpenMeteoApi(): Promise<AirQualityData> {
+  private async callOpenMeteoApi(latitude: number, longitude: number): Promise<AirQualityData> {
     const params = {
-      latitude: this.latitude,
-      longitude: this.longitude,
+      latitude,
+      longitude,
       current: 'european_aqi,pm10,pm2_5,nitrogen_dioxide,ozone',
     };
 

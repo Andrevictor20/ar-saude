@@ -11,6 +11,7 @@ import {
   InterscityResourceResponse,
 } from '../common/interfaces/index.js';
 import { retryWithBackoff } from '../common/utils/retry.util.js';
+import { SAO_LUIS_NEIGHBORHOODS } from '../common/constants/neighborhoods.js';
 
 /**
  * =====================================================
@@ -68,11 +69,11 @@ export class InterscityService implements OnModuleInit {
   private readonly retryBaseDelay: number;
 
   /**
-   * UUID do recurso registrado no InterSCity.
-   * É obtido durante a inicialização do módulo (onModuleInit)
-   * e reutilizado em todas as chamadas subsequentes.
+   * Mapa de UUIDs dos recursos registrados no InterSCity.
+   * Chave: neighborhoodId
+   * Valor: resourceUuid
    */
-  private resourceUuid: string | null = null;
+  private readonly resourceUuids = new Map<string, string>();
 
   /**
    * Definição das Capacidades (Capabilities) do sistema Ar-Saúde.
@@ -157,9 +158,9 @@ export class InterscityService implements OnModuleInit {
 
     try {
       await this.ensureCapabilitiesRegistered();
-      await this.ensureResourceRegistered();
+      await this.ensureResourcesRegistered();
       this.logger.log(
-        `✅ InterSCity inicializado — Resource UUID: ${this.resourceUuid}`,
+        `✅ InterSCity inicializado com ${this.resourceUuids.size} bairros registrados.`,
       );
     } catch (error) {
       this.logger.warn(
@@ -240,91 +241,71 @@ export class InterscityService implements OnModuleInit {
   }
 
   /**
-   * Garante que o recurso (estação de monitoramento) esteja registrado
-   * no InterSCity. Se já existir, busca o UUID existente.
-   *
-   * ─── Modelagem do Recurso ───
-   *
-   * O recurso representa a estação de monitoramento de São Luís.
-   * Ele é associado a todas as capabilities de qualidade do ar,
-   * formando o vínculo Resource ↔ Capabilities no InterSCity.
-   *
-   * Endpoint: POST {catalogUrl}/resources
+   * Garante que os recursos (bairros) estejam registrados
+   * no InterSCity. Se já existirem, busca os UUIDs existentes.
    */
-  async ensureResourceRegistered(): Promise<void> {
-    // Se já temos o UUID em memória, não é necessário re-registrar
-    if (this.resourceUuid) {
-      return;
-    }
+  async ensureResourcesRegistered(): Promise<void> {
+    for (const neighborhood of SAO_LUIS_NEIGHBORHOODS) {
+      if (this.resourceUuids.has(neighborhood.id)) {
+        continue;
+      }
 
-    const latitude = this.configService.get<number>('LATITUDE', -2.5293);
-    const longitude = this.configService.get<number>('LONGITUDE', -44.3028);
-
-    /**
-     * Payload de registro do recurso.
-     *
-     * O campo `capabilities` lista os nomes das capabilities que
-     * este recurso pode produzir dados. O InterSCity usa essa
-     * associação para validar os dados recebidos via Collector.
-     */
-    const resourcePayload: InterscityResourcePayload = {
-      data: {
-        description: 'Estação de monitoramento de qualidade do ar — São Luís, MA, Brasil (Ar-Saúde)',
-        capabilities: this.capabilities.map((c) => c.name),
-        status: 'active',
-        lat: latitude,
-        lon: longitude,
-      },
-    };
-
-    try {
-      const response = await retryWithBackoff(
-        () =>
-          firstValueFrom(
-            this.httpService.post<InterscityResourceResponse>(
-              `${this.catalogUrl}/resources`,
-              resourcePayload,
-              { headers: { 'Content-Type': 'application/json' } },
-            ),
-          ),
-        this.maxRetries,
-        this.retryBaseDelay,
-        'InterSCity.registerResource',
-        (error: any) => {
-          const status = error?.response?.status;
-          if (status === 409 || status === 422) return false;
-          return true;
+      const resourcePayload: InterscityResourcePayload = {
+        data: {
+          description: `Monitoramento Ar-Saúde - Bairro: ${neighborhood.name}`,
+          capabilities: this.capabilities.map((c) => c.name),
+          status: 'active',
+          lat: neighborhood.latitude,
+          lon: neighborhood.longitude,
         },
-      );
+      };
 
-      this.resourceUuid = response.data?.data?.uuid;
-      this.logger.log(
-        `✅ Recurso registrado no InterSCity — UUID: ${this.resourceUuid}`,
-      );
-    } catch (error: unknown) {
-      // Se o recurso já existe, tentamos buscar o UUID via listagem
-      const axiosError = error as { response?: { status?: number } };
-      if (
-        axiosError?.response?.status === 409 ||
-        axiosError?.response?.status === 422
-      ) {
-        this.logger.log('Recurso já existe, buscando UUID...');
-        await this.fetchExistingResourceUuid();
-      } else {
-        throw error;
+      try {
+        const response = await retryWithBackoff(
+          () =>
+            firstValueFrom(
+              this.httpService.post<InterscityResourceResponse>(
+                `${this.catalogUrl}/resources`,
+                resourcePayload,
+                { headers: { 'Content-Type': 'application/json' } },
+              ),
+            ),
+          this.maxRetries,
+          this.retryBaseDelay,
+          `InterSCity.registerResource(${neighborhood.id})`,
+          (error: any) => {
+            const status = error?.response?.status;
+            if (status === 409 || status === 422) return false;
+            return true;
+          },
+        );
+
+        const uuid = response.data?.data?.uuid;
+        if (uuid) {
+          this.resourceUuids.set(neighborhood.id, uuid);
+          this.logger.log(
+            `✅ Bairro ${neighborhood.name} registrado — UUID: ${uuid}`,
+          );
+        }
+      } catch (error: unknown) {
+        const axiosError = error as { response?: { status?: number } };
+        if (
+          axiosError?.response?.status === 409 ||
+          axiosError?.response?.status === 422
+        ) {
+          this.logger.log(`Bairro ${neighborhood.name} já existe, buscando UUID...`);
+          await this.fetchExistingResourceUuid(neighborhood.id, neighborhood.name);
+        } else {
+          throw error;
+        }
       }
     }
   }
 
   /**
-   * Busca o UUID de um recurso já existente no catálogo InterSCity.
-   *
-   * Consulta a listagem de recursos e filtra pelo primeiro
-   * que contém "Ar-Saúde" na descrição.
-   *
-   * Endpoint: GET {catalogUrl}/resources
+   * Busca o UUID de um recurso específico já existente.
    */
-  private async fetchExistingResourceUuid(): Promise<void> {
+  private async fetchExistingResourceUuid(neighborhoodId: string, neighborhoodName: string): Promise<void> {
     try {
       const response = await retryWithBackoff(
         () =>
@@ -337,24 +318,24 @@ export class InterscityService implements OnModuleInit {
       );
 
       const resources = response.data?.resources ?? [];
-      const arSaudeResource = resources.find(
+      const existingResource = resources.find(
         (r: { description?: string }) =>
-          r.description?.includes('Ar-Saúde'),
+          r.description?.includes(`Monitoramento Ar-Saúde - Bairro: ${neighborhoodName}`),
       );
 
-      if (arSaudeResource?.uuid) {
-        this.resourceUuid = arSaudeResource.uuid;
+      if (existingResource?.uuid) {
+        this.resourceUuids.set(neighborhoodId, existingResource.uuid);
         this.logger.log(
-          `✅ Recurso existente encontrado — UUID: ${this.resourceUuid}`,
+          `✅ Recurso existente encontrado para ${neighborhoodName} — UUID: ${existingResource.uuid}`,
         );
       } else {
         this.logger.warn(
-          '⚠️  Nenhum recurso Ar-Saúde encontrado no catálogo.',
+          `⚠️ Nenhum recurso Ar-Saúde encontrado para o bairro ${neighborhoodName}.`,
         );
       }
     } catch (error) {
       this.logger.error(
-        `Erro ao buscar recursos existentes: ${
+        `Erro ao buscar recursos existentes para ${neighborhoodName}: ${
           error instanceof Error ? error.message : String(error)
         }`,
       );
@@ -399,19 +380,23 @@ export class InterscityService implements OnModuleInit {
    * @throws Erro se o recurso não estiver registrado ou a requisição falhar
    */
   async sendMeasurement(data: ProcessedAirQualityData): Promise<void> {
-    // Garante que o recurso esteja registrado antes do envio
-    if (!this.resourceUuid) {
-      this.logger.warn(
-        'Resource UUID não disponível. Tentando re-registrar...',
-      );
-      await this.ensureResourceRegistered();
+    const uuid = this.resourceUuids.get(data.neighborhoodId);
 
-      if (!this.resourceUuid) {
+    // Garante que o recurso esteja registrado antes do envio
+    if (!uuid) {
+      this.logger.warn(
+        `Resource UUID não disponível para ${data.neighborhoodName}. Tentando re-registrar...`,
+      );
+      await this.ensureResourcesRegistered();
+
+      if (!this.resourceUuids.has(data.neighborhoodId)) {
         throw new Error(
-          'Impossível enviar medição: Resource UUID não encontrado no InterSCity.',
+          `Impossível enviar medição: Resource UUID não encontrado no InterSCity para ${data.neighborhoodName}.`,
         );
       }
     }
+
+    const currentUuid = this.resourceUuids.get(data.neighborhoodId);
 
     /**
      * Monta o payload de medição.
@@ -458,7 +443,7 @@ export class InterscityService implements OnModuleInit {
       },
     };
 
-    const url = `${this.collectorUrl}/resources/${this.resourceUuid}/data`;
+    const url = `${this.collectorUrl}/resources/${currentUuid}/data`;
 
     this.logger.log(
       `📤 Enviando medição ao InterSCity — URL: ${url}`,
@@ -480,14 +465,14 @@ export class InterscityService implements OnModuleInit {
     );
 
     this.logger.log(
-      `✅ Medição enviada com sucesso — AQI: ${data.aqi} (${data.level})`,
+      `✅ Medição enviada com sucesso para ${data.neighborhoodName} — AQI: ${data.aqi} (${data.level})`,
     );
   }
 
   /**
    * Retorna o UUID do recurso registrado (para fins de debug/health).
    */
-  getResourceUuid(): string | null {
-    return this.resourceUuid;
+  getResourceUuids(): Record<string, string> {
+    return Object.fromEntries(this.resourceUuids);
   }
 }
