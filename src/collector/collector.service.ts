@@ -54,7 +54,7 @@ export class CollectorService {
    * Este método NAO lança exceções — todos os erros são
    * capturados e logados para não interromper o agendador.
    */
-  @Cron(process.env.CRON_COLLECT_INTERVAL ?? '*/30 * * * *', {
+  @Cron(process.env.CRON_COLLECT_INTERVAL ?? '* * * * *', {
     name: 'air-quality-collection',
     timeZone: 'America/Sao_Paulo',
   })
