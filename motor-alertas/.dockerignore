@@ -7,7 +7,3 @@ dist
 .vscode
 .idea
 coverage
-test
-motor-alertas
-frontend
-verificar_ar.sh

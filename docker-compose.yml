@@ -1,0 +1,76 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ar-saude-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-arsaude}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-arsaude}
+      POSTGRES_DB: ${DB_NAME:-arsaude_alertas}
+    ports:
+      - "${DB_HOST_PORT:-5433}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-arsaude} -d ${DB_NAME:-arsaude_alertas}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  coletor:
+    build:
+      context: .
+    container_name: ar-saude-coletor
+    restart: unless-stopped
+    environment:
+      PORT: 3000
+      OPEN_METEO_BASE_URL: ${OPEN_METEO_BASE_URL:-https://air-quality-api.open-meteo.com/v1/air-quality}
+      INTERSCITY_CATALOG_URL: ${INTERSCITY_CATALOG_URL:-https://interscity.rasppi.cloud/catalog}
+      INTERSCITY_ADAPTOR_URL: ${INTERSCITY_ADAPTOR_URL:-https://interscity.rasppi.cloud/adaptor}
+      INTERSCITY_COLLECTOR_URL: ${INTERSCITY_COLLECTOR_URL:-https://interscity.rasppi.cloud/collector}
+      KONG_UPSTREAM_URL: ${KONG_UPSTREAM_URL:-https://kong.rasppi.cloud/upstreams}
+      CRON_COLLECT_INTERVAL: ${CRON_COLLECT_INTERVAL:-*/30 * * * *}
+      MAX_RETRIES: ${MAX_RETRIES:-5}
+      RETRY_BASE_DELAY_MS: ${RETRY_BASE_DELAY_MS:-1000}
+    ports:
+      - "${COLETOR_PORT:-3000}:3000"
+
+  motor-alertas:
+    build:
+      context: ./motor-alertas
+    container_name: ar-saude-motor-alertas
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    environment:
+      PORT: 3001
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-arsaude}
+      DB_PASSWORD: ${DB_PASSWORD:-arsaude}
+      DB_NAME: ${DB_NAME:-arsaude_alertas}
+      INTERSCITY_CATALOG_URL: ${INTERSCITY_CATALOG_URL:-https://interscity.rasppi.cloud/catalog}
+      INTERSCITY_COLLECTOR_URL: ${INTERSCITY_COLLECTOR_URL:-https://interscity.rasppi.cloud/collector}
+      CATALOG_PAGE_SIZE: ${CATALOG_PAGE_SIZE:-500}
+      MONITOR_INTERVAL: ${MONITOR_INTERVAL:-*/1 * * * *}
+      ALERT_AQI_THRESHOLD: ${ALERT_AQI_THRESHOLD:-61}
+      MAX_RETRIES: ${MAX_RETRIES:-5}
+      RETRY_BASE_DELAY_MS: ${RETRY_BASE_DELAY_MS:-1000}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:${FRONTEND_PORT:-3002}}
+    ports:
+      - "${MOTOR_PORT:-3001}:3001"
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:${MOTOR_PORT:-3001}}
+    container_name: ar-saude-frontend
+    restart: unless-stopped
+    depends_on:
+      - motor-alertas
+    ports:
+      - "${FRONTEND_PORT:-3002}:3002"
+
+volumes:
+  postgres_data:

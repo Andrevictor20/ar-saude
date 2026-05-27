@@ -1,0 +1,52 @@
+export interface Measurement {
+  id: string;
+  neighborhoodId: string;
+  neighborhoodName: string;
+  resourceUuid: string;
+  aqi: number | null;
+  level: string;
+  pm10: number | null;
+  pm2_5: number | null;
+  no2: number | null;
+  ozone: number | null;
+  latitude: number | null;
+  longitude: number | null;
+  measuredAt: string;
+  createdAt: string;
+}
+
+export type AlertSeverity = 'atencao' | 'alerta' | 'critico' | 'emergencia';
+export type AlertStatus = 'active' | 'resolved';
+
+export interface Alert {
+  id: string;
+  neighborhoodId: string;
+  neighborhoodName: string;
+  resourceUuid: string;
+  aqi: number;
+  peakAqi: number;
+  level: string;
+  severity: AlertSeverity;
+  message: string;
+  status: AlertStatus;
+  latitude: number | null;
+  longitude: number | null;
+  triggeredAt: string;
+  updatedAt: string;
+  resolvedAt: string | null;
+}
+
+export interface LevelDistribution {
+  level: string;
+  count: number;
+}
+
+export interface DashboardStats {
+  monitoredNeighborhoods: number;
+  totalMeasurements: number;
+  averageAqi: number | null;
+  worst: { neighborhoodName: string; aqi: number; level: string } | null;
+  best: { neighborhoodName: string; aqi: number; level: string } | null;
+  distribution: LevelDistribution[];
+  updatedAt: string;
+}
