@@ -1,8 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
-/**
- * Service raiz — provê lógica auxiliar como o healthcheck.
- */
+/** Service de healthcheck. */
 @Injectable()
 export class AppService {
   getHealth(): { status: string; service: string; timestamp: string } {
