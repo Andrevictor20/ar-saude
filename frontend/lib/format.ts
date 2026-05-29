@@ -10,6 +10,16 @@ export function aqiColor(aqi: number | null): string {
   return '#a855f7';
 }
 
+export function aqiLevel(aqi: number | null): string {
+  if (aqi === null || aqi === undefined) return 'Sem dados';
+  if (aqi <= 20) return 'Bom';
+  if (aqi <= 40) return 'Moderado';
+  if (aqi <= 60) return 'Ruim para grupos sensíveis';
+  if (aqi <= 80) return 'Ruim';
+  if (aqi <= 100) return 'Muito Ruim';
+  return 'Perigoso';
+}
+
 export function levelColor(level: string): string {
   switch (level) {
     case 'Bom':
