@@ -13,7 +13,6 @@ export const SAO_LUIS_NEIGHBORHOODS: Neighborhood[] = [
   { id: 'anjo_da_guarda', name: 'Anjo da Guarda', latitude: -2.5855, longitude: -44.3312 },
   { id: 'apeadouro', name: 'Apeadouro', latitude: -2.5455, longitude: -44.2870 },
   { id: 'apicum', name: 'Apicum', latitude: -2.5250, longitude: -44.2990 },
-  { id: 'aracagy', name: 'Araçagy', latitude: -2.4580, longitude: -44.2130 },
   { id: 'areinha', name: 'Areinha', latitude: -2.5570, longitude: -44.2950 },
   { id: 'vila_bacanga', name: 'Vila Bacanga', latitude: -2.5740, longitude: -44.3200 },
 
@@ -80,9 +79,6 @@ export const SAO_LUIS_NEIGHBORHOODS: Neighborhood[] = [
   { id: 'liberdade', name: 'Liberdade', latitude: -2.5490, longitude: -44.2950 },
   { id: 'madre_deus', name: 'Madre Deus', latitude: -2.5340, longitude: -44.2960 },
 
-  { id: 'maioba', name: 'Maioba', latitude: -2.5300, longitude: -44.1800 },
-  { id: 'maiobao', name: 'Maiobão', latitude: -2.4940, longitude: -44.1830 },
-  { id: 'maiobinha', name: 'Maiobinha', latitude: -2.5220, longitude: -44.2000 },
 
   { id: 'maracana', name: 'Maracanã', latitude: -2.6500, longitude: -44.2650 },
   { id: 'maranhao_novo', name: 'Maranhão Novo', latitude: -2.5255, longitude: -44.2655 },
@@ -92,12 +88,10 @@ export const SAO_LUIS_NEIGHBORHOODS: Neighborhood[] = [
   { id: 'olho_dagua', name: 'Olho d\'Água', latitude: -2.4842, longitude: -44.2413 },
   { id: 'outeiro_da_cruz', name: 'Outeiro da Cruz', latitude: -2.5480, longitude: -44.2860 },
 
-  { id: 'panaquatira', name: 'Panaquatira', latitude: -2.5700, longitude: -44.0700 },
   { id: 'parque_amazonas', name: 'Parque Amazonas', latitude: -2.5780, longitude: -44.2600 },
   { id: 'parque_timbiras', name: 'Parque Timbiras', latitude: -2.5660, longitude: -44.2480 },
   { id: 'parque_vitoria', name: 'Parque Vitória', latitude: -2.5300, longitude: -44.2300 },
 
-  { id: 'pau_deitado', name: 'Pau Deitado', latitude: -2.5200, longitude: -44.1600 },
 
   { id: 'pedrinhas', name: 'Pedrinhas', latitude: -2.6600, longitude: -44.2500 },
 
@@ -140,7 +134,6 @@ export const SAO_LUIS_NEIGHBORHOODS: Neighborhood[] = [
   { id: 'vicente_fialho', name: 'Vicente Fialho', latitude: -2.5150, longitude: -44.2450 },
 
   { id: 'vila_brasil', name: 'Vila Brasil', latitude: -2.5850, longitude: -44.3100 },
-  { id: 'vila_cafeteira', name: 'Vila Cafeteira', latitude: -2.5000, longitude: -44.1900 },
   { id: 'vila_cascavel', name: 'Vila Cascavel', latitude: -2.5800, longitude: -44.2800 },
 
   { id: 'vila_embratel', name: 'Vila Embratel', latitude: -2.5650, longitude: -44.3250 },

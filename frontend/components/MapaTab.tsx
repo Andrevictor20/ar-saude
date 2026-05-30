@@ -11,7 +11,7 @@ import 'leaflet/dist/leaflet.css';
 /* ─── Constants ─── */
 const MAP_CENTER: [number, number] = [-2.5307, -44.3068];
 const MAP_ZOOM = 13;
-const TILE_URL = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+const TILE_URL = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
 const TILE_ATTR =
   '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>';
 

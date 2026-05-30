@@ -237,7 +237,9 @@ export class InterscityService implements OnModuleInit {
       const response = await retryWithBackoff(
         () =>
           firstValueFrom(
-            this.httpService.get(`${this.catalogUrl}/resources`),
+            this.httpService.get(`${this.catalogUrl}/resources`, {
+              params: { per_page: 1000 },
+            }),
           ),
         this.maxRetries,
         this.retryBaseDelay,

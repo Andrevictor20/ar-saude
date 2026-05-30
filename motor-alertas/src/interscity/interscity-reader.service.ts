@@ -87,8 +87,12 @@ export class InterscityReaderService {
 
     const resources: any[] = response.data?.resources ?? [];
 
-    return resources
-      .filter((r) => typeof r?.description === 'string' && r.description.includes('Ar-Sa'))
+    const mappedResources = resources
+      .filter(
+        (r) =>
+          typeof r?.description === 'string' &&
+          r.description.includes('Ar-Saúde'),
+      )
       .map((r) => {
         const name = this.parseNeighborhoodName(r.description);
         return {
@@ -100,6 +104,16 @@ export class InterscityReaderService {
         };
       })
       .filter((r) => Boolean(r.resourceUuid));
+
+    // Remove duplicatas mantendo apenas o UUID mais recente (primeiro que aparece na API)
+    const uniqueResources = new Map<string, InterscityResource>();
+    for (const res of mappedResources) {
+      if (!uniqueResources.has(res.neighborhoodId)) {
+        uniqueResources.set(res.neighborhoodId, res);
+      }
+    }
+
+    return Array.from(uniqueResources.values());
   }
 
   async fetchLatestReading(
@@ -133,6 +147,10 @@ export class InterscityReaderService {
 
     const aqi = this.latestNumber(capabilities.air_quality_index);
     const measuredAt = this.latestTimestamp(capabilities.air_quality_index);
+
+    if (!measuredAt) {
+      return null;
+    }
 
     return {
       resourceUuid: resource.resourceUuid,
@@ -168,14 +186,14 @@ export class InterscityReaderService {
     return entry ? this.toNumber(entry.value) : null;
   }
 
-  private latestTimestamp(series: SeriesEntry[] | undefined): Date {
+  private latestTimestamp(series: SeriesEntry[] | undefined): Date | null {
     const entry = this.latestEntry(series);
     const raw = entry?.date ?? entry?.timestamp;
     if (raw) {
       const parsed = new Date(raw);
       if (!Number.isNaN(parsed.getTime())) return parsed;
     }
-    return new Date();
+    return null;
   }
 
   private isNotFound(error: unknown): boolean {

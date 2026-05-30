@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Measurement } from '@/lib/types';
-import { aqiColor, formatNumber, formatTime } from '@/lib/format';
+import { aqiColor, formatNumber, formatDateTime } from '@/lib/format';
 
 /* ─── Types ─── */
 interface HistoryPointData {
@@ -159,7 +159,7 @@ export default function HistoryChart({
                   }}
                 >
                   📍 Visualizando histórico –{' '}
-                  {formatTime(activeData.measuredAt)}
+                  {formatDateTime(activeData.measuredAt)}
                 </span>
               </div>
             )}
@@ -205,7 +205,7 @@ export default function HistoryChart({
                   animation: 'histFadeIn .3s ease',
                 }}
               >
-                📍 {formatTime(activeData.measuredAt)}
+                📍 {formatDateTime(activeData.measuredAt)}
               </div>
             )}
             <AnimatedCell
@@ -453,7 +453,7 @@ function Chart({
           fill="#64748b"
           fontSize={10}
         >
-          {formatTime(points[0].measuredAt)}
+          {formatDateTime(points[0].measuredAt)}
         </text>
         <text
           x={WIDTH - PADDING.right}
@@ -462,7 +462,7 @@ function Chart({
           fontSize={10}
           textAnchor="end"
         >
-          {formatTime(points[points.length - 1].measuredAt)}
+          {formatDateTime(points[points.length - 1].measuredAt)}
         </text>
       </svg>
     </div>
