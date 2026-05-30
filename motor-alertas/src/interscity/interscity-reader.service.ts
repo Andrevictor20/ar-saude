@@ -9,6 +9,7 @@ import {
   classifyAqi,
   slugify,
 } from '../common/air-quality';
+import { SAO_LUIS_NEIGHBORHOODS } from '../common/constants/neighborhoods';
 
 export interface InterscityResource {
   resourceUuid: string;
@@ -103,7 +104,7 @@ export class InterscityReaderService {
           longitude: this.toNumber(r.lon),
         };
       })
-      .filter((r) => Boolean(r.resourceUuid));
+      .filter((r) => Boolean(r.resourceUuid) && SAO_LUIS_NEIGHBORHOODS.some(n => n.id === r.neighborhoodId));
 
     // Remove duplicatas mantendo apenas o UUID mais recente (primeiro que aparece na API)
     const uniqueResources = new Map<string, InterscityResource>();
