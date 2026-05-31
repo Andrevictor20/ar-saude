@@ -3,7 +3,7 @@ import { Cron } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
 
 import { OpenMeteoService } from '../open-meteo/open-meteo.service.js';
-import { OpenWeatherService } from '../open-weather/open-weather.service.js';
+import { OpenWeatherService, ExtraPollutants } from '../open-weather/open-weather.service.js';
 import { InterscityService } from '../interscity/interscity.service.js';
 import { SAO_LUIS_NEIGHBORHOODS } from '../common/constants/neighborhoods.js';
 
@@ -59,7 +59,7 @@ export class CollectorService {
         );
 
         this.logger.log('[2/3] Coletando dados extras do OpenWeatherMap...');
-        let extraPollutants = { co: null, so2: null, nh3: null, no: null };
+        let extraPollutants: ExtraPollutants = { co: null, so2: null, nh3: null, no: null };
         try {
           extraPollutants = await this.openWeatherService.fetchExtraPollutants(
             neighborhood.latitude,
