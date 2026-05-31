@@ -83,6 +83,28 @@ export default function NeighborhoodTable({
                   <th>
                     <span
                       className="has-tooltip"
+                      data-tooltip="Dióxido de Nitrogênio. Gás emitido por veículos e queima de combustíveis fósseis; causa inflamação pulmonar."
+                    >
+                      NO₂{' '}
+                      <span style={{ textTransform: 'lowercase' }}>
+                        (µg/m³)
+                      </span>
+                    </span>
+                  </th>
+                  <th>
+                    <span
+                      className="has-tooltip"
+                      data-tooltip="Ozônio. Poluente secundário formado sob luz solar; agrava asma e afeta os pulmões."
+                    >
+                      O₃{' '}
+                      <span style={{ textTransform: 'lowercase' }}>
+                        (µg/m³)
+                      </span>
+                    </span>
+                  </th>
+                  <th>
+                    <span
+                      className="has-tooltip"
                       data-tooltip="Monóxido de Carbono. Gás incolor e tóxico que reduz a capacidade de transporte de oxigênio no sangue."
                     >
                       CO{' '}
@@ -159,6 +181,8 @@ export default function NeighborhoodTable({
                     </td>
                     <td>{formatNumber(m.pm2_5)}</td>
                     <td>{formatNumber(m.pm10)}</td>
+                    <td>{formatNumber(m.no2)}</td>
+                    <td>{formatNumber(m.ozone)}</td>
                     <td>{formatNumber(m.co)}</td>
                     <td>{formatNumber(m.so2)}</td>
                     <td>{formatNumber(m.nh3)}</td>
@@ -168,7 +192,7 @@ export default function NeighborhoodTable({
                 ))}
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={10} className="empty">
+                    <td colSpan={12} className="empty">
                       Nenhum bairro encontrado para a busca.
                     </td>
                   </tr>

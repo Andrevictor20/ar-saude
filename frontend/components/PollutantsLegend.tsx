@@ -18,6 +18,16 @@ export default function PollutantsLegend() {
       limit: 'Até 45 µg/m³ (24h)',
     },
     {
+      symbol: 'NO₂',
+      desc: 'Dióxido de Nitrogênio',
+      limit: 'Até 25 µg/m³ (24h)',
+    },
+    {
+      symbol: 'O₃',
+      desc: 'Ozônio',
+      limit: 'Até 100 µg/m³ (8h)',
+    },
+    {
       symbol: 'CO',
       desc: 'Monóxido de Carbono',
       limit: 'Até 4000 µg/m³ (24h)',
