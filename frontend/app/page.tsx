@@ -344,9 +344,12 @@ export default function DashboardPage() {
           padding: 6px 16px;
           border-radius: 6px;
           cursor: pointer;
-          transition: all .15s ease;
+          transition: transform 0.1s cubic-bezier(0.16, 1, 0.3, 1), background 0.15s ease, color 0.15s ease;
           letter-spacing: .02em;
           white-space: nowrap;
+        }
+        .tab-btn:active {
+          transform: scale(0.96);
         }
         .tab-btn:hover {
           color: var(--text, #e2e8f0);
