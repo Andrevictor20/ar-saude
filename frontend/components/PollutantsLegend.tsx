@@ -30,12 +30,12 @@ export default function PollutantsLegend() {
     {
       symbol: 'NH₃',
       desc: 'Amônia',
-      limit: 'Monitoramento (Precursor)',
+      limit: 'Padrão OMS não definido',
     },
     {
       symbol: 'NO',
       desc: 'Óxido Nítrico',
-      limit: 'Monitoramento (Precursor)',
+      limit: 'Padrão OMS não definido',
     },
   ];
 
