@@ -6,6 +6,7 @@ import { HttpModule } from '@nestjs/axios';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { OpenMeteoModule } from './open-meteo/open-meteo.module.js';
+import { OpenWeatherModule } from './open-weather/open-weather.module.js';
 import { InterscityModule } from './interscity/interscity.module.js';
 import { CollectorModule } from './collector/collector.module.js';
 
@@ -25,6 +26,7 @@ import { CollectorModule } from './collector/collector.module.js';
     }),
 
     OpenMeteoModule,
+    OpenWeatherModule,
     InterscityModule,
     CollectorModule,
   ],

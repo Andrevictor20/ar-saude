@@ -31,6 +31,10 @@ export interface InterscityReading {
   pm2_5: number | null;
   no2: number | null;
   ozone: number | null;
+  co: number | null;
+  so2: number | null;
+  nh3: number | null;
+  no: number | null;
   measuredAt: Date;
 }
 
@@ -165,6 +169,10 @@ export class InterscityReaderService {
       pm2_5: this.latestNumber(capabilities.pm2_5),
       no2: this.latestNumber(capabilities.no2),
       ozone: this.latestNumber(capabilities.ozone),
+      co: this.latestNumber(capabilities.co),
+      so2: this.latestNumber(capabilities.so2),
+      nh3: this.latestNumber(capabilities.nh3),
+      no: this.latestNumber(capabilities.no),
       measuredAt,
     };
   }

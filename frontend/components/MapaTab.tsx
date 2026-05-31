@@ -164,6 +164,11 @@ export default function MapaTab({ measurements, stats }: MapaTabProps) {
           <div>PM10: ${formatNumber(m.pm10)}</div>
           <div>NO₂: ${formatNumber(m.no2)}</div>
           <div>O₃: ${formatNumber(m.ozone)}</div>
+          <div style="margin-top:4px;border-top:1px solid rgba(255,255,255,0.1);padding-top:4px;"></div>
+          <div>CO: ${formatNumber(m.co)}</div>
+          <div>SO₂: ${formatNumber(m.so2)}</div>
+          <div>NH₃: ${formatNumber(m.nh3)}</div>
+          <div>NO: ${formatNumber(m.no)}</div>
           <div style="margin-top:6px;color:var(--text-dim,#64748b);font-size:11px">
             Atualizado: ${formatTime(m.measuredAt)}
           </div>

@@ -63,6 +63,26 @@ export class InterscityService implements OnModuleInit {
       description: 'Classificação textual do nível de qualidade do ar (ex.: Bom, Moderado, Ruim)',
       capability_type: 'sensor',
     },
+    {
+      name: 'co',
+      description: 'Concentração de Monóxido de Carbono — CO (µg/m³)',
+      capability_type: 'sensor',
+    },
+    {
+      name: 'so2',
+      description: 'Concentração de Dióxido de Enxofre — SO₂ (µg/m³)',
+      capability_type: 'sensor',
+    },
+    {
+      name: 'nh3',
+      description: 'Concentração de Amônia — NH₃ (µg/m³)',
+      capability_type: 'sensor',
+    },
+    {
+      name: 'no',
+      description: 'Concentração de Monóxido de Nitrogênio — NO (µg/m³)',
+      capability_type: 'sensor',
+    },
   ];
 
   constructor(
@@ -314,6 +334,22 @@ export class InterscityService implements OnModuleInit {
 
         air_quality_level: [
           { value: data.level, timestamp: data.timestamp },
+        ],
+
+        co: [
+          { value: data.co ?? null, timestamp: data.timestamp },
+        ],
+
+        so2: [
+          { value: data.so2 ?? null, timestamp: data.timestamp },
+        ],
+
+        nh3: [
+          { value: data.nh3 ?? null, timestamp: data.timestamp },
+        ],
+
+        no: [
+          { value: data.no ?? null, timestamp: data.timestamp },
         ],
       },
     };

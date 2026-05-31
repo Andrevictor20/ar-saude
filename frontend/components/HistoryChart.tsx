@@ -11,6 +11,10 @@ interface HistoryPointData {
   pm10: number | null;
   no2: number | null;
   ozone: number | null;
+  co: number | null;
+  so2: number | null;
+  nh3: number | null;
+  no: number | null;
   measuredAt: string;
 }
 
@@ -57,6 +61,10 @@ export default function HistoryChart({
           pm10: p.pm10,
           no2: p.no2,
           ozone: p.ozone,
+          co: p.co,
+          so2: p.so2,
+          nh3: p.nh3,
+          no: p.no,
           measuredAt: p.measuredAt,
         });
       }
@@ -79,6 +87,10 @@ export default function HistoryChart({
           pm10: points[selectedIndex].pm10,
           no2: points[selectedIndex].no2,
           ozone: points[selectedIndex].ozone,
+          co: points[selectedIndex].co,
+          so2: points[selectedIndex].so2,
+          nh3: points[selectedIndex].nh3,
+          no: points[selectedIndex].no,
           measuredAt: points[selectedIndex].measuredAt,
         }
       : latest
@@ -88,6 +100,10 @@ export default function HistoryChart({
             pm10: latest.pm10,
             no2: latest.no2,
             ozone: latest.ozone,
+            co: latest.co,
+            so2: latest.so2,
+            nh3: latest.nh3,
+            no: latest.no,
             measuredAt: latest.measuredAt,
           }
         : null;
@@ -178,6 +194,10 @@ export default function HistoryChart({
                     pm10: p.pm10,
                     no2: p.no2,
                     ozone: p.ozone,
+                    co: p.co,
+                    so2: p.so2,
+                    nh3: p.nh3,
+                    no: p.no,
                     measuredAt: p.measuredAt,
                   });
                 }
@@ -233,6 +253,26 @@ export default function HistoryChart({
               k="O3"
               v={formatNumber(activeData.ozone)}
               key={`o3-${isHistoryMode ? selectedIndex : 'live'}`}
+            />
+            <AnimatedCell
+              k="CO"
+              v={formatNumber(activeData.co)}
+              key={`co-${isHistoryMode ? selectedIndex : 'live'}`}
+            />
+            <AnimatedCell
+              k="SO2"
+              v={formatNumber(activeData.so2)}
+              key={`so2-${isHistoryMode ? selectedIndex : 'live'}`}
+            />
+            <AnimatedCell
+              k="NH3"
+              v={formatNumber(activeData.nh3)}
+              key={`nh3-${isHistoryMode ? selectedIndex : 'live'}`}
+            />
+            <AnimatedCell
+              k="NO"
+              v={formatNumber(activeData.no)}
+              key={`no-${isHistoryMode ? selectedIndex : 'live'}`}
             />
           </div>
         )}

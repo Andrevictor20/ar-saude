@@ -3,6 +3,7 @@ import { Cron } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
 
 import { OpenMeteoService } from '../open-meteo/open-meteo.service.js';
+import { OpenWeatherService } from '../open-weather/open-weather.service.js';
 import { InterscityService } from '../interscity/interscity.service.js';
 import { SAO_LUIS_NEIGHBORHOODS } from '../common/constants/neighborhoods.js';
 
@@ -16,6 +17,7 @@ export class CollectorService {
 
   constructor(
     private readonly openMeteoService: OpenMeteoService,
+    private readonly openWeatherService: OpenWeatherService,
     private readonly interscityService: InterscityService,
     private readonly configService: ConfigService,
   ) {}
@@ -50,17 +52,40 @@ export class CollectorService {
           await this.openMeteoService.fetchAirQuality(neighborhood);
 
         this.logger.log(
-          `[1/2] ✅ Dados coletados — AQI: ${airQualityData.aqi} ` +
+          `[1/3] ✅ Dados coletados — AQI: ${airQualityData.aqi} ` +
             `(${airQualityData.level}) | PM10: ${airQualityData.pm10} | ` +
             `PM2.5: ${airQualityData.pm2_5} | NO₂: ${airQualityData.no2} | ` +
             `O₃: ${airQualityData.ozone}`,
         );
 
-        this.logger.log('[2/2] Enviando dados ao InterSCity...');
-        await this.interscityService.sendMeasurement(airQualityData);
+        this.logger.log('[2/3] Coletando dados extras do OpenWeatherMap...');
+        let extraPollutants = { co: null, so2: null, nh3: null, no: null };
+        try {
+          extraPollutants = await this.openWeatherService.fetchExtraPollutants(
+            neighborhood.latitude,
+            neighborhood.longitude,
+            neighborhood.name
+          );
+          this.logger.log(
+            `[2/3] ✅ Dados extras coletados — CO: ${extraPollutants.co} | ` +
+              `SO₂: ${extraPollutants.so2} | NH₃: ${extraPollutants.nh3} | ` +
+              `NO: ${extraPollutants.no}`
+          );
+        } catch (error) {
+          this.logger.warn(
+            `⚠️ Falha ao buscar dados extras do OWM para ${neighborhood.name}: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
+          );
+        }
+
+        const enrichedData = { ...airQualityData, ...extraPollutants };
+
+        this.logger.log('[3/3] Enviando dados ao InterSCity...');
+        await this.interscityService.sendMeasurement(enrichedData);
 
         this.logger.log(
-          `[2/2] ✅ Medição de ${neighborhood.name} enviada com sucesso!`,
+          `[3/3] ✅ Medição de ${neighborhood.name} enviada com sucesso!`,
         );
       } catch (error) {
         this.logger.error(

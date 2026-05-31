@@ -6,6 +6,10 @@ export interface AirQualityData {
   pm2_5: number | null;
   no2: number | null;
   ozone: number | null;
+  co?: number | null;
+  so2?: number | null;
+  nh3?: number | null;
+  no?: number | null;
 }
 
 /** Classificação textual do nível de qualidade do ar. */

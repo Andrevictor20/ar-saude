@@ -42,6 +42,18 @@ export class Measurement {
   ozone: number | null;
 
   @Column({ type: 'double precision', nullable: true })
+  co: number | null;
+
+  @Column({ type: 'double precision', nullable: true })
+  so2: number | null;
+
+  @Column({ type: 'double precision', nullable: true })
+  nh3: number | null;
+
+  @Column({ type: 'double precision', nullable: true })
+  no: number | null;
+
+  @Column({ type: 'double precision', nullable: true })
   latitude: number | null;
 
   @Column({ type: 'double precision', nullable: true })
