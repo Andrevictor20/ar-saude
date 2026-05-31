@@ -73,6 +73,21 @@ export default function AlertsPanel({ alerts }: Props) {
                     }}
                   >
                     <div
+                      style={{
+                        color: color,
+                        fontSize: '15px',
+                        fontWeight: 700,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        width: '100%',
+                        borderBottom: '1px solid rgba(255,255,255,0.08)',
+                        paddingBottom: '12px',
+                      }}
+                    >
+                      {severityLabel(group.severity)}
+                    </div>
+
+                    <div
                       style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}
                     >
                       {group.neighborhoods.map((n, i) => (
@@ -89,16 +104,6 @@ export default function AlertsPanel({ alerts }: Props) {
                         </span>
                       ))}
                     </div>
-                    <span
-                      className="badge"
-                      style={{
-                        background: color,
-                        color: '#0b1120',
-                        alignSelf: 'flex-start',
-                      }}
-                    >
-                      {severityLabel(group.severity)}
-                    </span>
                   </div>
                   <div
                     className="alert-msg"
