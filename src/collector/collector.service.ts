@@ -94,6 +94,9 @@ export class CollectorService {
           }`,
         );
       }
+
+      // Delay de 1.2 segundos para não estourar o rate limit do OpenWeatherMap (máx 60/min)
+      await new Promise((resolve) => setTimeout(resolve, 1200));
     }
 
     const elapsed = Date.now() - startTime;
