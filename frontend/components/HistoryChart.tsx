@@ -41,7 +41,8 @@ export default function HistoryChart({
 
   const filteredHistory = history.filter((m) => {
     if (startDate && new Date(m.measuredAt) < new Date(startDate)) return false;
-    if (endDate && new Date(m.measuredAt) > new Date(endDate + 'T23:59:59Z')) return false;
+    if (endDate && new Date(m.measuredAt) > new Date(endDate + 'T23:59:59Z'))
+      return false;
     return true;
   });
 
@@ -144,18 +145,32 @@ export default function HistoryChart({
               ↻ Voltar ao tempo real
             </button>
           )}
-          <input 
-            type="date" 
-            value={startDate} 
+          <input
+            type="date"
+            value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
-            style={{ background: 'var(--panel-2, #1b2638)', border: '1px solid var(--border, #233047)', color: 'var(--text, #e2e8f0)', padding: '4px 8px', borderRadius: 4, fontSize: 12 }}
+            style={{
+              background: 'var(--panel-2, #1b2638)',
+              border: '1px solid var(--border, #233047)',
+              color: 'var(--text, #e2e8f0)',
+              padding: '4px 8px',
+              borderRadius: 4,
+              fontSize: 12,
+            }}
             title="Data Inicial"
           />
-          <input 
-            type="date" 
-            value={endDate} 
+          <input
+            type="date"
+            value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
-            style={{ background: 'var(--panel-2, #1b2638)', border: '1px solid var(--border, #233047)', color: 'var(--text, #e2e8f0)', padding: '4px 8px', borderRadius: 4, fontSize: 12 }}
+            style={{
+              background: 'var(--panel-2, #1b2638)',
+              border: '1px solid var(--border, #233047)',
+              color: 'var(--text, #e2e8f0)',
+              padding: '4px 8px',
+              borderRadius: 4,
+              fontSize: 12,
+            }}
             title="Data Final"
           />
           <span className="muted" style={{ marginLeft: 8 }}>
@@ -509,12 +524,7 @@ function Chart({
           </circle>
         )}
 
-        <text
-          x={PADDING.left}
-          y={HEIGHT - 8}
-          fill="#64748b"
-          fontSize={10}
-        >
+        <text x={PADDING.left} y={HEIGHT - 8} fill="#64748b" fontSize={10}>
           {formatDateTime(points[0].measuredAt)}
         </text>
         <text

@@ -165,7 +165,8 @@ export default function DashboardPage() {
               {connected ? 'Conectado ao motor de alertas' : 'Sem conexao'}
             </span>
             <span>
-              Atualizado: {updatedAt ? formatDateTime(updatedAt.toISOString()) : '-'}
+              Atualizado:{' '}
+              {updatedAt ? formatDateTime(updatedAt.toISOString()) : '-'}
             </span>
             <button
               onClick={toggleTheme}
@@ -178,7 +179,7 @@ export default function DashboardPage() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                marginLeft: '8px'
+                marginLeft: '8px',
               }}
               title="Alternar tema claro/escuro"
             >
@@ -192,12 +193,17 @@ export default function DashboardPage() {
       {activeTab === 'dashboard' && (
         <main>
           {loading ? (
-            <div className="spinner">Carregando dados do motor de alertas...</div>
+            <div className="spinner">
+              Carregando dados do motor de alertas...
+            </div>
           ) : (
             <>
               <SummaryCards stats={stats} activeAlerts={alerts.length} />
 
-              <div className="layout-grid" style={{ gridTemplateColumns: '1fr' }}>
+              <div
+                className="layout-grid"
+                style={{ gridTemplateColumns: '1fr' }}
+              >
                 <NeighborhoodTable
                   measurements={measurements}
                   selectedId={selected?.id ?? null}
@@ -207,8 +213,8 @@ export default function DashboardPage() {
               </div>
 
               <div className="footer-note">
-                Dados coletados via InterSCity, Open-Meteo e OpenWeatherMap. Atualizacao
-                automatica a cada {REFRESH_MS / 1000}s.
+                Dados coletados via InterSCity, Open-Meteo e OpenWeatherMap.
+                Atualizacao automatica a cada {REFRESH_MS / 1000}s.
               </div>
             </>
           )}
@@ -219,15 +225,44 @@ export default function DashboardPage() {
       {activeTab === 'historico' && (
         <main>
           {loading ? (
-            <div className="spinner">Carregando dados do motor de alertas...</div>
+            <div className="spinner">
+              Carregando dados do motor de alertas...
+            </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 1000, margin: '0 auto' }}>
-              <div style={{ display: 'flex', gap: 16, alignItems: 'center', background: 'var(--panel-bg, #111827)', padding: '16px 24px', borderRadius: 12, border: '1px solid var(--border, #233047)' }}>
-                <span style={{ color: 'var(--text-muted, #94a3b8)', fontWeight: 600 }}>Selecionar Bairro:</span>
-                <select 
-                  value={selected?.id ?? ''} 
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 24,
+                maxWidth: 1000,
+                margin: '0 auto',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  gap: 16,
+                  alignItems: 'center',
+                  background: 'var(--panel-bg, #111827)',
+                  padding: '16px 24px',
+                  borderRadius: 12,
+                  border: '1px solid var(--border, #233047)',
+                }}
+              >
+                <span
+                  style={{
+                    color: 'var(--text-muted, #94a3b8)',
+                    fontWeight: 600,
+                  }}
+                >
+                  Selecionar Bairro:
+                </span>
+                <select
+                  value={selected?.id ?? ''}
                   onChange={(e) => {
-                    const m = measurements.find(x => x.neighborhoodId === e.target.value);
+                    const m = measurements.find(
+                      (x) => x.neighborhoodId === e.target.value,
+                    );
                     if (m) handleSelect(m);
                   }}
                   style={{
@@ -238,15 +273,21 @@ export default function DashboardPage() {
                     borderRadius: 6,
                     fontSize: 14,
                     flex: 1,
-                    outline: 'none'
+                    outline: 'none',
                   }}
                 >
-                  <option value="" disabled>-- Escolha um bairro --</option>
-                  {[...measurements].sort((a,b) => a.neighborhoodName.localeCompare(b.neighborhoodName)).map(m => (
-                    <option key={m.neighborhoodId} value={m.neighborhoodId}>
-                      {m.neighborhoodName}
-                    </option>
-                  ))}
+                  <option value="" disabled>
+                    -- Escolha um bairro --
+                  </option>
+                  {[...measurements]
+                    .sort((a, b) =>
+                      a.neighborhoodName.localeCompare(b.neighborhoodName),
+                    )
+                    .map((m) => (
+                      <option key={m.neighborhoodId} value={m.neighborhoodId}>
+                        {m.neighborhoodName}
+                      </option>
+                    ))}
                 </select>
               </div>
               <HistoryChart
@@ -262,22 +303,22 @@ export default function DashboardPage() {
       {activeTab === 'alertas' && (
         <main>
           {loading ? (
-            <div className="spinner">Carregando dados do motor de alertas...</div>
-          ) : (
-            <div style={{ maxWidth: 800, margin: '0 auto' }}>
-              <AlertsPanel alerts={alerts} />
+            <div className="spinner">
+              Carregando dados do motor de alertas...
             </div>
+          ) : (
+            <AlertsPanel alerts={alerts} />
           )}
         </main>
       )}
-
-
 
       {/* ─── Mapa Tab ─── */}
       {activeTab === 'mapa' && (
         <main className="mapa-main">
           {loading ? (
-            <div className="spinner">Carregando dados do motor de alertas...</div>
+            <div className="spinner">
+              Carregando dados do motor de alertas...
+            </div>
           ) : (
             <MapaTab measurements={measurements} stats={stats} />
           )}

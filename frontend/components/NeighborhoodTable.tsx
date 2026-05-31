@@ -2,12 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { Measurement } from '@/lib/types';
-import {
-  aqiColor,
-  formatNumber,
-  formatTime,
-  levelColor,
-} from '@/lib/format';
+import { aqiColor, formatNumber, formatTime, levelColor } from '@/lib/format';
 
 interface Props {
   measurements: Measurement[];
@@ -25,9 +20,7 @@ export default function NeighborhoodTable({
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     const list = q
-      ? measurements.filter((m) =>
-          m.neighborhoodName.toLowerCase().includes(q),
-        )
+      ? measurements.filter((m) => m.neighborhoodName.toLowerCase().includes(q))
       : measurements;
     return [...list].sort((a, b) => (b.aqi ?? -1) - (a.aqi ?? -1));
   }, [measurements, query]);
@@ -56,14 +49,81 @@ export default function NeighborhoodTable({
               <thead>
                 <tr>
                   <th>Bairro</th>
-                  <th><span className="has-tooltip" data-tooltip="Índice de Qualidade do Ar. Medida geral e simplificada da poluição atmosférica atual.">AQI</span></th>
+                  <th>
+                    <span
+                      className="has-tooltip"
+                      data-tooltip="Índice de Qualidade do Ar. Medida geral e simplificada da poluição atmosférica atual."
+                    >
+                      AQI
+                    </span>
+                  </th>
                   <th>Nivel</th>
-                  <th><span className="has-tooltip" data-tooltip="Material Particulado < 2.5µm. Partículas finas que penetram profundamente nos pulmões e corrente sanguínea.">PM2.5 <span style={{ textTransform: 'lowercase' }}>(µg/m³)</span></span></th>
-                  <th><span className="has-tooltip" data-tooltip="Material Particulado < 10µm. Poeira e partículas inaláveis que causam irritação e problemas respiratórios.">PM10 <span style={{ textTransform: 'lowercase' }}>(µg/m³)</span></span></th>
-                  <th><span className="has-tooltip" data-tooltip="Monóxido de Carbono. Gás incolor e tóxico que reduz a capacidade de transporte de oxigênio no sangue.">CO <span style={{ textTransform: 'lowercase' }}>(µg/m³)</span></span></th>
-                  <th><span className="has-tooltip" data-tooltip="Dióxido de Enxofre. Gás irritante resultante da combustão; causa broncoconstrição e tosse aguda.">SO₂ <span style={{ textTransform: 'lowercase' }}>(µg/m³)</span></span></th>
-                  <th><span className="has-tooltip" data-tooltip="Amônia. Gás de forte odor, atua na atmosfera como precursor de partículas finas.">NH₃ <span style={{ textTransform: 'lowercase' }}>(µg/m³)</span></span></th>
-                  <th><span className="has-tooltip" data-tooltip="Óxido Nítrico. Gás reativo de escapamentos que rapidamente contribui para formar poluição fotoquímica (ozônio).">NO <span style={{ textTransform: 'lowercase' }}>(µg/m³)</span></span></th>
+                  <th>
+                    <span
+                      className="has-tooltip"
+                      data-tooltip="Material Particulado < 2.5µm. Partículas finas que penetram profundamente nos pulmões e corrente sanguínea."
+                    >
+                      PM2.5{' '}
+                      <span style={{ textTransform: 'lowercase' }}>
+                        (µg/m³)
+                      </span>
+                    </span>
+                  </th>
+                  <th>
+                    <span
+                      className="has-tooltip"
+                      data-tooltip="Material Particulado < 10µm. Poeira e partículas inaláveis que causam irritação e problemas respiratórios."
+                    >
+                      PM10{' '}
+                      <span style={{ textTransform: 'lowercase' }}>
+                        (µg/m³)
+                      </span>
+                    </span>
+                  </th>
+                  <th>
+                    <span
+                      className="has-tooltip"
+                      data-tooltip="Monóxido de Carbono. Gás incolor e tóxico que reduz a capacidade de transporte de oxigênio no sangue."
+                    >
+                      CO{' '}
+                      <span style={{ textTransform: 'lowercase' }}>
+                        (µg/m³)
+                      </span>
+                    </span>
+                  </th>
+                  <th>
+                    <span
+                      className="has-tooltip"
+                      data-tooltip="Dióxido de Enxofre. Gás irritante resultante da combustão; causa broncoconstrição e tosse aguda."
+                    >
+                      SO₂{' '}
+                      <span style={{ textTransform: 'lowercase' }}>
+                        (µg/m³)
+                      </span>
+                    </span>
+                  </th>
+                  <th>
+                    <span
+                      className="has-tooltip"
+                      data-tooltip="Amônia. Gás de forte odor, atua na atmosfera como precursor de partículas finas."
+                    >
+                      NH₃{' '}
+                      <span style={{ textTransform: 'lowercase' }}>
+                        (µg/m³)
+                      </span>
+                    </span>
+                  </th>
+                  <th>
+                    <span
+                      className="has-tooltip"
+                      data-tooltip="Óxido Nítrico. Gás reativo de escapamentos que rapidamente contribui para formar poluição fotoquímica (ozônio)."
+                    >
+                      NO{' '}
+                      <span style={{ textTransform: 'lowercase' }}>
+                        (µg/m³)
+                      </span>
+                    </span>
+                  </th>
                   <th>Atualizado</th>
                 </tr>
               </thead>
@@ -71,7 +131,9 @@ export default function NeighborhoodTable({
                 {filtered.map((m) => (
                   <tr
                     key={m.neighborhoodId}
-                    className={m.neighborhoodId === selectedId ? 'selected' : ''}
+                    className={
+                      m.neighborhoodId === selectedId ? 'selected' : ''
+                    }
                     onClick={() => onSelect(m)}
                   >
                     <td>{m.neighborhoodName}</td>

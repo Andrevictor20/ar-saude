@@ -55,7 +55,15 @@ export default function PollutantsLegend() {
       }}
     >
       <div style={{ width: '100%', textAlign: 'center', marginBottom: 4 }}>
-        <h3 style={{ fontSize: 13, margin: 0, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+        <h3
+          style={{
+            fontSize: 13,
+            margin: 0,
+            color: 'var(--text-muted)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
+          }}
+        >
           Legenda de Poluentes e Limites Seguros (OMS 2021)
         </h3>
       </div>
@@ -74,9 +82,17 @@ export default function PollutantsLegend() {
             textAlign: 'center',
           }}
         >
-          <strong style={{ fontSize: 14, color: 'var(--accent)' }}>{item.symbol}</strong>
-          <span style={{ fontSize: 11, color: 'var(--text)', margin: '4px 0' }}>{item.desc}</span>
-          <span style={{ fontSize: 11, color: 'var(--text-dim)', fontWeight: 600 }}>{item.limit}</span>
+          <strong style={{ fontSize: 14, color: 'var(--accent)' }}>
+            {item.symbol}
+          </strong>
+          <span style={{ fontSize: 11, color: 'var(--text)', margin: '4px 0' }}>
+            {item.desc}
+          </span>
+          <span
+            style={{ fontSize: 11, color: 'var(--text-dim)', fontWeight: 600 }}
+          >
+            {item.limit}
+          </span>
         </div>
       ))}
     </div>
