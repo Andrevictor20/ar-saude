@@ -10,22 +10,22 @@ export default function PollutantsLegend() {
     {
       symbol: 'PM2.5',
       desc: 'Partículas Finas (< 2.5µm)',
-      limit: 'Até 15 µg/m³ (24h)',
+      limit: 'Até 15 µg/m3 (24h)',
     },
     {
       symbol: 'PM10',
       desc: 'Poeira/Particulado (< 10µm)',
-      limit: 'Até 45 µg/m³ (24h)',
+      limit: 'Até 45 µg/m3 (24h)',
     },
     {
       symbol: 'CO',
       desc: 'Monóxido de Carbono',
-      limit: 'Até 4 mg/m³ (24h)',
+      limit: 'Até 4000 µg/m3 (24h)',
     },
     {
       symbol: 'SO₂',
       desc: 'Dióxido de Enxofre',
-      limit: 'Até 40 µg/m³ (24h)',
+      limit: 'Até 40 µg/m3 (24h)',
     },
     {
       symbol: 'NH₃',
