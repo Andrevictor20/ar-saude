@@ -1,257 +1,99 @@
-# 🌬️ Ar-Saúde — Microsserviço 1 (Coletor)
+# 🌬️ Ar-Saúde — Plataforma de Monitoramento da Qualidade do Ar
 
-O **Microsserviço 1 (Coletor)** do projeto **Ar-Saúde** é um serviço em segundo plano construído sobre o framework **Nest.js** com **TypeScript**. Sua função exclusiva é executar rotinas agendadas (Cron Jobs) para coletar dados meteorológicos e de qualidade do ar da API pública **Open-Meteo**, processá-los e atualizar a plataforma de cidades inteligentes **InterSCity** com novas medições para a cidade de São Luís, Maranhão, Brasil.
+O **Ar-Saúde** é um sistema completo e distribuído (baseado em microsserviços) criado para monitorar, alertar e visualizar em tempo real a qualidade do ar em diversos bairros da cidade de São Luís, Maranhão, Brasil. 
+
+O projeto foi construído utilizando **TypeScript**, **Nest.js**, e **Next.js**, centralizando toda a comunicação e o histórico de dados climáticos na plataforma de cidades inteligentes **InterSCity**.
 
 ---
 
-## 🚀 Fluxo de Funcionamento
+## 🏗️ Arquitetura e Fluxo de Funcionamento
 
-```
-  ┌───────────────┐        GET /v1/air-quality        ┌─────────────────┐
-  │               │ ────────────────────────────────> │  Open-Meteo API │
-  │  Microsserviço│                                   └─────────────────┘
-  │   1 Coletor   │ ── POST /collector/.../data ────> ┌─────────────────┐
-  │   (Agendado)  │    (Roteado através do Kong)     │    InterSCity   │
-  └───────────────┘                                   └─────────────────┘
+O sistema é dividido em três grandes pilares, garantindo alta escalabilidade e separação de responsabilidades:
+
+```text
+  ┌─────────────────┐       ┌─────────────────┐       ┌─────────────────┐
+  │   APIs Externas │ ────> │ Microsserviço 1 │ ────> │   InterSCity    │
+  │ (Open-Meteo &   │       │    (Coletor)    │       │ (Banco Central) │
+  │ OpenWeatherMap) │       └─────────────────┘       └────────┬────────┘
+  └─────────────────┘                                          │
+                                                               │ (Leitura)
+                                                               ▼
+  ┌─────────────────┐       ┌─────────────────┐       ┌─────────────────┐
+  │    Usuário      │ <──── │    Frontend     │ <──── │ Microsserviço 2 │
+  │  (Dashboard)    │       │   (Next.js)     │       │(Motor Alertas)  │
+  └─────────────────┘       └─────────────────┘       └─────────────────┘
 ```
 
-1. **Inicialização (`onModuleInit`)**: O microsserviço tenta registrar no Catálogo do InterSCity as **Capacidades** (poluentes e índices) e dezenas de **Recursos** (um para cada Bairro monitorado em São Luís) caso ainda não estejam criados.
-2. **Coleta Agendada (`@Cron`)**: Periodicamente, o coletor consulta a API do Open-Meteo iterando pelas coordenadas geográficas exatas de cada bairro.
-3. **Resiliência (`retryWithBackoff`)**: Qualquer requisição HTTP falha é tratada com retry automático usando backoff exponencial e jitter.
-4. **Envio de Medições**: O microsserviço empacota as medições no formato exigido pelo InterSCity e envia para o gateway de API (Kong/Adaptor) via requisição POST.
+### 1. Microsserviço 1: Coletor (Diretório `/src` - NestJS)
+Sua principal responsabilidade é rodar rotinas agendadas (Cron Jobs) que consultam as coordenadas geográficas de cada bairro de São Luís nas APIs meteorológicas externas.
+- **Coleta Híbrida de Qualidade do Ar**: 
+  - Consulta a **Open-Meteo API** para obter índices unificados de qualidade do ar e concentração de poluentes base.
+  - Consulta a **OpenWeatherMap API** paralelamente para capturar e enriquecer a carga com gases adicionais críticos (como CO, NO, NO₂, SO₂, NH₃).
+- **Publicação**: Após mesclar os dados em uma unidade padronizada (`µg/m3`), o Coletor monta a medição no padrão InterSCity e envia (POST) as atualizações para o Catálogo (Capabilities/Recursos) através do gateway de API Kong.
+
+### 2. Microsserviço 2: Motor de Alertas (Diretório `/motor-alertas` - NestJS)
+É o cérebro avaliativo do sistema. Possui banco de dados embutido (SQLite via TypeORM) e age como consumidor final do barramento da cidade inteligente.
+- Consulta ativamente a API de dados recentes do **InterSCity**.
+- Cruza as concentrações de poluentes contra limiares e diretrizes globais da Organização Mundial da Saúde (OMS 2021).
+- Identifica picos críticos (ex: PM2.5 muito alto) e gera **Alertas** persistentes com base na periculosidade daquela amostra de ar específica para o bairro afetado.
+
+### 3. Frontend: Dashboard (Diretório `/frontend` - Next.js)
+Interface voltada para o usuário final e gestores, construída em React com foco em alta responsividade e performance (estilização por CSS modular e leve).
+- Fornece um painel robusto contendo o histórico temporal da poluição, estatísticas gerais e um mapa geolocalizado de calor de São Luís.
+- Suporta **Light Mode** e **Dark Mode**.
+- Contém explicações toxicológicas sobre os poluentes exibidos nas colunas de dados (tooltips) e a respectiva margem de segurança da OMS, traduzindo dados brutos em orientações amigáveis.
 
 ---
 
 ## 📋 Pré-requisitos
 
-Antes de iniciar, garanta que você possui instalado na sua máquina:
-- **Node.js** (versão 20 ou superior recomendada)
-- **npm** (gerenciador de pacotes padrão do Node)
-- **Git** (para versionamento e download do código)
-- **Docker** (opcional, necessário apenas se quiser rodar em container)
+Para rodar todo o ecossistema localmente na sua máquina, certifique-se de possuir instalado:
+- **Node.js** (versão 20 ou superior)
+- **Docker** e **Docker Compose** *(Altamente recomendado para subir os três serviços simultaneamente)*
 
 ---
 
-## 🛠️ Guia de Instalação e Configuração Passo a Passo
+## 🛠️ Como Executar a Plataforma
 
-### Passo 1: Download do Repositório
-Abra um terminal no seu sistema operacional e clone o repositório público do GitHub:
+A forma mais simples de colocar todo o sistema no ar é utilizando a nossa orquestração via **Docker Compose**, já configurada na raiz do repositório.
+
+### Passo 1: Configuração das Variáveis de Ambiente
+Copie e renomeie os arquivos `.env` de exemplo fornecidos nas pastas cruciais do projeto:
+
 ```bash
-git clone https://github.com/Andrevictor20/ar-saude-coletor.git
-```
+# Na raiz do projeto (Coletor):
+cp .env.example .env
 
-Acesse o diretório do projeto clonado:
+# Na pasta do Motor de Alertas:
+cd motor-alertas && cp .env.example .env && cd ..
+
+# Na pasta do Frontend:
+cd frontend && cp .env.example .env && cd ..
+```
+*Se aplicável, preencha a variável `OPENWEATHER_API_KEY` com a sua chave pessoal da API dentro do `.env` do Coletor.*
+
+### Passo 2: Inicialização
+Na raiz do repositório, faça o *build* estrutural e levante os containers:
 ```bash
-cd ar-saude-coletor
+docker-compose up --build
 ```
 
-### Passo 2: Instalação de Dependências
-Dentro da pasta do projeto, execute o comando abaixo para instalar todas as dependências necessárias do NestJS e de utilitários:
-```bash
-npm install
-```
+O comando irá criar, compilar e executar de forma orquestrada as três instâncias:
+- 🌬️ `coletor-ar` na porta **3000** (Responsável por rodar o cron de coleta)
+- 🚨 `motor-alertas` na porta **3001** (Fornecedor da API de dados consumíveis)
+- 📊 `frontend` na porta **3002** (Servidor web SSR para a interface)
 
-### Passo 3: Criação e Configuração do Arquivo `.env`
-O microsserviço depende de variáveis de ambiente para saber onde estão hospedados os serviços (InterSCity, API Open-Meteo, Kong) e as configurações de execução.
+### Passo 3: Acessando a Aplicação
+Com os terminais rodando limpos sem erros:
+- Abra seu navegador de internet e vá até: **http://localhost:3002** para acessar o **Dashboard Web**.
 
-1. Duplique o arquivo de exemplo fornecido no repositório criando um arquivo chamado `.env`:
-   ```bash
-   cp .env.example .env
-   ```
-
-2. Abra o arquivo `.env` gerado em um editor de sua preferência (VS Code, Vim, Nano, etc.). Ele possui a seguinte estrutura e campos que podem ser modificados:
-
-```env
-# --- Servidor ---
-PORT=3000
-
-# --- Open-Meteo (API pública de qualidade do ar) ---
-OPEN_METEO_BASE_URL=https://air-quality-api.open-meteo.com/v1/air-quality
-
-# --- InterSCity (Plataforma de Cidades Inteligentes) ---
-INTERSCITY_CATALOG_URL=https://interscity.rasppi.cloud/catalog
-INTERSCITY_ADAPTOR_URL=https://interscity.rasppi.cloud/adaptor
-INTERSCITY_COLLECTOR_URL=https://interscity.rasppi.cloud/collector
-
-# --- Kong API Gateway ---
-KONG_UPSTREAM_URL=https://kong.rasppi.cloud/upstreams
-
-# --- Cron (Intervalos de execução) ---
-# Expressão cron para a coleta de dados (Padrão: a cada 30 minutos)
-CRON_COLLECT_INTERVAL=*/30 * * * *
-
-# --- Retry / Resiliência ---
-# Número máximo de tentativas de requisição HTTP em caso de falha/rate-limit
-MAX_RETRIES=5
-# Tempo base inicial em milissegundos para o backoff exponencial
-RETRY_BASE_DELAY_MS=1000
-```
-
-> **Dica para testes rápidos:** Se você quiser que a rotina de coleta execute a cada minuto em vez de a cada 30 minutos, altere o valor de `CRON_COLLECT_INTERVAL` para:
-> ```env
-> CRON_COLLECT_INTERVAL=* * * * *
-> ```
+> **Nota**: Ao rodar pela primeiríssima vez, a página inicial pode demorar de 10 a 20 segundos para popular a tabela de bairros, pois o Coletor precisa executar o primeiro turno do *Cron Job* em segundo plano, ir até as APIs externas e enviar a primeira leva pro banco de dados da nuvem.
 
 ---
 
-## 🏃 Como Executar a Aplicação
+## 🔍 InterSCity: O Centro de Retenção de Dados
 
-Você pode executar o microsserviço em diferentes modos:
-
-### Opção A: Execução em Desenvolvimento (Local com Hot-Reload)
-Este comando inicia o servidor em modo de observação de mudanças. Qualquer alteração nos arquivos fontes reiniciará o serviço automaticamente.
-```bash
-npm run start:dev
-```
-
-### Opção B: Execução em Produção (Compilado para JavaScript Puro)
-Para rodar em ambiente produtivo, primeiro compile o código TypeScript para JavaScript na pasta `/dist` e depois inicie a aplicação:
-```bash
-npm run build
-npm run start:prod
-```
-
-### Opção C: Execução com Docker (Containerizado)
-Se você preferir executar a aplicação dentro de um container Docker isolado para produção:
-
-1. Gere a imagem do Docker localmente:
-   ```bash
-   docker build -t ar-saude-coletor .
-   ```
-
-2. Execute o container vinculando a porta `3000` da sua máquina e injetando as variáveis do arquivo `.env`:
-   ```bash
-   docker run -d --name ar-saude-coletor-instance -p 3000:3000 --env-file .env ar-saude-coletor
-   ```
-
----
-
-## 📊 Saídas e Logs Esperados
-
-Ao inicializar o serviço, você deverá ver logs semelhantes a estes no terminal de execução:
-
-```text
-[Nest] 12345  - 25/05/2026, 22:50:00Z     LOG [NestFactory] Starting Nest application...
-[Nest] 12345  - 25/05/2026, 22:50:00Z     LOG [InstanceLoader] AppModule dependencies initialized +15ms
-...
-🌬️  Ar-Saúde Coletor rodando na porta 3000
-[Nest] 12345  - 25/05/2026, 22:50:01Z     LOG [InterscityService] 🔧 Inicializando integração com InterSCity...
-[Nest] 12345  - 25/05/2026, 22:50:01Z     LOG [InterscityService] Registrando capabilities no InterSCity...
-[Nest] 12345  - 25/05/2026, 22:50:02Z     LOG [InterscityService]   ⏭️  Capability "air_quality_index" já existe, pulando.
-[Nest] 12345  - 25/05/2026, 22:50:02Z     LOG [InterscityService]   ⏭️  Capability "pm10" já existe, pulando.
-...
-[Nest] 12345  - 25/05/2026, 22:50:03Z     LOG [InterscityService] Recurso já existe, buscando UUID...
-[Nest] 12345  - 25/05/2026, 22:50:04Z     LOG [InterscityService] ✅ Recurso existente encontrado — UUID: f59d0421-2a6f-4428-98e3-e8470a1a5b82
-[Nest] 12345  - 25/05/2026, 22:50:04Z     LOG [InterscityService] ✅ InterSCity inicializado — Resource UUID: f59d0421-2a6f-4428-98e3-e8470a1a5b82
-```
-
-Quando o Cron Job for ativado (conforme o intervalo configurado em `CRON_COLLECT_INTERVAL`), as seguintes mensagens serão exibidas:
-
-```text
-[Nest] 12345  - 25/05/2026, 23:00:00Z     LOG [CollectorService] ═══════════════════════════════════════════════════
-[Nest] 12345  - 25/05/2026, 23:00:00Z     LOG [CollectorService] 🔄 Execução #1 — Iniciando coleta de qualidade do ar por bairros...
-[Nest] 12345  - 25/05/2026, 23:00:00Z     LOG [CollectorService] ═══════════════════════════════════════════════════
-[Nest] 12345  - 25/05/2026, 23:00:00Z     LOG [CollectorService] 
---- Bairro: Centro ---
-[Nest] 12345  - 25/05/2026, 23:00:00Z     LOG [CollectorService] [1/2] Coletando dados do Open-Meteo...
-[Nest] 12345  - 25/05/2026, 23:00:01Z     LOG [OpenMeteoService] Iniciando coleta de dados para bairro Centro (lat=-2.5283, lon=-44.3044)
-[Nest] 12345  - 25/05/2026, 23:00:02Z     LOG [OpenMeteoService] ✅ Dados coletados com sucesso — AQI: 18 (Bom)
-[Nest] 12345  - 25/05/2026, 23:00:02Z     LOG [CollectorService] [1/2] ✅ Dados coletados — AQI: 18 (Bom) | PM10: 10.2 | PM2.5: 4.8 | NO₂: 5.1 | O₃: 36.8
-[Nest] 12345  - 25/05/2026, 23:00:02Z     LOG [CollectorService] [2/2] Enviando dados ao InterSCity...
-[Nest] 12345  - 25/05/2026, 23:00:02Z     LOG [InterscityService] 📤 Enviando medição ao InterSCity — URL: https://interscity.rasppi.cloud/adaptor/resources/f59d0421-2a6f-4428-98e3-e8470a1a5b82/data
-[Nest] 12345  - 25/05/2026, 23:00:03Z     LOG [InterscityService] ✅ Medição enviada com sucesso para Centro — AQI: 18 (Bom)
-[Nest] 12345  - 25/05/2026, 23:00:03Z     LOG [CollectorService] [2/2] ✅ Medição de Centro enviada com sucesso!
-[Nest] 12345  - 25/05/2026, 23:00:03Z     LOG [CollectorService] 
---- Bairro: Renascença ---
-...
-[Nest] 12345  - 25/05/2026, 23:00:33Z     LOG [CollectorService] 🏁 Execução #1 concluída em 33230ms
-```
-
----
-
-## 🔍 Como Visualizar no InterSCity se Tudo está Funcionando
-
-Você pode testar a integridade das conexões e dados gravados no banco do InterSCity utilizando a ferramenta de terminal `curl` para fazer requisições HTTP diretas à plataforma.
-
-### 1. Testar o healthcheck local do microsserviço
-Antes de consultar as nuvens, garanta que o microsserviço local está respondendo:
-```bash
-curl -s http://localhost:3000/
-```
-**Resposta esperada:**
-```json
-{"status":"ok","service":"ar-saude-coletor","timestamp":"2026-05-25T23:00:00.000Z"}
-```
-
----
-
-### 2. Verificar as Capabilities (Capacidades) no InterSCity
-Consulte a API pública do Catálogo do InterSCity para garantir que os parâmetros do Ar-Saúde foram registrados no sistema:
-```bash
-curl -s https://interscity.rasppi.cloud/catalog/capabilities
-```
-Se você quiser filtrar apenas por uma específica para poluir menos o terminal, por exemplo, a capability de nível da qualidade do ar:
-```bash
-curl -s https://interscity.rasppi.cloud/catalog/capabilities | grep -A 3 -B 1 '"name": "air_quality_level"'
-```
-**Resposta esperada:**
-```json
-{
-  "name": "air_quality_level",
-  "description": "Classificação textual do nível de qualidade do ar (ex.: Bom, Moderado, Ruim)",
-  "capability_type": "sensor"
-}
-```
-
----
-
-### 3. Visualizar Dados Coletados por Bairro (Script Bash)
-Como o microsserviço agora registra múltiplos bairros (múltiplos UUIDs), você pode utilizar o script abaixo no seu terminal para iterar pelos recursos no Catálogo e automaticamente consultar os níveis de poluição de cada um deles no Coletor.
-
-Certifique-se de ter a ferramenta `jq` instalada (`sudo apt install jq` no Linux) e execute:
-
-```bash
-curl -s https://interscity.rasppi.cloud/catalog/resources | \
-jq -c '.resources[] | select(.description | contains("Ar-Saúde")) | {uuid: .uuid, name: (.description | sub("Monitoramento Ar-Saúde - Bairro: "; ""))}' | \
-while read -r item; do
-    UUID=$(echo "$item" | jq -r .uuid)
-    NAME=$(echo "$item" | jq -r .name)
-    echo "========================================"
-    echo "📍 Bairro: $NAME"
-    
-    # Busca os dados mais recentes do Collector
-    RESPONSE=$(curl -s "https://interscity.rasppi.cloud/collector/resources/${UUID}/data")
-    
-    # Checa se o bairro já possui dados coletados
-    HAS_DATA=$(echo "$RESPONSE" | jq '.resources[0].capabilities | length > 0')
-    
-    if [ "$HAS_DATA" == "true" ]; then
-        echo "📊 Última Medição:"
-        echo "$RESPONSE" | jq -r '.resources[0].capabilities | to_entries[] | "  - \(.key): \(.value[-1].value)"'
-    else
-        echo "⏳ Ainda não há dados coletados para este bairro (Aguarde a próxima execução do Cron)."
-    fi
-done
-```
-
-**Resultado Esperado:**
-```text
-========================================
-📍 Bairro: Centro
-📊 Última Medição:
-  - air_quality_index: 23
-  - pm10: 10.6
-  - pm2_5: 7.2
-  - no2: 4.2
-  - ozone: 57
-  - air_quality_level: Moderado
-========================================
-...
-```
-
-### 5. Consultar Dados de uma Única Capability Específica
-Se você quiser obter a série temporal histórica de apenas uma propriedade (ex: apenas o `air_quality_index`), use:
-```bash
-UUID="f59d0421-2a6f-4428-98e3-e8470a1a5b82"
-curl -s "https://interscity.rasppi.cloud/collector/resources/${UUID}/data/air_quality_index"
-```
+Todo o fluxo foi planejado seguindo os padrões arquiteturais de Internet das Coisas (IoT) em Smart Cities. 
+- A robustez baseia-se no fato do Microsserviço Coletor atuar apenas como um "Sensor/Adapter" genérico. Ele detecta, adapta a estrutura da requisição e empilha as métricas nos recursos virtuais do Catálogo na nuvem da UFMA (InterSCity).
+- O armazenamento e a série temporal pesada da poluição ocorrem 100% debaixo do guarda-chuva do **InterSCity**.
+- O Motor de Alertas, por sua vez, é apenas uma aplicação final de terceira parte consumidora, totalmente desacoplada das diretrizes de coletas. Isso significa que, se as APIs de previsão mudarem ou o coletor cair, o motor ainda mantém a avaliação histórica local acessível no Frontend.
