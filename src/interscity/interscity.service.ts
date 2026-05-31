@@ -249,7 +249,7 @@ export class InterscityService implements OnModuleInit {
       const resources = response.data?.resources ?? [];
       const existingResource = resources.find(
         (r: { description?: string }) =>
-          r.description?.includes(`Monitoramento Ar-Saúde - Bairro: ${neighborhoodName}`),
+          r.description?.includes(`Bairro: ${neighborhoodName}`),
       );
 
       if (existingResource?.uuid) {

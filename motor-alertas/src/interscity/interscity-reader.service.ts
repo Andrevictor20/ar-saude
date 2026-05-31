@@ -92,7 +92,7 @@ export class InterscityReaderService {
       .filter(
         (r) =>
           typeof r?.description === 'string' &&
-          r.description.includes('Ar-Saúde'),
+          (r.description.includes('Ar-Saúde') || r.description.includes('Ar-Saude')),
       )
       .map((r) => {
         const name = this.parseNeighborhoodName(r.description);
