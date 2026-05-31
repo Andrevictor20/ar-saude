@@ -38,6 +38,7 @@ export interface Alert {
   triggeredAt: string;
   updatedAt: string;
   resolvedAt: string | null;
+  triggeredBy?: string[];
 }
 
 export interface LevelDistribution {

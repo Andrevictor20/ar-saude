@@ -10,6 +10,15 @@ import { AlertsEventsService } from './alerts-events.service';
 import { InterscityReading } from '../interscity/interscity-reader.service';
 import { AlertSeverity, severityForAqi } from '../common/air-quality';
 
+const POLLUTANT_THRESHOLDS = {
+  pm2_5: 15,
+  pm10: 45,
+  no2: 25,
+  ozone: 100,
+  so2: 40,
+  co: 4,
+};
+
 export interface AlertFilters {
   status?: 'active' | 'resolved';
   neighborhoodId?: string;
@@ -43,16 +52,36 @@ export class AlertsService {
     });
 
     const aqi = reading.aqi;
-    const breached = aqi !== null && aqi >= this.threshold;
+    const breachedAqi = aqi !== null && aqi >= this.threshold;
+    const breachedPm25 = reading.pm2_5 !== null && reading.pm2_5 > POLLUTANT_THRESHOLDS.pm2_5;
+    const breachedPm10 = reading.pm10 !== null && reading.pm10 > POLLUTANT_THRESHOLDS.pm10;
+    const breachedNo2 = reading.no2 !== null && reading.no2 > POLLUTANT_THRESHOLDS.no2;
+    const breachedOzone = reading.ozone !== null && reading.ozone > POLLUTANT_THRESHOLDS.ozone;
+    const breachedSo2 = reading.so2 !== null && reading.so2 > POLLUTANT_THRESHOLDS.so2;
+    const breachedCo = reading.co !== null && reading.co > POLLUTANT_THRESHOLDS.co;
+
+    const breached = breachedAqi || breachedPm25 || breachedPm10 || breachedNo2 || breachedOzone || breachedSo2 || breachedCo;
 
     if (breached) {
+      const triggeredBy: string[] = [];
+      if (breachedAqi) triggeredBy.push(`AQI`);
+      if (breachedPm25) triggeredBy.push(`PM2.5 (${reading.pm2_5} µg/m³)`);
+      if (breachedPm10) triggeredBy.push(`PM10 (${reading.pm10} µg/m³)`);
+      if (breachedNo2) triggeredBy.push(`NO2 (${reading.no2} µg/m³)`);
+      if (breachedOzone) triggeredBy.push(`O3 (${reading.ozone} µg/m³)`);
+      if (breachedSo2) triggeredBy.push(`SO2 (${reading.so2} µg/m³)`);
+      if (breachedCo) triggeredBy.push(`CO (${reading.co} mg/m³)`);
+
       const severity = severityForAqi(aqi) ?? 'atencao';
+      const safeAqi = aqi ?? 0;
+
       if (active) {
-        active.aqi = aqi as number;
-        active.peakAqi = Math.max(active.peakAqi, aqi as number);
+        active.aqi = safeAqi;
+        active.peakAqi = Math.max(active.peakAqi, safeAqi);
         active.level = reading.level;
         active.severity = severity;
-        active.message = this.buildMessage(reading, severity);
+        active.message = this.buildMessage(reading, severity, triggeredBy);
+        active.triggeredBy = triggeredBy;
         const saved = await this.repo.save(active);
         this.events.emit({ type: 'updated', alert: saved });
       } else {
@@ -60,11 +89,12 @@ export class AlertsService {
           neighborhoodId: reading.neighborhoodId,
           neighborhoodName: reading.neighborhoodName,
           resourceUuid: reading.resourceUuid,
-          aqi: aqi as number,
-          peakAqi: aqi as number,
+          aqi: safeAqi,
+          peakAqi: safeAqi,
           level: reading.level,
           severity,
-          message: this.buildMessage(reading, severity),
+          message: this.buildMessage(reading, severity, triggeredBy),
+          triggeredBy,
           status: 'active',
           latitude: reading.latitude,
           longitude: reading.longitude,
@@ -119,6 +149,7 @@ export class AlertsService {
   private buildMessage(
     reading: InterscityReading,
     severity: AlertSeverity,
+    triggeredBy?: string[],
   ): string {
     const labels: Record<AlertSeverity, string> = {
       atencao: 'Atencao',
@@ -126,6 +157,16 @@ export class AlertsService {
       critico: 'Critico',
       emergencia: 'Emergencia',
     };
-    return `${labels[severity]}: qualidade do ar ${reading.level} em ${reading.neighborhoodName} (AQI ${reading.aqi}).`;
+    const baseMessage = `${labels[severity]}: qualidade do ar ${reading.level} em ${reading.neighborhoodName}`;
+    const aqiMsg = reading.aqi !== null ? `(AQI ${reading.aqi})` : '(AQI Indisponivel)';
+
+    if (triggeredBy && triggeredBy.length > 0) {
+      const specificCauses = triggeredBy.filter(c => c !== 'AQI');
+      if (specificCauses.length > 0) {
+        return `${baseMessage}. Níveis críticos detectados para: ${specificCauses.join(', ')}. ${aqiMsg}.`;
+      }
+    }
+
+    return `${baseMessage} ${aqiMsg}.`;
   }
 }

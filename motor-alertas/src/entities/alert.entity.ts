@@ -50,6 +50,9 @@ export class Alert {
   @Column({ type: 'double precision', nullable: true })
   longitude: number | null;
 
+  @Column({ type: 'simple-array', nullable: true })
+  triggeredBy: string[] | null;
+
   @CreateDateColumn({ type: 'timestamptz' })
   triggeredAt: Date;
 
