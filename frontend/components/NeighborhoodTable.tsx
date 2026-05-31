@@ -58,12 +58,12 @@ export default function NeighborhoodTable({
                   <th>Bairro</th>
                   <th><span className="has-tooltip" data-tooltip="Índice de Qualidade do Ar. Medida geral e simplificada da poluição atmosférica atual.">AQI</span></th>
                   <th>Nivel</th>
-                  <th><span className="has-tooltip" data-tooltip="Material Particulado < 2.5µm. Partículas finas que penetram profundamente nos pulmões e corrente sanguínea.">PM2.5 (µg/m3)</span></th>
-                  <th><span className="has-tooltip" data-tooltip="Material Particulado < 10µm. Poeira e partículas inaláveis que causam irritação e problemas respiratórios.">PM10 (µg/m3)</span></th>
-                  <th><span className="has-tooltip" data-tooltip="Monóxido de Carbono. Gás incolor e tóxico que reduz a capacidade de transporte de oxigênio no sangue.">CO (µg/m3)</span></th>
-                  <th><span className="has-tooltip" data-tooltip="Dióxido de Enxofre. Gás irritante resultante da combustão; causa broncoconstrição e tosse aguda.">SO₂ (µg/m3)</span></th>
-                  <th><span className="has-tooltip" data-tooltip="Amônia. Gás de forte odor, atua na atmosfera como precursor de partículas finas.">NH₃ (µg/m3)</span></th>
-                  <th><span className="has-tooltip" data-tooltip="Óxido Nítrico. Gás reativo de escapamentos que rapidamente contribui para formar poluição fotoquímica (ozônio).">NO (µg/m3)</span></th>
+                  <th><span className="has-tooltip" data-tooltip="Material Particulado < 2.5µm. Partículas finas que penetram profundamente nos pulmões e corrente sanguínea.">PM2.5 <span style={{ textTransform: 'lowercase' }}>(µg/m³)</span></span></th>
+                  <th><span className="has-tooltip" data-tooltip="Material Particulado < 10µm. Poeira e partículas inaláveis que causam irritação e problemas respiratórios.">PM10 <span style={{ textTransform: 'lowercase' }}>(µg/m³)</span></span></th>
+                  <th><span className="has-tooltip" data-tooltip="Monóxido de Carbono. Gás incolor e tóxico que reduz a capacidade de transporte de oxigênio no sangue.">CO <span style={{ textTransform: 'lowercase' }}>(µg/m³)</span></span></th>
+                  <th><span className="has-tooltip" data-tooltip="Dióxido de Enxofre. Gás irritante resultante da combustão; causa broncoconstrição e tosse aguda.">SO₂ <span style={{ textTransform: 'lowercase' }}>(µg/m³)</span></span></th>
+                  <th><span className="has-tooltip" data-tooltip="Amônia. Gás de forte odor, atua na atmosfera como precursor de partículas finas.">NH₃ <span style={{ textTransform: 'lowercase' }}>(µg/m³)</span></span></th>
+                  <th><span className="has-tooltip" data-tooltip="Óxido Nítrico. Gás reativo de escapamentos que rapidamente contribui para formar poluição fotoquímica (ozônio).">NO <span style={{ textTransform: 'lowercase' }}>(µg/m³)</span></span></th>
                   <th>Atualizado</th>
                 </tr>
               </thead>
