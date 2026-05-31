@@ -16,7 +16,7 @@ const POLLUTANT_THRESHOLDS = {
   no2: 25,
   ozone: 100,
   so2: 40,
-  co: 4,
+  co: 4000,
 };
 
 export interface AlertFilters {
@@ -70,7 +70,7 @@ export class AlertsService {
       if (breachedNo2) triggeredBy.push(`NO2 (${reading.no2} µg/m³)`);
       if (breachedOzone) triggeredBy.push(`O3 (${reading.ozone} µg/m³)`);
       if (breachedSo2) triggeredBy.push(`SO2 (${reading.so2} µg/m³)`);
-      if (breachedCo) triggeredBy.push(`CO (${reading.co} mg/m³)`);
+      if (breachedCo) triggeredBy.push(`CO (${reading.co} µg/m³)`);
 
       const severity = severityForAqi(aqi) ?? 'atencao';
       const safeAqi = aqi ?? 0;
