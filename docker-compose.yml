@@ -25,6 +25,8 @@ services:
     environment:
       PORT: 3000
       OPEN_METEO_BASE_URL: ${OPEN_METEO_BASE_URL:-https://air-quality-api.open-meteo.com/v1/air-quality}
+      OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY:-}
+      OPENWEATHER_BASE_URL: ${OPENWEATHER_BASE_URL:-http://api.openweathermap.org/data/2.5/air_pollution}
       INTERSCITY_CATALOG_URL: ${INTERSCITY_CATALOG_URL:-https://interscity.rasppi.cloud/catalog}
       INTERSCITY_ADAPTOR_URL: ${INTERSCITY_ADAPTOR_URL:-https://interscity.rasppi.cloud/adaptor}
       INTERSCITY_COLLECTOR_URL: ${INTERSCITY_COLLECTOR_URL:-https://interscity.rasppi.cloud/collector}
