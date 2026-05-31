@@ -39,13 +39,14 @@ function createCircleIcon(aqi: number | null, size: number): L.DivIcon {
     iconSize: [size, size],
     iconAnchor: [size / 2, size / 2],
     popupAnchor: [0, -(size / 2 + 4)],
-    html: `<div style="
+    html: `<div class="pulse-marker" style="
+      --marker-color: ${color};
       width:${size}px;height:${size}px;border-radius:50%;
       background:${color};
       display:flex;align-items:center;justify-content:center;
       font-size:11px;font-weight:700;color:#0b1120;
       box-shadow:0 0 0 3px ${color}44, 0 2px 8px rgba(0,0,0,.5);
-      transition: transform .15s ease;
+      transition: transform .2s cubic-bezier(0.34, 1.56, 0.64, 1);
     ">${label}</div>`,
   });
 }
@@ -157,20 +158,25 @@ export default function MapaTab({ measurements, stats }: MapaTabProps) {
 
       /* Popup on click */
       marker.bindPopup(
-        `<div style="font-size:12px;line-height:1.7;min-width:160px">
-          <div style="font-weight:700;font-size:13px;margin-bottom:4px">${m.neighborhoodName}</div>
-          <div>AQI: <strong style="color:${aqiColor(m.aqi)}">${m.aqi ?? '–'}</strong></div>
-          <div>PM2.5: ${formatNumber(m.pm2_5)}</div>
-          <div>PM10: ${formatNumber(m.pm10)}</div>
-          <div>NO₂: ${formatNumber(m.no2)}</div>
-          <div>O₃: ${formatNumber(m.ozone)}</div>
-          <div style="margin-top:4px;border-top:1px solid rgba(255,255,255,0.1);padding-top:4px;"></div>
-          <div>CO: ${formatNumber(m.co)}</div>
-          <div>SO₂: ${formatNumber(m.so2)}</div>
-          <div>NH₃: ${formatNumber(m.nh3)}</div>
-          <div>NO: ${formatNumber(m.no)}</div>
-          <div style="margin-top:6px;color:var(--text-dim,#64748b);font-size:11px">
-            Atualizado: ${formatTime(m.measuredAt)}
+        `<div class="animated-popup">
+          <div class="popup-header">
+            <div class="popup-title">${m.neighborhoodName}</div>
+            <div class="popup-aqi" style="background:${aqiColor(m.aqi)}22; color:${aqiColor(m.aqi)}; border: 1px solid ${aqiColor(m.aqi)}55;">
+              AQI: <strong>${m.aqi ?? '–'}</strong>
+            </div>
+          </div>
+          <div class="popup-grid">
+            <div class="popup-item"><span>PM2.5</span><strong>${formatNumber(m.pm2_5)}</strong></div>
+            <div class="popup-item"><span>PM10</span><strong>${formatNumber(m.pm10)}</strong></div>
+            <div class="popup-item"><span>NO₂</span><strong>${formatNumber(m.no2)}</strong></div>
+            <div class="popup-item"><span>O₃</span><strong>${formatNumber(m.ozone)}</strong></div>
+            <div class="popup-item"><span>CO</span><strong>${formatNumber(m.co)}</strong></div>
+            <div class="popup-item"><span>SO₂</span><strong>${formatNumber(m.so2)}</strong></div>
+            <div class="popup-item"><span>NH₃</span><strong>${formatNumber(m.nh3)}</strong></div>
+            <div class="popup-item"><span>NO</span><strong>${formatNumber(m.no)}</strong></div>
+          </div>
+          <div class="popup-footer">
+            <span class="live-indicator"></span> Atualizado: ${formatTime(m.measuredAt)}
           </div>
         </div>`,
         { className: 'mapa-popup' },
@@ -250,18 +256,82 @@ export default function MapaTab({ measurements, stats }: MapaTabProps) {
           border-top-color: var(--border, #233047) !important;
         }
         .mapa-popup .leaflet-popup-content-wrapper {
-          background: var(--panel, #151e2e) !important;
-          border: 1px solid var(--border, #233047) !important;
-          border-radius: 10px !important;
+          padding: 16px !important;
+          background: rgba(15, 23, 42, 0.95) !important;
+          backdrop-filter: blur(8px) !important;
+          border: 1px solid rgba(255,255,255,0.1) !important;
+          border-radius: 12px !important;
           color: var(--text, #e2e8f0) !important;
-          box-shadow: 0 4px 20px rgba(0,0,0,.5) !important;
+          box-shadow: 0 8px 32px rgba(0,0,0,.5) !important;
+        }
+        .mapa-popup .leaflet-popup-content {
+          margin: 0 !important;
         }
         .mapa-popup .leaflet-popup-tip {
-          background: var(--panel, #151e2e) !important;
-          border: 1px solid var(--border, #233047) !important;
+          background: rgba(15, 23, 42, 0.95) !important;
+          border: 1px solid rgba(255,255,255,0.1) !important;
         }
         .mapa-popup .leaflet-popup-close-button {
           color: var(--text-muted, #94a3b8) !important;
+          top: 10px !important;
+          right: 10px !important;
+        }
+
+        /* Marker Animations */
+        @keyframes pulseMarker {
+          0% { box-shadow: 0 0 0 0 var(--marker-color), 0 2px 8px rgba(0,0,0,.5); }
+          70% { box-shadow: 0 0 0 6px rgba(0,0,0,0), 0 2px 8px rgba(0,0,0,.5); }
+          100% { box-shadow: 0 0 0 0 rgba(0,0,0,0), 0 2px 8px rgba(0,0,0,.5); }
+        }
+        .pulse-marker {
+          animation: pulseMarker 3s infinite ease-in-out;
+        }
+        .pulse-marker:hover {
+          transform: scale(1.15) !important;
+          z-index: 1000 !important;
+        }
+
+        /* Popup Animations & Styling */
+        @keyframes popupEnter {
+          from { opacity: 0; transform: translateY(10px) scale(0.95); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .animated-popup {
+          animation: popupEnter 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+          min-width: 220px;
+          font-family: inherit;
+        }
+        .popup-header {
+          display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; gap: 12px; padding-right: 12px;
+        }
+        .popup-title {
+          font-weight: 700; font-size: 15px; color: #f8fafc; line-height: 1.2;
+        }
+        .popup-aqi {
+          padding: 3px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; white-space: nowrap;
+        }
+        .popup-grid {
+          display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 12px;
+        }
+        .popup-item {
+          display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.03); padding: 4px 8px; border-radius: 6px; font-size: 11px; border: 1px solid rgba(255,255,255,0.02);
+        }
+        .popup-item span {
+          color: #94a3b8; font-weight: 500;
+        }
+        .popup-item strong {
+          color: #e2e8f0; font-family: monospace; font-size: 12px;
+        }
+        .popup-footer {
+          margin-top: 8px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 10px; color: #64748b; font-size: 10.5px; display: flex; align-items: center; gap: 6px; font-weight: 500;
+        }
+        @keyframes pulseDot {
+          0% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.4; transform: scale(0.8); }
+          100% { opacity: 1; transform: scale(1); }
+        }
+        .live-indicator {
+          display: inline-block; width: 6px; height: 6px; background: #22c55e; border-radius: 50%; box-shadow: 0 0 4px #22c55e; animation: pulseDot 2s infinite;
         }
       `}</style>
     </div>
