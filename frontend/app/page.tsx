@@ -6,6 +6,7 @@ import dynamic from 'next/dynamic';
 import SummaryCards from '@/components/SummaryCards';
 import AlertsPanel from '@/components/AlertsPanel';
 import NeighborhoodTable from '@/components/NeighborhoodTable';
+import PollutantsLegend from '@/components/PollutantsLegend';
 import HistoryChart from '@/components/HistoryChart';
 
 import {
@@ -39,6 +40,7 @@ export default function DashboardPage() {
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabKey>('dashboard');
+  const [isLightMode, setIsLightMode] = useState(false);
 
   const selectedRef = useRef<Selected | null>(null);
   selectedRef.current = selected;
@@ -73,6 +75,28 @@ export default function DashboardPage() {
     const timer = setInterval(() => void load(), REFRESH_MS);
     return () => clearInterval(timer);
   }, [load]);
+
+  useEffect(() => {
+    const stored = localStorage.getItem('arSaudeTheme');
+    if (stored === 'light') {
+      setIsLightMode(true);
+      document.body.classList.add('light-mode');
+    }
+  }, []);
+
+  const toggleTheme = useCallback(() => {
+    setIsLightMode((prev) => {
+      const next = !prev;
+      if (next) {
+        document.body.classList.add('light-mode');
+        localStorage.setItem('arSaudeTheme', 'light');
+      } else {
+        document.body.classList.remove('light-mode');
+        localStorage.setItem('arSaudeTheme', 'dark');
+      }
+      return next;
+    });
+  }, []);
 
   const handleSelect = useCallback(async (m: Measurement) => {
     const next = { id: m.neighborhoodId, name: m.neighborhoodName };
@@ -143,6 +167,23 @@ export default function DashboardPage() {
             <span>
               Atualizado: {updatedAt ? formatDateTime(updatedAt.toISOString()) : '-'}
             </span>
+            <button
+              onClick={toggleTheme}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: 18,
+                padding: '4px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginLeft: '8px'
+              }}
+              title="Alternar tema claro/escuro"
+            >
+              {isLightMode ? '🌙' : '☀️'}
+            </button>
           </div>
         </div>
       </header>
@@ -162,6 +203,7 @@ export default function DashboardPage() {
                   selectedId={selected?.id ?? null}
                   onSelect={handleSelect}
                 />
+                <PollutantsLegend />
               </div>
 
               <div className="footer-note">

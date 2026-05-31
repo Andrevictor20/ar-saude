@@ -56,14 +56,14 @@ export default function NeighborhoodTable({
               <thead>
                 <tr>
                   <th>Bairro</th>
-                  <th>AQI</th>
+                  <th className="has-tooltip" data-tooltip="Índice de Qualidade do Ar. Medida geral e simplificada da poluição atmosférica atual.">AQI</th>
                   <th>Nivel</th>
-                  <th>PM2.5</th>
-                  <th>PM10</th>
-                  <th>CO</th>
-                  <th>SO₂</th>
-                  <th>NH₃</th>
-                  <th>NO</th>
+                  <th className="has-tooltip" data-tooltip="Material Particulado < 2.5µm. Partículas finas que penetram profundamente nos pulmões e corrente sanguínea.">PM2.5</th>
+                  <th className="has-tooltip" data-tooltip="Material Particulado < 10µm. Poeira e partículas inaláveis que causam irritação e problemas respiratórios.">PM10</th>
+                  <th className="has-tooltip" data-tooltip="Monóxido de Carbono. Gás incolor e tóxico que reduz a capacidade de transporte de oxigênio no sangue.">CO</th>
+                  <th className="has-tooltip" data-tooltip="Dióxido de Enxofre. Gás irritante resultante da combustão; causa broncoconstrição e tosse aguda.">SO₂</th>
+                  <th className="has-tooltip" data-tooltip="Amônia. Gás de forte odor, atua na atmosfera como precursor de partículas finas.">NH₃</th>
+                  <th className="has-tooltip" data-tooltip="Óxido Nítrico. Gás reativo de escapamentos que rapidamente contribui para formar poluição fotoquímica (ozônio).">NO</th>
                   <th>Atualizado</th>
                 </tr>
               </thead>
