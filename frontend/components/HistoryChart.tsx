@@ -33,15 +33,23 @@ export default function HistoryChart({
   history,
   onHistoryPointSelect,
 }: Props) {
-  const points = [...history]
+  const latest = history[0];
+
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+
+  const filteredHistory = history.filter((m) => {
+    if (startDate && new Date(m.measuredAt) < new Date(startDate)) return false;
+    if (endDate && new Date(m.measuredAt) > new Date(endDate + 'T23:59:59Z')) return false;
+    return true;
+  });
+
+  const points = [...filteredHistory]
     .reverse()
     .filter((m) => typeof m.aqi === 'number') as Array<
     Measurement & { aqi: number }
   >;
-
-  const latest = history[0];
-
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
   /* Reset selection when neighborhood changes */
   useEffect(() => {
@@ -136,7 +144,21 @@ export default function HistoryChart({
               ↻ Voltar ao tempo real
             </button>
           )}
-          <span className="muted">
+          <input 
+            type="date" 
+            value={startDate} 
+            onChange={(e) => setStartDate(e.target.value)}
+            style={{ background: 'var(--panel-2, #1b2638)', border: '1px solid var(--border, #233047)', color: 'var(--text, #e2e8f0)', padding: '4px 8px', borderRadius: 4, fontSize: 12 }}
+            title="Data Inicial"
+          />
+          <input 
+            type="date" 
+            value={endDate} 
+            onChange={(e) => setEndDate(e.target.value)}
+            style={{ background: 'var(--panel-2, #1b2638)', border: '1px solid var(--border, #233047)', color: 'var(--text, #e2e8f0)', padding: '4px 8px', borderRadius: 4, fontSize: 12 }}
+            title="Data Final"
+          />
+          <span className="muted" style={{ marginLeft: 8 }}>
             {neighborhoodName ?? 'Selecione um bairro'}
           </span>
         </div>

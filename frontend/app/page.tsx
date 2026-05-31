@@ -22,7 +22,7 @@ const MapaTab = dynamic(() => import('@/components/MapaTab'), { ssr: false });
 
 const REFRESH_MS = 15000;
 
-type TabKey = 'dashboard' | 'mapa';
+type TabKey = 'dashboard' | 'historico' | 'alertas' | 'mapa';
 
 interface Selected {
   id: string;
@@ -84,6 +84,7 @@ export default function DashboardPage() {
     } catch {
       setHistory([]);
     }
+    setActiveTab('historico');
   }, []);
 
   return (
@@ -106,6 +107,22 @@ export default function DashboardPage() {
               onClick={() => setActiveTab('dashboard')}
             >
               📊 Dashboard
+            </button>
+            <button
+              role="tab"
+              aria-selected={activeTab === 'historico'}
+              className={`tab-btn${activeTab === 'historico' ? ' tab-active' : ''}`}
+              onClick={() => setActiveTab('historico')}
+            >
+              📈 Histórico
+            </button>
+            <button
+              role="tab"
+              aria-selected={activeTab === 'alertas'}
+              className={`tab-btn${activeTab === 'alertas' ? ' tab-active' : ''}`}
+              onClick={() => setActiveTab('alertas')}
+            >
+              🚨 Alertas
             </button>
             <button
               role="tab"
@@ -139,22 +156,12 @@ export default function DashboardPage() {
             <>
               <SummaryCards stats={stats} activeAlerts={alerts.length} />
 
-              <div className="layout-grid">
-                <div
-                  style={{ display: 'flex', flexDirection: 'column', gap: 24 }}
-                >
-                  <NeighborhoodTable
-                    measurements={measurements}
-                    selectedId={selected?.id ?? null}
-                    onSelect={handleSelect}
-                  />
-                  <HistoryChart
-                    neighborhoodName={selected?.name ?? null}
-                    history={history}
-                  />
-                </div>
-
-                <AlertsPanel alerts={alerts} />
+              <div className="layout-grid" style={{ gridTemplateColumns: '1fr' }}>
+                <NeighborhoodTable
+                  measurements={measurements}
+                  selectedId={selected?.id ?? null}
+                  onSelect={handleSelect}
+                />
               </div>
 
               <div className="footer-note">
@@ -165,6 +172,64 @@ export default function DashboardPage() {
           )}
         </main>
       )}
+
+      {/* ─── Histórico Tab ─── */}
+      {activeTab === 'historico' && (
+        <main>
+          {loading ? (
+            <div className="spinner">Carregando dados do motor de alertas...</div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 1000, margin: '0 auto' }}>
+              <div style={{ display: 'flex', gap: 16, alignItems: 'center', background: 'var(--panel-bg, #111827)', padding: '16px 24px', borderRadius: 12, border: '1px solid var(--border, #233047)' }}>
+                <span style={{ color: 'var(--text-muted, #94a3b8)', fontWeight: 600 }}>Selecionar Bairro:</span>
+                <select 
+                  value={selected?.id ?? ''} 
+                  onChange={(e) => {
+                    const m = measurements.find(x => x.neighborhoodId === e.target.value);
+                    if (m) handleSelect(m);
+                  }}
+                  style={{
+                    background: 'var(--panel-2, #1b2638)',
+                    color: 'var(--text, #e2e8f0)',
+                    border: '1px solid var(--border, #233047)',
+                    padding: '8px 16px',
+                    borderRadius: 6,
+                    fontSize: 14,
+                    flex: 1,
+                    outline: 'none'
+                  }}
+                >
+                  <option value="" disabled>-- Escolha um bairro --</option>
+                  {[...measurements].sort((a,b) => a.neighborhoodName.localeCompare(b.neighborhoodName)).map(m => (
+                    <option key={m.neighborhoodId} value={m.neighborhoodId}>
+                      {m.neighborhoodName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <HistoryChart
+                neighborhoodName={selected?.name ?? null}
+                history={history}
+              />
+            </div>
+          )}
+        </main>
+      )}
+
+      {/* ─── Alertas Tab ─── */}
+      {activeTab === 'alertas' && (
+        <main>
+          {loading ? (
+            <div className="spinner">Carregando dados do motor de alertas...</div>
+          ) : (
+            <div style={{ maxWidth: 800, margin: '0 auto' }}>
+              <AlertsPanel alerts={alerts} />
+            </div>
+          )}
+        </main>
+      )}
+
+
 
       {/* ─── Mapa Tab ─── */}
       {activeTab === 'mapa' && (

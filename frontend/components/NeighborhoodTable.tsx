@@ -60,6 +60,10 @@ export default function NeighborhoodTable({
                   <th>Nivel</th>
                   <th>PM2.5</th>
                   <th>PM10</th>
+                  <th>CO</th>
+                  <th>SO₂</th>
+                  <th>NH₃</th>
+                  <th>NO</th>
                   <th>Atualizado</th>
                 </tr>
               </thead>
@@ -93,12 +97,16 @@ export default function NeighborhoodTable({
                     </td>
                     <td>{formatNumber(m.pm2_5)}</td>
                     <td>{formatNumber(m.pm10)}</td>
+                    <td>{formatNumber(m.co)}</td>
+                    <td>{formatNumber(m.so2)}</td>
+                    <td>{formatNumber(m.nh3)}</td>
+                    <td>{formatNumber(m.no)}</td>
                     <td className="muted">{formatTime(m.measuredAt)}</td>
                   </tr>
                 ))}
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="empty">
+                    <td colSpan={10} className="empty">
                       Nenhum bairro encontrado para a busca.
                     </td>
                   </tr>

@@ -24,7 +24,7 @@ export function getLatestMeasurements(): Promise<Measurement[]> {
 
 export function getHistory(
   neighborhoodId: string,
-  limit = 60,
+  limit = 336,
 ): Promise<Measurement[]> {
   return request<Measurement[]>(
     `/measurements/history?neighborhoodId=${encodeURIComponent(neighborhoodId)}&limit=${limit}`,
