@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 
 import { Measurement } from '../entities/measurement.entity';
 import { InterscityReading } from '../interscity/interscity-reader.service';
+import { SAO_LUIS_NEIGHBORHOODS } from '../common/constants/neighborhoods';
 
 export interface LevelDistribution {
   level: string;
@@ -71,8 +72,10 @@ export class MeasurementsService {
   }
 
   async findLatestPerNeighborhood(): Promise<Measurement[]> {
+    const validIds = SAO_LUIS_NEIGHBORHOODS.map(n => n.id);
     return this.repo
       .createQueryBuilder('m')
+      .where('m.neighborhoodId IN (:...validIds)', { validIds })
       .distinctOn(['m.neighborhoodId'])
       .orderBy('m.neighborhoodId', 'ASC')
       .addOrderBy('m.measuredAt', 'DESC')

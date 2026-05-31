@@ -1,7 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsWhere, Repository } from 'typeorm';
+import { FindOptionsWhere, Repository, In } from 'typeorm';
+
+import { SAO_LUIS_NEIGHBORHOODS } from '../common/constants/neighborhoods';
 
 import { Alert } from '../entities/alert.entity';
 import { AlertsEventsService } from './alerts-events.service';
@@ -86,9 +88,12 @@ export class AlertsService {
   }
 
   async findAll(filters: AlertFilters = {}): Promise<Alert[]> {
-    const where: FindOptionsWhere<Alert> = {};
+    const validIds = SAO_LUIS_NEIGHBORHOODS.map(n => n.id);
+    const where: FindOptionsWhere<Alert> = { neighborhoodId: In(validIds) };
     if (filters.status) where.status = filters.status;
-    if (filters.neighborhoodId) where.neighborhoodId = filters.neighborhoodId;
+    if (filters.neighborhoodId && validIds.includes(filters.neighborhoodId)) {
+       where.neighborhoodId = filters.neighborhoodId;
+    }
     if (filters.severity) where.severity = filters.severity;
 
     return this.repo.find({
@@ -99,14 +104,16 @@ export class AlertsService {
   }
 
   async findActive(): Promise<Alert[]> {
+    const validIds = SAO_LUIS_NEIGHBORHOODS.map(n => n.id);
     return this.repo.find({
-      where: { status: 'active' },
+      where: { status: 'active', neighborhoodId: In(validIds) },
       order: { aqi: 'DESC' },
     });
   }
 
   async countActive(): Promise<number> {
-    return this.repo.count({ where: { status: 'active' } });
+    const validIds = SAO_LUIS_NEIGHBORHOODS.map(n => n.id);
+    return this.repo.count({ where: { status: 'active', neighborhoodId: In(validIds) } });
   }
 
   private buildMessage(
