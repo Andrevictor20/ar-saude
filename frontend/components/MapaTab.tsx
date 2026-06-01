@@ -12,7 +12,7 @@ import 'leaflet/dist/leaflet.css';
 const MAP_CENTER: [number, number] = [-2.5307, -44.3068];
 const MAP_ZOOM = 13;
 const TILE_URL =
-  'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+  'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
 const TILE_ATTR =
   '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>';
 
@@ -45,8 +45,8 @@ function createCircleIcon(aqi: number | null, size: number): L.DivIcon {
       width:${size}px;height:${size}px;border-radius:50%;
       background:${color};
       display:flex;align-items:center;justify-content:center;
-      font-size:11px;font-weight:700;color:#0b1120;
-      box-shadow:0 0 0 3px ${color}44, 0 2px 8px rgba(0,0,0,.5);
+      font-size:12px;font-weight:700;color:#0b1120;
+      box-shadow:0 0 0 4px ${color}66, 0 2px 8px rgba(0,0,0,.5);
       transition: transform .2s cubic-bezier(0.34, 1.56, 0.64, 1);
     ">${label}</div>`,
   });
@@ -140,15 +140,24 @@ export default function MapaTab({ measurements, stats }: MapaTabProps) {
       if (m.latitude === null || m.longitude === null) return;
 
       const marker = L.marker([m.latitude, m.longitude], {
-        icon: createCircleIcon(m.aqi, 32),
+        icon: createCircleIcon(m.aqi, 38),
       });
 
       /* Tooltip on hover */
       marker.bindTooltip(
-        `<div style="font-size:12px;line-height:1.6">
+        `<div style="font-size:12px;line-height:1.6;min-width:180px;">
           <strong>${m.neighborhoodName}</strong><br/>
           AQI: <strong style="color:${aqiColor(m.aqi)}">${m.aqi ?? '–'}</strong> · ${aqiLevel(m.aqi)}<br/>
-          PM2.5: ${formatNumber(m.pm2_5)} · PM10: ${formatNumber(m.pm10)}
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:6px;font-size:11px;color:#94a3b8;border-top:1px solid rgba(255,255,255,0.1);padding-top:6px;">
+            <div>PM2.5: <strong style="color:#e2e8f0">${formatNumber(m.pm2_5)}</strong></div>
+            <div>PM10: <strong style="color:#e2e8f0">${formatNumber(m.pm10)}</strong></div>
+            <div>NO₂: <strong style="color:#e2e8f0">${formatNumber(m.no2)}</strong></div>
+            <div>O₃: <strong style="color:#e2e8f0">${formatNumber(m.ozone)}</strong></div>
+            <div>CO: <strong style="color:#e2e8f0">${formatNumber(m.co)}</strong></div>
+            <div>SO₂: <strong style="color:#e2e8f0">${formatNumber(m.so2)}</strong></div>
+            <div>NH₃: <strong style="color:#e2e8f0">${formatNumber(m.nh3)}</strong></div>
+            <div>NO: <strong style="color:#e2e8f0">${formatNumber(m.no)}</strong></div>
+          </div>
         </div>`,
         {
           direction: 'top',
@@ -281,7 +290,7 @@ export default function MapaTab({ measurements, stats }: MapaTabProps) {
         /* Marker Animations */
         @keyframes pulseMarker {
           0% { box-shadow: 0 0 0 0 var(--marker-color), 0 2px 8px rgba(0,0,0,.5); }
-          70% { box-shadow: 0 0 0 6px rgba(0,0,0,0), 0 2px 8px rgba(0,0,0,.5); }
+          70% { box-shadow: 0 0 0 14px rgba(0,0,0,0), 0 2px 8px rgba(0,0,0,.5); }
           100% { box-shadow: 0 0 0 0 rgba(0,0,0,0), 0 2px 8px rgba(0,0,0,.5); }
         }
         .pulse-marker {
