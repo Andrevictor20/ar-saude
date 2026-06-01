@@ -39,8 +39,11 @@ export default function MapaTab({ measurements, stats }: MapaTabProps) {
   const [geoJsonData, setGeoJsonData] = useState<any>(null);
 
   useEffect(() => {
-    fetch('/bairros_slz.geojson')
-      .then((res) => res.json())
+    fetch('/bairros_slz.geojson?v=' + new Date().getTime())
+      .then((res) => {
+        if (!res.ok) throw new Error('Falha ao carregar geojson');
+        return res.json();
+      })
       .then((data) => setGeoJsonData(data))
       .catch((err) => console.error('Erro ao carregar bairros_slz.geojson:', err));
   }, []);
