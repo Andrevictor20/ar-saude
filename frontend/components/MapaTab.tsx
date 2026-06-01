@@ -131,17 +131,19 @@ export default function MapaTab({ measurements, stats }: MapaTabProps) {
         const m = measurements.find((x) => x.neighborhoodName === name);
         if (!m || m.aqi === null) {
           return {
-            color: '#233047',
-            weight: 1,
+            color: '#475569',
+            weight: 1.5,
+            dashArray: '5, 5',
             fillColor: '#000000',
             fillOpacity: 0.1,
           };
         }
         return {
-          color: '#233047',
-          weight: 1,
+          color: '#475569',
+          weight: 1.5,
+          dashArray: '5, 5',
           fillColor: aqiColor(m.aqi),
-          fillOpacity: 0.45,
+          fillOpacity: 0.25,
           className: 'geojson-polygon',
         };
       },
@@ -204,7 +206,8 @@ export default function MapaTab({ measurements, stats }: MapaTabProps) {
               target.setStyle({
                 fillOpacity: 0.65,
                 weight: 2,
-                color: '#ffffff'
+                color: '#ffffff',
+                dashArray: ''
               });
               if (!L.Browser.ie && !L.Browser.edge) {
                 target.bringToFront();
