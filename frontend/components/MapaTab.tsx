@@ -120,11 +120,17 @@ export default function MapaTab({ measurements, stats }: MapaTabProps) {
   /* Sync GeoJSON with measurements */
   useEffect(() => {
     const map = mapInstanceRef.current;
-    if (!map || !geoJsonData) return;
+    if (!map) return;
+    if (!geoJsonData || !geoJsonData.features) {
+      console.log('GeoJSON Data não carregado ou sem features:', geoJsonData);
+      return;
+    }
 
     if (geoJsonLayerRef.current) {
       map.removeLayer(geoJsonLayerRef.current);
     }
+
+    console.log('Adicionando GeoJSON com', geoJsonData.features.length, 'bairros.');
 
     geoJsonLayerRef.current = L.geoJSON(geoJsonData, {
       style: (feature) => {
@@ -132,14 +138,14 @@ export default function MapaTab({ measurements, stats }: MapaTabProps) {
         const m = measurements.find((x) => x.neighborhoodName === name);
         if (!m || m.aqi === null) {
           return {
-            color: 'var(--border, #233047)',
+            color: '#233047',
             weight: 1,
             fillColor: '#000000',
             fillOpacity: 0.1,
           };
         }
         return {
-          color: 'var(--border, #233047)',
+          color: '#233047',
           weight: 1,
           fillColor: aqiColor(m.aqi),
           fillOpacity: 0.45,
