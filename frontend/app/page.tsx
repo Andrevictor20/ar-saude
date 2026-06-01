@@ -243,15 +243,15 @@ export default function DashboardPage() {
                   display: 'flex',
                   gap: 16,
                   alignItems: 'center',
-                  background: 'var(--panel-bg, #111827)',
+                  background: 'var(--panel)',
                   padding: '16px 24px',
                   borderRadius: 12,
-                  border: '1px solid var(--border, #233047)',
+                  border: '1px solid var(--border)',
                 }}
               >
                 <span
                   style={{
-                    color: 'var(--text-muted, #94a3b8)',
+                    color: 'var(--text-muted)',
                     fontWeight: 600,
                   }}
                 >
@@ -266,9 +266,9 @@ export default function DashboardPage() {
                     if (m) handleSelect(m);
                   }}
                   style={{
-                    background: 'var(--panel-2, #1b2638)',
-                    color: 'var(--text, #e2e8f0)',
-                    border: '1px solid var(--border, #233047)',
+                    background: 'var(--panel-2)',
+                    color: 'var(--text)',
+                    border: '1px solid var(--border)',
                     padding: '8px 16px',
                     borderRadius: 6,
                     fontSize: 14,

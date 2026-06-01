@@ -150,9 +150,9 @@ export default function HistoryChart({
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
             style={{
-              background: 'var(--panel-2, #1b2638)',
-              border: '1px solid var(--border, #233047)',
-              color: 'var(--text, #e2e8f0)',
+              background: 'var(--panel-2)',
+              border: '1px solid var(--border)',
+              color: 'var(--text)',
               padding: '4px 8px',
               borderRadius: 4,
               fontSize: 12,
@@ -164,9 +164,9 @@ export default function HistoryChart({
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
             style={{
-              background: 'var(--panel-2, #1b2638)',
-              border: '1px solid var(--border, #233047)',
-              color: 'var(--text, #e2e8f0)',
+              background: 'var(--panel-2)',
+              border: '1px solid var(--border)',
+              color: 'var(--text)',
               padding: '4px 8px',
               borderRadius: 4,
               fontSize: 12,
@@ -435,10 +435,10 @@ function Chart({
               x2={WIDTH - PADDING.right}
               y1={g.yy}
               y2={g.yy}
-              stroke="#233047"
+              stroke="var(--border)"
               strokeWidth={1}
             />
-            <text x={8} y={g.yy + 4} fill="#64748b" fontSize={10}>
+            <text x={8} y={g.yy + 4} fill="var(--text-dim)" fontSize={10}>
               {g.value}
             </text>
           </g>
@@ -524,13 +524,18 @@ function Chart({
           </circle>
         )}
 
-        <text x={PADDING.left} y={HEIGHT - 8} fill="#64748b" fontSize={10}>
+        <text
+          x={PADDING.left}
+          y={HEIGHT - 8}
+          fill="var(--text-dim)"
+          fontSize={10}
+        >
           {formatDateTime(points[0].measuredAt)}
         </text>
         <text
           x={WIDTH - PADDING.right}
           y={HEIGHT - 8}
-          fill="#64748b"
+          fill="var(--text-dim)"
           fontSize={10}
           textAnchor="end"
         >

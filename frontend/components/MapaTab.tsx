@@ -148,15 +148,15 @@ export default function MapaTab({ measurements, stats }: MapaTabProps) {
         `<div style="font-size:12px;line-height:1.6;min-width:180px;">
           <strong>${m.neighborhoodName}</strong><br/>
           AQI: <strong style="color:${aqiColor(m.aqi)}">${m.aqi ?? '–'}</strong> · ${aqiLevel(m.aqi)}<br/>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:6px;font-size:11px;color:#94a3b8;border-top:1px solid rgba(255,255,255,0.1);padding-top:6px;">
-            <div>PM2.5: <strong style="color:#e2e8f0">${formatNumber(m.pm2_5)}</strong></div>
-            <div>PM10: <strong style="color:#e2e8f0">${formatNumber(m.pm10)}</strong></div>
-            <div>NO₂: <strong style="color:#e2e8f0">${formatNumber(m.no2)}</strong></div>
-            <div>O₃: <strong style="color:#e2e8f0">${formatNumber(m.ozone)}</strong></div>
-            <div>CO: <strong style="color:#e2e8f0">${formatNumber(m.co)}</strong></div>
-            <div>SO₂: <strong style="color:#e2e8f0">${formatNumber(m.so2)}</strong></div>
-            <div>NH₃: <strong style="color:#e2e8f0">${formatNumber(m.nh3)}</strong></div>
-            <div>NO: <strong style="color:#e2e8f0">${formatNumber(m.no)}</strong></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:6px;font-size:11px;color:var(--text-muted);border-top:1px solid var(--border);padding-top:6px;">
+            <div>PM2.5: <strong style="color:var(--text)">${formatNumber(m.pm2_5)}</strong></div>
+            <div>PM10: <strong style="color:var(--text)">${formatNumber(m.pm10)}</strong></div>
+            <div>NO₂: <strong style="color:var(--text)">${formatNumber(m.no2)}</strong></div>
+            <div>O₃: <strong style="color:var(--text)">${formatNumber(m.ozone)}</strong></div>
+            <div>CO: <strong style="color:var(--text)">${formatNumber(m.co)}</strong></div>
+            <div>SO₂: <strong style="color:var(--text)">${formatNumber(m.so2)}</strong></div>
+            <div>NH₃: <strong style="color:var(--text)">${formatNumber(m.nh3)}</strong></div>
+            <div>NO: <strong style="color:var(--text)">${formatNumber(m.no)}</strong></div>
           </div>
         </div>`,
         {
@@ -255,11 +255,11 @@ export default function MapaTab({ measurements, stats }: MapaTabProps) {
       {/* Global Leaflet overrides scoped to this component */}
       <style>{`
         .mapa-tooltip {
-          background: var(--panel, #151e2e) !important;
-          border: 1px solid var(--border, #233047) !important;
+          background: var(--panel) !important;
+          border: 1px solid var(--border) !important;
           border-radius: 8px !important;
-          color: var(--text, #e2e8f0) !important;
-          box-shadow: 0 4px 16px rgba(0,0,0,.5) !important;
+          color: var(--text) !important;
+          box-shadow: var(--shadow) !important;
           padding: 8px 12px !important;
         }
         .mapa-tooltip::before {
@@ -267,19 +267,19 @@ export default function MapaTab({ measurements, stats }: MapaTabProps) {
         }
         .mapa-popup .leaflet-popup-content-wrapper {
           padding: 16px !important;
-          background: rgba(15, 23, 42, 0.95) !important;
+          background: var(--bg-elevated) !important;
           backdrop-filter: blur(8px) !important;
-          border: 1px solid rgba(255,255,255,0.1) !important;
+          border: 1px solid var(--border) !important;
           border-radius: 12px !important;
-          color: var(--text, #e2e8f0) !important;
-          box-shadow: 0 8px 32px rgba(0,0,0,.5) !important;
+          color: var(--text) !important;
+          box-shadow: var(--shadow) !important;
         }
         .mapa-popup .leaflet-popup-content {
           margin: 0 !important;
         }
         .mapa-popup .leaflet-popup-tip {
-          background: rgba(15, 23, 42, 0.95) !important;
-          border: 1px solid rgba(255,255,255,0.1) !important;
+          background: var(--bg-elevated) !important;
+          border: 1px solid var(--border) !important;
         }
         .mapa-popup .leaflet-popup-close-button {
           color: var(--text-muted, #94a3b8) !important;
@@ -315,7 +315,7 @@ export default function MapaTab({ measurements, stats }: MapaTabProps) {
           display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; gap: 12px; padding-right: 12px;
         }
         .popup-title {
-          font-weight: 700; font-size: 15px; color: #f8fafc; line-height: 1.2;
+          font-weight: 700; font-size: 15px; color: var(--text); line-height: 1.2;
         }
         .popup-aqi {
           padding: 3px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; white-space: nowrap;
@@ -324,16 +324,16 @@ export default function MapaTab({ measurements, stats }: MapaTabProps) {
           display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 12px;
         }
         .popup-item {
-          display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.03); padding: 4px 8px; border-radius: 6px; font-size: 11px; border: 1px solid rgba(255,255,255,0.02);
+          display: flex; justify-content: space-between; align-items: center; background: var(--panel-2); padding: 4px 8px; border-radius: 6px; font-size: 11px; border: 1px solid var(--border);
         }
         .popup-item span {
-          color: #94a3b8; font-weight: 500;
+          color: var(--text-muted); font-weight: 500;
         }
         .popup-item strong {
-          color: #e2e8f0; font-family: monospace; font-size: 12px;
+          color: var(--text); font-family: monospace; font-size: 12px;
         }
         .popup-footer {
-          margin-top: 8px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 10px; color: #64748b; font-size: 10.5px; display: flex; align-items: center; gap: 6px; font-weight: 500;
+          margin-top: 8px; border-top: 1px solid var(--border); padding-top: 10px; color: var(--text-dim); font-size: 10.5px; display: flex; align-items: center; gap: 6px; font-weight: 500;
         }
         @keyframes pulseDot {
           0% { opacity: 1; transform: scale(1); }

@@ -48,14 +48,14 @@ export const SAO_LUIS_NEIGHBORHOODS: Neighborhood[] = [
 
   { id: 'diamante', name: 'Diamante', latitude: -2.5600, longitude: -44.2870 },
   { id: 'divineia', name: 'Divinéia', latitude: -2.5060, longitude: -44.2740 },
-  { id: 'estiva', name: 'Estiva', latitude: -2.6700, longitude: -44.2400 },
+  { id: 'estiva', name: 'Estiva', latitude: -2.7570, longitude: -44.3515 },
 
   { id: 'filipinho', name: 'Filipinho', latitude: -2.5480, longitude: -44.2720 },
   { id: 'forquilha', name: 'Forquilha', latitude: -2.5720, longitude: -44.2390 },
   { id: 'fumaca', name: 'Fumacê', latitude: -2.5620, longitude: -44.2810 },
 
   { id: 'gancharia', name: 'Gancharia', latitude: -2.5310, longitude: -44.3120 },
-  { id: 'gapara', name: 'Gapara', latitude: -2.6200, longitude: -44.3300 },
+  { id: 'gapara', name: 'Gapara', latitude: -2.5894, longitude: -44.3003 },
   { id: 'geniparana', name: 'Geniparana', latitude: -2.6500, longitude: -44.2600 },
 
   { id: 'ilha_da_paz', name: 'Ilha da Paz', latitude: -2.5900, longitude: -44.3200 },
@@ -80,7 +80,7 @@ export const SAO_LUIS_NEIGHBORHOODS: Neighborhood[] = [
   { id: 'madre_deus', name: 'Madre Deus', latitude: -2.5340, longitude: -44.2960 },
 
 
-  { id: 'maracana', name: 'Maracanã', latitude: -2.6500, longitude: -44.2650 },
+  { id: 'maracana', name: 'Maracanã', latitude: -2.6369, longitude: -44.2806 },
   { id: 'maranhao_novo', name: 'Maranhão Novo', latitude: -2.5255, longitude: -44.2655 },
 
   { id: 'monte_castelo', name: 'Monte Castelo', latitude: -2.5570, longitude: -44.2810 },
@@ -93,11 +93,11 @@ export const SAO_LUIS_NEIGHBORHOODS: Neighborhood[] = [
   { id: 'parque_vitoria', name: 'Parque Vitória', latitude: -2.5300, longitude: -44.2300 },
 
 
-  { id: 'pedrinhas', name: 'Pedrinhas', latitude: -2.6600, longitude: -44.2500 },
+  { id: 'pedrinhas', name: 'Pedrinhas', latitude: -2.6901, longitude: -44.3051 },
 
   { id: 'ponta_dareia', name: 'Ponta d\'Areia', latitude: -2.4885, longitude: -44.3168 },
 
-  { id: 'quebra_pote', name: 'Quebra Pote', latitude: -2.6300, longitude: -44.2900 },
+  { id: 'quebra_pote', name: 'Quebra Pote', latitude: -2.6927, longitude: -44.2172 },
 
   { id: 'radional', name: 'Radional', latitude: -2.5440, longitude: -44.2680 },
 
@@ -144,7 +144,7 @@ export const SAO_LUIS_NEIGHBORHOODS: Neighborhood[] = [
 
   { id: 'vila_lobao', name: 'Vila Lobão', latitude: -2.5700, longitude: -44.2700 },
   { id: 'vila_luizao', name: 'Vila Luizão', latitude: -2.5000, longitude: -44.2300 },
-  { id: 'vila_maranhao', name: 'Vila Maranhão', latitude: -2.6400, longitude: -44.3400 },
+  { id: 'vila_maranhao', name: 'Vila Maranhão', latitude: -2.6231, longitude: -44.3176 },
 
   { id: 'vila_nova', name: 'Vila Nova', latitude: -2.6100, longitude: -44.3000 },
   { id: 'vila_operaria', name: 'Vila Operária', latitude: -2.5650, longitude: -44.2400 },
@@ -155,7 +155,7 @@ export const SAO_LUIS_NEIGHBORHOODS: Neighborhood[] = [
 
   { id: 'vila_riod', name: 'Vila Riod', latitude: -2.6100, longitude: -44.2900 },
 
-  { id: 'vila_sarney', name: 'Vila Sarney', latitude: -2.4900, longitude: -44.1900 },
+  { id: 'vila_sarney', name: 'Vila Sarney', latitude: -2.6302, longitude: -44.2717 },
   { id: 'vila_vitoria', name: 'Vila Vitória', latitude: -2.4700, longitude: -44.2500 },
 
   { id: 'vinhais', name: 'Vinhais', latitude: -2.5164, longitude: -44.2741 }
