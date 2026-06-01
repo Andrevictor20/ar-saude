@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useMemo } from 'react';
+import { useEffect, useRef, useMemo, useState } from 'react';
 import { Measurement, DashboardStats } from '@/lib/types';
 import { aqiColor, aqiLevel, formatNumber, formatTime } from '@/lib/format';
 
@@ -31,32 +31,19 @@ interface MapaTabProps {
   stats: DashboardStats | null;
 }
 
-/* ─── Helpers ─── */
-function createCircleIcon(aqi: number | null, size: number): L.DivIcon {
-  const color = aqiColor(aqi);
-  const label = aqi !== null ? String(aqi) : '–';
-  return L.divIcon({
-    className: '',
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
-    popupAnchor: [0, -(size / 2 + 4)],
-    html: `<div class="pulse-marker" style="
-      --marker-color: ${color};
-      width:${size}px;height:${size}px;border-radius:50%;
-      background:${color};
-      display:flex;align-items:center;justify-content:center;
-      font-size:12px;font-weight:700;color:#0b1120;
-      box-shadow:0 0 0 4px ${color}66, 0 2px 8px rgba(0,0,0,.5);
-      transition: transform .2s cubic-bezier(0.34, 1.56, 0.64, 1);
-    ">${label}</div>`,
-  });
-}
-
 /* ─── Component ─── */
 export default function MapaTab({ measurements, stats }: MapaTabProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
-  const markersRef = useRef<L.Marker[]>([]);
+  const geoJsonLayerRef = useRef<L.GeoJSON | null>(null);
+  const [geoJsonData, setGeoJsonData] = useState<any>(null);
+
+  useEffect(() => {
+    fetch('/bairros_slz.geojson')
+      .then((res) => res.json())
+      .then((data) => setGeoJsonData(data))
+      .catch((err) => console.error('Erro ao carregar bairros_slz.geojson:', err));
+  }, []);
 
   /* Computed stats for the status bar */
   const statusData = useMemo(() => {
@@ -127,75 +114,113 @@ export default function MapaTab({ measurements, stats }: MapaTabProps) {
     };
   }, []);
 
-  /* Sync markers with measurements */
+  /* Sync GeoJSON with measurements */
   useEffect(() => {
     const map = mapInstanceRef.current;
-    if (!map) return;
+    if (!map || !geoJsonData) return;
 
-    /* Remove old markers */
-    markersRef.current.forEach((m) => m.remove());
-    markersRef.current = [];
+    if (geoJsonLayerRef.current) {
+      map.removeLayer(geoJsonLayerRef.current);
+    }
 
-    measurements.forEach((m) => {
-      if (m.latitude === null || m.longitude === null) return;
+    geoJsonLayerRef.current = L.geoJSON(geoJsonData, {
+      style: (feature) => {
+        const name = feature?.properties?.name;
+        const m = measurements.find((x) => x.neighborhoodName === name);
+        if (!m || m.aqi === null) {
+          return {
+            color: 'var(--border, #233047)',
+            weight: 1,
+            fillColor: '#000000',
+            fillOpacity: 0.1,
+          };
+        }
+        return {
+          color: 'var(--border, #233047)',
+          weight: 1,
+          fillColor: aqiColor(m.aqi),
+          fillOpacity: 0.45,
+          className: 'geojson-polygon',
+        };
+      },
+      onEachFeature: (feature, layer) => {
+        const name = feature?.properties?.name;
+        const m = measurements.find((x) => x.neighborhoodName === name);
 
-      const marker = L.marker([m.latitude, m.longitude], {
-        icon: createCircleIcon(m.aqi, 38),
-      });
+        if (m && m.aqi !== null) {
+          layer.bindTooltip(
+            `<div style="font-size:12px;line-height:1.6;min-width:180px;">
+              <strong>${m.neighborhoodName}</strong><br/>
+              AQI: <strong style="color:${aqiColor(m.aqi)}">${m.aqi ?? '–'}</strong> · ${aqiLevel(m.aqi)}<br/>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:6px;font-size:11px;color:var(--text-muted);border-top:1px solid var(--border);padding-top:6px;">
+                <div>PM2.5: <strong style="color:var(--text)">${formatNumber(m.pm2_5)}</strong></div>
+                <div>PM10: <strong style="color:var(--text)">${formatNumber(m.pm10)}</strong></div>
+                <div>NO₂: <strong style="color:var(--text)">${formatNumber(m.no2)}</strong></div>
+                <div>O₃: <strong style="color:var(--text)">${formatNumber(m.ozone)}</strong></div>
+                <div>CO: <strong style="color:var(--text)">${formatNumber(m.co)}</strong></div>
+                <div>SO₂: <strong style="color:var(--text)">${formatNumber(m.so2)}</strong></div>
+                <div>NH₃: <strong style="color:var(--text)">${formatNumber(m.nh3)}</strong></div>
+                <div>NO: <strong style="color:var(--text)">${formatNumber(m.no)}</strong></div>
+              </div>
+            </div>`,
+            {
+              direction: 'auto',
+              sticky: true,
+              className: 'mapa-tooltip',
+            },
+          );
 
-      /* Tooltip on hover */
-      marker.bindTooltip(
-        `<div style="font-size:12px;line-height:1.6;min-width:180px;">
-          <strong>${m.neighborhoodName}</strong><br/>
-          AQI: <strong style="color:${aqiColor(m.aqi)}">${m.aqi ?? '–'}</strong> · ${aqiLevel(m.aqi)}<br/>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:6px;font-size:11px;color:var(--text-muted);border-top:1px solid var(--border);padding-top:6px;">
-            <div>PM2.5: <strong style="color:var(--text)">${formatNumber(m.pm2_5)}</strong></div>
-            <div>PM10: <strong style="color:var(--text)">${formatNumber(m.pm10)}</strong></div>
-            <div>NO₂: <strong style="color:var(--text)">${formatNumber(m.no2)}</strong></div>
-            <div>O₃: <strong style="color:var(--text)">${formatNumber(m.ozone)}</strong></div>
-            <div>CO: <strong style="color:var(--text)">${formatNumber(m.co)}</strong></div>
-            <div>SO₂: <strong style="color:var(--text)">${formatNumber(m.so2)}</strong></div>
-            <div>NH₃: <strong style="color:var(--text)">${formatNumber(m.nh3)}</strong></div>
-            <div>NO: <strong style="color:var(--text)">${formatNumber(m.no)}</strong></div>
-          </div>
-        </div>`,
-        {
-          direction: 'top',
-          offset: [0, -18],
-          className: 'mapa-tooltip',
-        },
-      );
+          layer.bindPopup(
+            `<div class="animated-popup">
+              <div class="popup-header">
+                <div class="popup-title">${m.neighborhoodName}</div>
+                <div class="popup-aqi" style="background:${aqiColor(m.aqi)}22; color:${aqiColor(m.aqi)}; border: 1px solid ${aqiColor(m.aqi)}55;">
+                  AQI: <strong>${m.aqi ?? '–'}</strong>
+                </div>
+              </div>
+              <div class="popup-grid">
+                <div class="popup-item"><span>PM2.5</span><strong>${formatNumber(m.pm2_5)}</strong></div>
+                <div class="popup-item"><span>PM10</span><strong>${formatNumber(m.pm10)}</strong></div>
+                <div class="popup-item"><span>NO₂</span><strong>${formatNumber(m.no2)}</strong></div>
+                <div class="popup-item"><span>O₃</span><strong>${formatNumber(m.ozone)}</strong></div>
+                <div class="popup-item"><span>CO</span><strong>${formatNumber(m.co)}</strong></div>
+                <div class="popup-item"><span>SO₂</span><strong>${formatNumber(m.so2)}</strong></div>
+                <div class="popup-item"><span>NH₃</span><strong>${formatNumber(m.nh3)}</strong></div>
+                <div class="popup-item"><span>NO</span><strong>${formatNumber(m.no)}</strong></div>
+              </div>
+              <div class="popup-footer">
+                <span class="live-indicator"></span> Atualizado: ${formatTime(m.measuredAt)}
+              </div>
+            </div>`,
+            { className: 'mapa-popup' },
+          );
 
-      /* Popup on click */
-      marker.bindPopup(
-        `<div class="animated-popup">
-          <div class="popup-header">
-            <div class="popup-title">${m.neighborhoodName}</div>
-            <div class="popup-aqi" style="background:${aqiColor(m.aqi)}22; color:${aqiColor(m.aqi)}; border: 1px solid ${aqiColor(m.aqi)}55;">
-              AQI: <strong>${m.aqi ?? '–'}</strong>
-            </div>
-          </div>
-          <div class="popup-grid">
-            <div class="popup-item"><span>PM2.5</span><strong>${formatNumber(m.pm2_5)}</strong></div>
-            <div class="popup-item"><span>PM10</span><strong>${formatNumber(m.pm10)}</strong></div>
-            <div class="popup-item"><span>NO₂</span><strong>${formatNumber(m.no2)}</strong></div>
-            <div class="popup-item"><span>O₃</span><strong>${formatNumber(m.ozone)}</strong></div>
-            <div class="popup-item"><span>CO</span><strong>${formatNumber(m.co)}</strong></div>
-            <div class="popup-item"><span>SO₂</span><strong>${formatNumber(m.so2)}</strong></div>
-            <div class="popup-item"><span>NH₃</span><strong>${formatNumber(m.nh3)}</strong></div>
-            <div class="popup-item"><span>NO</span><strong>${formatNumber(m.no)}</strong></div>
-          </div>
-          <div class="popup-footer">
-            <span class="live-indicator"></span> Atualizado: ${formatTime(m.measuredAt)}
-          </div>
-        </div>`,
-        { className: 'mapa-popup' },
-      );
-
-      marker.addTo(map);
-      markersRef.current.push(marker);
-    });
-  }, [measurements]);
+          // Add interactive hover effects
+          layer.on({
+            mouseover: (e) => {
+              const target = e.target as L.Path;
+              target.setStyle({
+                fillOpacity: 0.65,
+                weight: 2,
+                color: '#ffffff'
+              });
+              if (!L.Browser.ie && !L.Browser.edge) {
+                target.bringToFront();
+              }
+            },
+            mouseout: (e) => {
+              geoJsonLayerRef.current?.resetStyle(e.target);
+            }
+          });
+        } else {
+          layer.bindTooltip(
+            `<div style="font-size:12px;"><strong>${name}</strong><br/>Sem dados recentes</div>`,
+            { className: 'mapa-tooltip', sticky: true }
+          );
+        }
+      },
+    }).addTo(map);
+  }, [measurements, geoJsonData]);
 
   return (
     <div className="mapa-tab-root">
@@ -254,6 +279,11 @@ export default function MapaTab({ measurements, stats }: MapaTabProps) {
 
       {/* Global Leaflet overrides scoped to this component */}
       <style>{`
+        /* GeoJSON Animations */
+        .geojson-polygon {
+          transition: fill-opacity 0.2s ease, stroke-width 0.2s ease, stroke 0.2s ease;
+        }
+
         .mapa-tooltip {
           background: var(--panel) !important;
           border: 1px solid var(--border) !important;
