@@ -1,12 +1,15 @@
 'use client';
 
-import { useEffect, useRef, useMemo, useState } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import { Measurement, DashboardStats } from '@/lib/types';
 import { aqiColor, aqiLevel, formatNumber, formatTime } from '@/lib/format';
 
 /* ─── Leaflet dynamic import (SSR-safe) ─── */
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+
+/* ─── GeoJSON Data ─── */
+import geoJsonDataRaw from '../public/bairros_slz.json';
 
 /* ─── Constants ─── */
 const MAP_CENTER: [number, number] = [-2.5307, -44.3068];
@@ -36,17 +39,7 @@ export default function MapaTab({ measurements, stats }: MapaTabProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const geoJsonLayerRef = useRef<L.GeoJSON | null>(null);
-  const [geoJsonData, setGeoJsonData] = useState<any>(null);
-
-  useEffect(() => {
-    fetch('/bairros_slz.geojson?v=' + new Date().getTime())
-      .then((res) => {
-        if (!res.ok) throw new Error('Falha ao carregar geojson');
-        return res.json();
-      })
-      .then((data) => setGeoJsonData(data))
-      .catch((err) => console.error('Erro ao carregar bairros_slz.geojson:', err));
-  }, []);
+  const geoJsonData = geoJsonDataRaw as any;
 
   /* Computed stats for the status bar */
   const statusData = useMemo(() => {
