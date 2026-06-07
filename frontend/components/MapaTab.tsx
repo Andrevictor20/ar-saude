@@ -150,9 +150,15 @@ export default function MapaTab({ measurements, stats }: MapaTabProps) {
         
         const bounds = l.getBounds();
         const center = bounds.getCenter();
+        const nw = bounds.getNorthWest();
         const ne = bounds.getNorthEast();
-        // Raio aproximado baseado na distância até a extremidade
-        const radius = center.distanceTo(ne) * 0.7;
+        const sw = bounds.getSouthWest();
+        
+        // Calcular área aproximada da bounding box para obter um raio equivalente realista
+        const width = map.distance(nw, ne);
+        const height = map.distance(nw, sw);
+        const area = width * height;
+        const radius = Math.sqrt(area / Math.PI) * 0.85;
 
         if (m && m.aqi !== null) {
           // Criar círculo de área (inicialmente oculto)
@@ -161,6 +167,7 @@ export default function MapaTab({ measurements, stats }: MapaTabProps) {
             fillColor: aqiColor(m.aqi),
             fillOpacity: 0,
             stroke: false,
+            opacity: 0,
             interactive: false,
             className: 'area-circle',
           }).addTo(dynamicLayers);
@@ -175,10 +182,10 @@ export default function MapaTab({ measurements, stats }: MapaTabProps) {
           const customIcon = L.divIcon({
             className: 'custom-glowing-icon',
             html: markerHtml,
-            iconSize: [24, 24],
-            iconAnchor: [12, 12],
+            iconSize: [40, 40],
+            iconAnchor: [20, 20],
             popupAnchor: [0, -12],
-            tooltipAnchor: [12, 0]
+            tooltipAnchor: [20, 0]
           });
 
           const marker = L.marker(center, {
@@ -246,9 +253,9 @@ export default function MapaTab({ measurements, stats }: MapaTabProps) {
           const customIcon = L.divIcon({
             className: 'custom-glowing-icon no-data',
             html: `<div class="glowing-point-wrapper" style="width:16px;height:16px;"><div class="glowing-point-core" style="background:#475569;width:8px;height:8px;"></div></div>`,
-            iconSize: [16, 16],
-            iconAnchor: [8, 8],
-            tooltipAnchor: [8, 0]
+            iconSize: [32, 32],
+            iconAnchor: [16, 16],
+            tooltipAnchor: [16, 0]
           });
 
           const marker = L.marker(center, { icon: customIcon }).addTo(dynamicLayers);
