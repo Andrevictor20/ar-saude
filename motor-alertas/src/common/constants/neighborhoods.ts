@@ -33,7 +33,7 @@ export const SAO_LUIS_NEIGHBORHOODS: Neighborhood[] = [
 
   { id: 'cohab', name: 'Cohab', latitude: -2.5412, longitude: -44.2189 },
   { id: 'cohafuma', name: 'Cohafuma', latitude: -2.5078, longitude: -44.2668 },
-  { id: 'cohajap', name: 'Cohajap', latitude: -2.4996, longitude: -44.2406 },
+  { id: 'cohajap', name: 'Cohajap', latitude: -2.5085, longitude: -44.2458 },
   { id: 'cohama', name: 'Cohama', latitude: -2.5141, longitude: -44.2459 },
 
   { id: 'cohatrac_1', name: 'Cohatrac 1', latitude: -2.5434, longitude: -44.2091 },
@@ -94,7 +94,7 @@ export const SAO_LUIS_NEIGHBORHOODS: Neighborhood[] = [
 
   { id: 'pedrinhas', name: 'Pedrinhas', latitude: -2.6901, longitude: -44.3051 },
 
-  { id: 'ponta_dareia', name: 'Ponta d\'Areia', latitude: -2.4885, longitude: -44.3168 },
+  { id: 'ponta_dareia', name: 'Ponta d\'Areia', latitude: -2.4975, longitude: -44.3150 },
   { id: 'ponta_do_farol', name: 'Ponta do Farol', latitude: -2.4921, longitude: -44.2920 },
 
   { id: 'quebra_pote', name: 'Quebra Pote', latitude: -2.6927, longitude: -44.2172 },
@@ -127,7 +127,7 @@ export const SAO_LUIS_NEIGHBORHOODS: Neighborhood[] = [
   { id: 'sol_e_mar', name: 'Sol e Mar', latitude: -2.4902, longitude: -44.2156 },
 
   { id: 'turu', name: 'Turu', latitude: -2.5150, longitude: -44.2200 },
-  { id: 'upaon_acu', name: 'Upaon-Açu', latitude: -2.5094, longitude: -44.2613 },
+
 
   { id: 'vassoural', name: 'Vassoural', latitude: -2.5065, longitude: -44.1765 },
   { id: 'vera_cruz', name: 'Vera Cruz', latitude: -2.5461, longitude: -44.2449 },
