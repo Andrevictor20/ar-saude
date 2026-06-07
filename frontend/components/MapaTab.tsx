@@ -39,6 +39,7 @@ export default function MapaTab({ measurements, stats }: MapaTabProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const geoJsonLayerRef = useRef<L.GeoJSON | null>(null);
+  const dynamicLayersRef = useRef<L.FeatureGroup | null>(null);
   const geoJsonData = geoJsonDataRaw as any;
 
   /* Computed stats for the status bar */
@@ -122,37 +123,69 @@ export default function MapaTab({ measurements, stats }: MapaTabProps) {
     if (geoJsonLayerRef.current) {
       map.removeLayer(geoJsonLayerRef.current);
     }
+    if (dynamicLayersRef.current) {
+      map.removeLayer(dynamicLayersRef.current);
+    }
 
     console.log('Adicionando GeoJSON com', geoJsonData.features.length, 'bairros.');
 
+    dynamicLayersRef.current = L.featureGroup().addTo(map);
+    const dynamicLayers = dynamicLayersRef.current;
+
     geoJsonLayerRef.current = L.geoJSON(geoJsonData, {
-      style: (feature) => {
-        const name = feature?.properties?.name;
-        const m = measurements.find((x) => x.neighborhoodName === name);
-        if (!m || m.aqi === null) {
-          return {
-            color: '#475569',
-            weight: 1.5,
-            dashArray: '5, 5',
-            fillColor: '#000000',
-            fillOpacity: 0.1,
-          };
-        }
+      style: () => {
         return {
-          color: '#475569',
-          weight: 1.5,
-          dashArray: '5, 5',
-          fillColor: aqiColor(m.aqi),
-          fillOpacity: 0.25,
-          className: 'geojson-polygon',
+          stroke: false,
+          fill: false,
+          interactive: false,
         };
       },
       onEachFeature: (feature, layer) => {
         const name = feature?.properties?.name;
         const m = measurements.find((x) => x.neighborhoodName === name);
 
+        // Certifique-se de que a camada é um polígono para calcular o centro
+        const l = layer as any;
+        if (!l.getBounds) return;
+        
+        const bounds = l.getBounds();
+        const center = bounds.getCenter();
+        const ne = bounds.getNorthEast();
+        // Raio aproximado baseado na distância até a extremidade
+        const radius = center.distanceTo(ne) * 0.7;
+
         if (m && m.aqi !== null) {
-          layer.bindTooltip(
+          // Criar círculo de área (inicialmente oculto)
+          const areaCircle = L.circle(center, {
+            radius: radius,
+            fillColor: aqiColor(m.aqi),
+            fillOpacity: 0,
+            stroke: false,
+            interactive: false,
+            className: 'area-circle',
+          }).addTo(dynamicLayers);
+
+          // Criar ponto pulsante
+          const markerHtml = `
+            <div class="glowing-point-wrapper">
+               <div class="glowing-point-pulse" style="background:${aqiColor(m.aqi)}"></div>
+               <div class="glowing-point-core" style="background:${aqiColor(m.aqi)}"></div>
+            </div>
+          `;
+          const customIcon = L.divIcon({
+            className: 'custom-glowing-icon',
+            html: markerHtml,
+            iconSize: [24, 24],
+            iconAnchor: [12, 12],
+            popupAnchor: [0, -12],
+            tooltipAnchor: [12, 0]
+          });
+
+          const marker = L.marker(center, {
+            icon: customIcon
+          }).addTo(dynamicLayers);
+
+          marker.bindTooltip(
             `<div style="font-size:12px;line-height:1.6;min-width:180px;">
               <strong>${m.neighborhoodName}</strong><br/>
               AQI: <strong style="color:${aqiColor(m.aqi)}">${m.aqi ?? '–'}</strong> · ${aqiLevel(m.aqi)}<br/>
@@ -174,7 +207,7 @@ export default function MapaTab({ measurements, stats }: MapaTabProps) {
             },
           );
 
-          layer.bindPopup(
+          marker.bindPopup(
             `<div class="animated-popup">
               <div class="popup-header">
                 <div class="popup-title">${m.neighborhoodName}</div>
@@ -199,26 +232,27 @@ export default function MapaTab({ measurements, stats }: MapaTabProps) {
             { className: 'mapa-popup' },
           );
 
-          // Add interactive hover effects
-          layer.on({
-            mouseover: (e) => {
-              const target = e.target as L.Path;
-              target.setStyle({
-                fillOpacity: 0.65,
-                weight: 2,
-                color: '#ffffff',
-                dashArray: ''
-              });
-              if (!L.Browser.ie && !L.Browser.edge) {
-                target.bringToFront();
-              }
-            },
-            mouseout: (e) => {
-              geoJsonLayerRef.current?.resetStyle(e.target);
-            }
+          // Expandir círculo ao abrir popup
+          marker.on('popupopen', () => {
+            areaCircle.setStyle({ fillOpacity: 0.35, stroke: true, weight: 1.5, color: '#475569', opacity: 0.8, dashArray: '5, 5' });
           });
+          
+          marker.on('popupclose', () => {
+            areaCircle.setStyle({ fillOpacity: 0, stroke: false, opacity: 0 });
+          });
+
         } else {
-          layer.bindTooltip(
+          // Sem dados: exibir um ponto cinza menor
+          const customIcon = L.divIcon({
+            className: 'custom-glowing-icon no-data',
+            html: `<div class="glowing-point-wrapper" style="width:16px;height:16px;"><div class="glowing-point-core" style="background:#475569;width:8px;height:8px;"></div></div>`,
+            iconSize: [16, 16],
+            iconAnchor: [8, 8],
+            tooltipAnchor: [8, 0]
+          });
+
+          const marker = L.marker(center, { icon: customIcon }).addTo(dynamicLayers);
+          marker.bindTooltip(
             `<div style="font-size:12px;"><strong>${name}</strong><br/>Sem dados recentes</div>`,
             { className: 'mapa-tooltip', sticky: true }
           );
@@ -284,9 +318,9 @@ export default function MapaTab({ measurements, stats }: MapaTabProps) {
 
       {/* Global Leaflet overrides scoped to this component */}
       <style>{`
-        /* GeoJSON Animations */
-        .geojson-polygon {
-          transition: fill-opacity 0.2s ease, stroke-width 0.2s ease, stroke 0.2s ease;
+        /* Area Circle Animations */
+        path.area-circle {
+          transition: fill-opacity 0.4s ease-out, stroke-opacity 0.4s ease-out, stroke-width 0.4s ease-out;
         }
 
         .mapa-tooltip {
@@ -322,17 +356,46 @@ export default function MapaTab({ measurements, stats }: MapaTabProps) {
           right: 10px !important;
         }
 
-        /* Marker Animations */
-        @keyframes pulseMarker {
-          0% { box-shadow: 0 0 0 0 var(--marker-color), 0 2px 8px rgba(0,0,0,.5); }
-          70% { box-shadow: 0 0 0 14px rgba(0,0,0,0), 0 2px 8px rgba(0,0,0,.5); }
-          100% { box-shadow: 0 0 0 0 rgba(0,0,0,0), 0 2px 8px rgba(0,0,0,.5); }
+        /* Glowing Point Animations */
+        .glowing-point-wrapper {
+          position: relative;
+          width: 100%;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
-        .pulse-marker {
-          animation: pulseMarker 3s infinite ease-in-out;
+        .glowing-point-core {
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+          z-index: 2;
+          box-shadow: 0 0 4px rgba(0,0,0,0.4);
+          border: 1.5px solid rgba(255,255,255,0.6);
         }
-        .pulse-marker:hover {
-          transform: scale(1.15) !important;
+        .glowing-point-pulse {
+          position: absolute;
+          width: 100%;
+          height: 100%;
+          border-radius: 50%;
+          z-index: 1;
+          opacity: 0.6;
+          animation: mapPulse 2s infinite ease-out;
+        }
+        @keyframes mapPulse {
+          0% { transform: scale(0.5); opacity: 0.8; }
+          100% { transform: scale(2.5); opacity: 0; }
+        }
+        .custom-glowing-icon {
+          background: none;
+          border: none;
+        }
+        .custom-glowing-icon.no-data {
+          opacity: 0.6;
+          filter: grayscale(100%);
+        }
+        .custom-glowing-icon:hover {
+          transform: scale(1.1) !important;
           z-index: 1000 !important;
         }
 
