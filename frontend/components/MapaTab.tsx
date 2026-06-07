@@ -161,13 +161,15 @@ export default function MapaTab({ measurements, stats }: MapaTabProps) {
         const radius = Math.sqrt(area / Math.PI) * 0.85;
 
         if (m && m.aqi !== null) {
-          // Criar círculo de área (inicialmente oculto)
+          // Criar círculo de área (inicialmente oculto, com stroke definido para funcionar no Firefox)
           const areaCircle = L.circle(center, {
             radius: radius,
             fillColor: aqiColor(m.aqi),
             fillOpacity: 0,
-            stroke: false,
+            color: '#475569',
+            weight: 1.5,
             opacity: 0,
+            dashArray: '5, 5',
             interactive: false,
             className: 'area-circle',
           }).addTo(dynamicLayers);
@@ -184,37 +186,15 @@ export default function MapaTab({ measurements, stats }: MapaTabProps) {
             html: markerHtml,
             iconSize: [40, 40],
             iconAnchor: [20, 20],
-            popupAnchor: [0, -12],
-            tooltipAnchor: [20, 0]
+            tooltipAnchor: [0, -20]
           });
 
           const marker = L.marker(center, {
             icon: customIcon
           }).addTo(dynamicLayers);
 
+          // Usa bindTooltip com o HTML rico para aparecer no hover (e click no mobile)
           marker.bindTooltip(
-            `<div style="font-size:12px;line-height:1.6;min-width:180px;">
-              <strong>${m.neighborhoodName}</strong><br/>
-              AQI: <strong style="color:${aqiColor(m.aqi)}">${m.aqi ?? '–'}</strong> · ${aqiLevel(m.aqi)}<br/>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:6px;font-size:11px;color:var(--text-muted);border-top:1px solid var(--border);padding-top:6px;">
-                <div>PM2.5: <strong style="color:var(--text)">${formatNumber(m.pm2_5)}</strong></div>
-                <div>PM10: <strong style="color:var(--text)">${formatNumber(m.pm10)}</strong></div>
-                <div>NO₂: <strong style="color:var(--text)">${formatNumber(m.no2)}</strong></div>
-                <div>O₃: <strong style="color:var(--text)">${formatNumber(m.ozone)}</strong></div>
-                <div>CO: <strong style="color:var(--text)">${formatNumber(m.co)}</strong></div>
-                <div>SO₂: <strong style="color:var(--text)">${formatNumber(m.so2)}</strong></div>
-                <div>NH₃: <strong style="color:var(--text)">${formatNumber(m.nh3)}</strong></div>
-                <div>NO: <strong style="color:var(--text)">${formatNumber(m.no)}</strong></div>
-              </div>
-            </div>`,
-            {
-              direction: 'auto',
-              sticky: true,
-              className: 'mapa-tooltip',
-            },
-          );
-
-          marker.bindPopup(
             `<div class="animated-popup">
               <div class="popup-header">
                 <div class="popup-title">${m.neighborhoodName}</div>
@@ -236,16 +216,19 @@ export default function MapaTab({ measurements, stats }: MapaTabProps) {
                 <span class="live-indicator"></span> Atualizado: ${formatTime(m.measuredAt)}
               </div>
             </div>`,
-            { className: 'mapa-popup' },
+            {
+              direction: 'top',
+              className: 'mapa-tooltip-rich',
+            },
           );
 
-          // Expandir círculo ao abrir popup
-          marker.on('popupopen', () => {
-            areaCircle.setStyle({ fillOpacity: 0.35, stroke: true, weight: 1.5, color: '#475569', opacity: 0.8, dashArray: '5, 5' });
+          // Expandir círculo ao passar o mouse
+          marker.on('mouseover', () => {
+            areaCircle.setStyle({ fillOpacity: 0.35, opacity: 0.8 });
           });
           
-          marker.on('popupclose', () => {
-            areaCircle.setStyle({ fillOpacity: 0, stroke: false, opacity: 0 });
+          marker.on('mouseout', () => {
+            areaCircle.setStyle({ fillOpacity: 0, opacity: 0 });
           });
 
         } else {
@@ -255,13 +238,13 @@ export default function MapaTab({ measurements, stats }: MapaTabProps) {
             html: `<div class="glowing-point-wrapper" style="width:16px;height:16px;"><div class="glowing-point-core" style="background:#475569;width:8px;height:8px;"></div></div>`,
             iconSize: [32, 32],
             iconAnchor: [16, 16],
-            tooltipAnchor: [16, 0]
+            tooltipAnchor: [0, -16]
           });
 
           const marker = L.marker(center, { icon: customIcon }).addTo(dynamicLayers);
           marker.bindTooltip(
-            `<div style="font-size:12px;"><strong>${name}</strong><br/>Sem dados recentes</div>`,
-            { className: 'mapa-tooltip', sticky: true }
+            `<div style="font-size:12px;padding:4px;"><strong>${name}</strong><br/>Sem dados recentes</div>`,
+            { className: 'mapa-tooltip-rich', direction: 'top' }
           );
         }
       },
@@ -327,40 +310,22 @@ export default function MapaTab({ measurements, stats }: MapaTabProps) {
       <style>{`
         /* Area Circle Animations */
         path.area-circle {
-          transition: fill-opacity 0.4s ease-out, stroke-opacity 0.4s ease-out, stroke-width 0.4s ease-out;
+          transition: fill-opacity 0.3s ease-out, stroke-opacity 0.3s ease-out, opacity 0.3s ease-out;
         }
 
-        .mapa-tooltip {
-          background: var(--panel) !important;
-          border: 1px solid var(--border) !important;
-          border-radius: 8px !important;
-          color: var(--text) !important;
-          box-shadow: var(--shadow) !important;
-          padding: 8px 12px !important;
-        }
-        .mapa-tooltip::before {
-          border-top-color: var(--border, #233047) !important;
-        }
-        .mapa-popup .leaflet-popup-content-wrapper {
-          padding: 16px !important;
+        .mapa-tooltip-rich {
           background: var(--bg-elevated) !important;
           backdrop-filter: blur(8px) !important;
           border: 1px solid var(--border) !important;
           border-radius: 12px !important;
           color: var(--text) !important;
           box-shadow: var(--shadow) !important;
-        }
-        .mapa-popup .leaflet-popup-content {
+          padding: 16px !important;
           margin: 0 !important;
+          pointer-events: none !important;
         }
-        .mapa-popup .leaflet-popup-tip {
-          background: var(--bg-elevated) !important;
-          border: 1px solid var(--border) !important;
-        }
-        .mapa-popup .leaflet-popup-close-button {
-          color: var(--text-muted, #94a3b8) !important;
-          top: 10px !important;
-          right: 10px !important;
+        .mapa-tooltip-rich::before {
+          border-top-color: var(--border) !important;
         }
 
         /* Glowing Point Animations */
@@ -400,10 +365,6 @@ export default function MapaTab({ measurements, stats }: MapaTabProps) {
         .custom-glowing-icon.no-data {
           opacity: 0.6;
           filter: grayscale(100%);
-        }
-        .custom-glowing-icon:hover {
-          transform: scale(1.1) !important;
-          z-index: 1000 !important;
         }
 
         /* Popup Animations & Styling */
