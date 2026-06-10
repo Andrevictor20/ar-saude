@@ -1,6 +1,7 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
+import { Interval } from '@nestjs/schedule';
 import { firstValueFrom } from 'rxjs';
 
 import {
@@ -13,21 +14,64 @@ import {
 import { retryWithBackoff } from '../common/utils/retry.util.js';
 import { SAO_LUIS_NEIGHBORHOODS } from '../common/constants/neighborhoods.js';
 
+/** Um destino do InterSCity (catálogo + adaptor). */
+export interface InterscityEndpoint {
+  name: string;
+  catalogUrl: string;
+  adaptorUrl: string;
+}
+
+/** Situação de saúde atual da integração com o InterSCity. */
+export interface InterscityHealth {
+  active: string;
+  primaryUp: boolean;
+  fallbackUp: boolean;
+  lastCheckedAt: string | null;
+}
+
 /** Adaptador de integração com a plataforma InterSCity (capabilities, resources, medições). */
 @Injectable()
 export class InterscityService implements OnModuleInit {
   private readonly logger = new Logger(InterscityService.name);
 
-  private readonly catalogUrl: string;
+  /** Endpoint primário — sempre preferido enquanto estiver no ar. */
+  private readonly primaryEndpoint: InterscityEndpoint;
 
-  private readonly collectorUrl: string;
+  /** Endpoint de fallback — usado apenas se o primário cair. */
+  private readonly fallbackEndpoint: InterscityEndpoint;
 
-  private readonly adaptorUrl: string;
+  /** Endpoint efetivamente em uso no momento. */
+  private activeEndpoint: InterscityEndpoint;
+
+  /** Último retrato de saúde dos endpoints. */
+  private health: InterscityHealth = {
+    active: '',
+    primaryUp: false,
+    fallbackUp: false,
+    lastCheckedAt: null,
+  };
 
   private readonly kongUrl: string;
 
   private readonly maxRetries: number;
   private readonly retryBaseDelay: number;
+  private readonly healthTimeoutMs: number;
+
+  /** Timeout (maior) usado só no primeiro healthcheck, p/ tolerar o cold start. */
+  private readonly firstHealthTimeoutMs: number;
+
+  /** Indica se o primeiro healthcheck já rodou. */
+  private firstCheckDone = false;
+
+  /** Catálogo do endpoint ativo. */
+  private get catalogUrl(): string {
+    return this.activeEndpoint.catalogUrl;
+  }
+
+  /** Adaptor do endpoint ativo. */
+  private get adaptorUrl(): string {
+    return this.activeEndpoint.adaptorUrl;
+  }
 
   /** Mapa neighborhoodId → resourceUuid */
   private readonly resourceUuids = new Map<string, string>();
@@ -35,7 +79,8 @@ export class InterscityService implements OnModuleInit {
   private readonly capabilities: InterscityCapabilityPayload[] = [
     {
       name: 'air_quality_index',
-      description: 'Índice de Qualidade do Ar (European AQI) — valor inteiro de 0 a 500+',
+      description:
+        'Índice de Qualidade do Ar (European AQI) — valor inteiro de 0 a 500+',
       capability_type: 'sensor',
     },
     {
@@ -60,7 +105,8 @@ export class InterscityService implements OnModuleInit {
     },
     {
       name: 'air_quality_level',
-      description: 'Classificação textual do nível de qualidade do ar (ex.: Bom, Moderado, Ruim)',
+      description:
+        'Classificação textual do nível de qualidade do ar (ex.: Bom, Moderado, Ruim)',
       capability_type: 'sensor',
     },
     {
@@ -89,18 +135,36 @@ export class InterscityService implements OnModuleInit {
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
   ) {
-    this.catalogUrl = this.configService.get<string>(
-      'INTERSCITY_CATALOG_URL',
-      'https://interscity.rasppi.cloud/catalog',
-    );
-    this.collectorUrl = this.configService.get<string>(
-      'INTERSCITY_COLLECTOR_URL',
-      'https://interscity.rasppi.cloud/collector',
-    );
-    this.adaptorUrl = this.configService.get<string>(
-      'INTERSCITY_ADAPTOR_URL',
-      'https://interscity.rasppi.cloud/adaptor',
-    );
+    // Endpoint primário (LSDI/UFMA) — preferido sempre que estiver no ar.
+    this.primaryEndpoint = {
+      name: 'primary',
+      catalogUrl: this.configService.get<string>(
+        'INTERSCITY_CATALOG_URL',
+        'https://cidadesinteligentes.lsdi.ufma.br/interscity_lh/catalog',
+      ),
+      adaptorUrl: this.configService.get<string>(
+        'INTERSCITY_ADAPTOR_URL',
+        'https://cidadesinteligentes.lsdi.ufma.br/interscity_lh/adaptor',
+      ),
+    };
+
+    // Endpoint de fallback — usado só se o primário cair.
+    this.fallbackEndpoint = {
+      name: 'fallback',
+      catalogUrl: this.configService.get<string>(
+        'INTERSCITY_CATALOG_URL_FALLBACK',
+        'https://interscity.rasppi.cloud/catalog',
+      ),
+      adaptorUrl: this.configService.get<string>(
+        'INTERSCITY_ADAPTOR_URL_FALLBACK',
+        'https://interscity.rasppi.cloud/adaptor',
+      ),
+    };
+
+    // Começa apontando para o primário; o healthcheck ajusta se necessário.
+    this.activeEndpoint = this.primaryEndpoint;
+    this.health.active = this.activeEndpoint.name;
+
     this.kongUrl = this.configService.get<string>(
       'KONG_UPSTREAM_URL',
       'https://kong.rasppi.cloud/upstreams',
@@ -110,11 +174,115 @@ export class InterscityService implements OnModuleInit {
       'RETRY_BASE_DELAY_MS',
       1000,
     );
+    this.healthTimeoutMs = this.configService.get<number>(
+      'INTERSCITY_HEALTH_TIMEOUT_MS',
+      8000,
+    );
+    this.firstHealthTimeoutMs = this.configService.get<number>(
+      'INTERSCITY_FIRST_HEALTH_TIMEOUT_MS',
+      30_000,
+    );
+  }
+
+  /**
+   * Healthcheck de um endpoint: GET {catalog}/capabilities.
+   * Retorna true se o serviço respondeu 2xx.
+   */
+  private async isEndpointUp(
+    endpoint: InterscityEndpoint,
+    timeoutMs: number = this.healthTimeoutMs,
+  ): Promise<boolean> {
+    try {
+      const response = await firstValueFrom(
+        this.httpService.get(`${endpoint.catalogUrl}/capabilities`, {
+          timeout: timeoutMs,
+          params: { per_page: 1 },
+        }),
+      );
+      return response.status >= 200 && response.status < 300;
+    } catch (error) {
+      this.logger.debug(
+        `Healthcheck DOWN para ${endpoint.name} (${endpoint.catalogUrl}): ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+      return false;
+    }
+  }
+
+  /**
+   * Verifica primário e fallback e (re)seleciona o endpoint ativo.
+   * Regra: o primário tem prioridade sempre que estiver no ar; se cair,
+   * faz failover para o fallback; se ambos caírem, mantém o atual e confia
+   * no retry das requisições.
+   */
+  async checkHealth(): Promise<InterscityHealth> {
+    // O primeiro check usa um timeout maior para tolerar o cold start do servidor.
+    const timeoutMs = this.firstCheckDone
+      ? this.healthTimeoutMs
+      : this.firstHealthTimeoutMs;
+
+    if (!this.firstCheckDone) {
+      this.logger.log(
+        `⏳ Primeiro healthcheck do InterSCity (timeout estendido de ${timeoutMs}ms p/ cold start)...`,
+      );
+    }
+
+    const [primaryUp, fallbackUp] = await Promise.all([
+      this.isEndpointUp(this.primaryEndpoint, timeoutMs),
+      this.isEndpointUp(this.fallbackEndpoint, timeoutMs),
+    ]);
+
+    this.firstCheckDone = true;
+
+    const previous = this.activeEndpoint.name;
+
+    if (primaryUp) {
+      this.activeEndpoint = this.primaryEndpoint;
+    } else if (fallbackUp) {
+      this.activeEndpoint = this.fallbackEndpoint;
+    }
+    // ambos down → mantém o ativo atual
+
+    if (this.activeEndpoint.name !== previous) {
+      this.logger.warn(
+        `🔀 Failover do InterSCity: endpoint ativo ${previous} → ${this.activeEndpoint.name}`,
+      );
+    }
+
+    this.health = {
+      active: this.activeEndpoint.name,
+      primaryUp,
+      fallbackUp,
+      lastCheckedAt: new Date().toISOString(),
+    };
+
+    const overall = primaryUp ? '🟢' : fallbackUp ? '🟡' : '🔴';
+    this.logger.log(
+      `${overall} Healthcheck InterSCity — primário: ${primaryUp ? 'UP' : 'DOWN'} | ` +
+        `fallback: ${fallbackUp ? 'UP' : 'DOWN'} | ativo: ${this.activeEndpoint.name}`,
+    );
+
+    return this.health;
+  }
+
+  /** Healthcheck periódico — mantém o endpoint ativo sempre atualizado. */
+  @Interval('interscity-health', 60_000)
+  async scheduledHealthCheck(): Promise<void> {
+    await this.checkHealth();
+  }
+
+  /** Último retrato de saúde conhecido (sem disparar nova checagem). */
+  getHealth(): InterscityHealth {
+    return this.health;
   }
 
   /** Registra capabilities e resources ao iniciar o módulo. */
   async onModuleInit(): Promise<void> {
     this.logger.log('🔧 Inicializando integração com InterSCity...');
+
+    // Descobre qual endpoint está no ar (primário tem prioridade) antes de registrar.
+    await this.checkHealth();
 
     try {
       await this.ensureCapabilitiesRegistered();
@@ -165,13 +333,16 @@ export class InterscityService implements OnModuleInit {
 
         this.logger.log(`  ✓ Capability "${capability.name}" registrada.`);
       } catch (error: unknown) {
-        const axiosError = error as { response?: { status?: number; data?: any } };
+        const axiosError = error as {
+          response?: { status?: number; data?: any };
+        };
         const errorMsg = axiosError?.response?.data?.error;
-        
+
         if (
           axiosError?.response?.status === 409 ||
           axiosError?.response?.status === 422 ||
-          (axiosError?.response?.status === 400 && errorMsg === 'Name has already been taken')
+          (axiosError?.response?.status === 400 &&
+            errorMsg === 'Name has already been taken')
         ) {
           this.logger.log(
             `  ⏭️  Capability "${capability.name}" já existe, pulando.`,
@@ -242,8 +413,13 @@ export class InterscityService implements OnModuleInit {
           axiosError?.response?.status === 409 ||
           axiosError?.response?.status === 422
         ) {
-          this.logger.log(`Bairro ${neighborhood.name} já existe, buscando UUID...`);
-          await this.fetchExistingResourceUuid(neighborhood.id, neighborhood.name);
+          this.logger.log(
+            `Bairro ${neighborhood.name} já existe, buscando UUID...`,
+          );
+          await this.fetchExistingResourceUuid(
+            neighborhood.id,
+            neighborhood.name,
+          );
         } else {
           throw error;
         }
@@ -252,7 +428,10 @@ export class InterscityService implements OnModuleInit {
   }
 
   /** Busca UUID de um recurso já existente. */
-  private async fetchExistingResourceUuid(neighborhoodId: string, neighborhoodName: string): Promise<void> {
+  private async fetchExistingResourceUuid(
+    neighborhoodId: string,
+    neighborhoodName: string,
+  ): Promise<void> {
     try {
       const response = await retryWithBackoff(
         () =>
@@ -267,9 +446,8 @@ export class InterscityService implements OnModuleInit {
       );
 
       const resources = response.data?.resources ?? [];
-      const existingResource = resources.find(
-        (r: { description?: string }) =>
-          r.description?.includes(`Bairro: ${neighborhoodName}`),
+      const existingResource = resources.find((r: { description?: string }) =>
+        r.description?.includes(`Bairro: ${neighborhoodName}`),
       );
 
       if (existingResource?.uuid) {
@@ -312,53 +490,31 @@ export class InterscityService implements OnModuleInit {
 
     const measurementPayload: InterscityMeasurementPayload = {
       data: {
-        air_quality_index: [
-          { value: data.aqi, timestamp: data.timestamp },
-        ],
+        air_quality_index: [{ value: data.aqi, timestamp: data.timestamp }],
 
-        pm10: [
-          { value: data.pm10, timestamp: data.timestamp },
-        ],
+        pm10: [{ value: data.pm10, timestamp: data.timestamp }],
 
-        pm2_5: [
-          { value: data.pm2_5, timestamp: data.timestamp },
-        ],
+        pm2_5: [{ value: data.pm2_5, timestamp: data.timestamp }],
 
-        no2: [
-          { value: data.no2, timestamp: data.timestamp },
-        ],
+        no2: [{ value: data.no2, timestamp: data.timestamp }],
 
-        ozone: [
-          { value: data.ozone, timestamp: data.timestamp },
-        ],
+        ozone: [{ value: data.ozone, timestamp: data.timestamp }],
 
-        air_quality_level: [
-          { value: data.level, timestamp: data.timestamp },
-        ],
+        air_quality_level: [{ value: data.level, timestamp: data.timestamp }],
 
-        co: [
-          { value: data.co ?? null, timestamp: data.timestamp },
-        ],
+        co: [{ value: data.co ?? null, timestamp: data.timestamp }],
 
-        so2: [
-          { value: data.so2 ?? null, timestamp: data.timestamp },
-        ],
+        so2: [{ value: data.so2 ?? null, timestamp: data.timestamp }],
 
-        nh3: [
-          { value: data.nh3 ?? null, timestamp: data.timestamp },
-        ],
+        nh3: [{ value: data.nh3 ?? null, timestamp: data.timestamp }],
 
-        no: [
-          { value: data.no ?? null, timestamp: data.timestamp },
-        ],
+        no: [{ value: data.no ?? null, timestamp: data.timestamp }],
       },
     };
 
     const url = `${this.adaptorUrl}/resources/${currentUuid}/data`;
 
-    this.logger.log(
-      `📤 Enviando medição ao InterSCity — URL: ${url}`,
-    );
+    this.logger.log(`📤 Enviando medição ao InterSCity — URL: ${url}`);
     this.logger.debug(
       `Payload: ${JSON.stringify(measurementPayload, null, 2)}`,
     );

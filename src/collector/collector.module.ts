@@ -8,5 +8,6 @@ import { InterscityModule } from '../interscity/interscity.module.js';
 @Module({
   imports: [OpenMeteoModule, OpenWeatherModule, InterscityModule],
   providers: [CollectorService],
+  exports: [CollectorService],
 })
 export class CollectorModule {}

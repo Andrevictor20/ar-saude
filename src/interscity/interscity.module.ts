@@ -8,7 +8,7 @@ import * as https from 'https'; // <-- 1. Importe o pacote https
     HttpModule.register({
       timeout: 15_000,
       maxRedirects: 3,
-      httpsAgent: new https.Agent({  
+      httpsAgent: new https.Agent({
         rejectUnauthorized: false,
       }),
     }),

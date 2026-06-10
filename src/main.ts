@@ -9,10 +9,7 @@ async function bootstrap(): Promise<void> {
 
   await app.listen(port);
 
-  Logger.log(
-    `🌬️  Ar-Saúde Coletor rodando na porta ${port}`,
-    'Bootstrap',
-  );
+  Logger.log(`🌬️  Ar-Saúde Coletor rodando na porta ${port}`, 'Bootstrap');
 }
 
 bootstrap();

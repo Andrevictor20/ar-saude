@@ -31,6 +31,68 @@ Sua principal responsabilidade é rodar rotinas agendadas (Cron Jobs) que consul
   - Consulta a **OpenWeatherMap API** paralelamente para capturar e enriquecer a carga com gases adicionais críticos (como CO, NO, NO₂, SO₂, NH₃).
 - **Publicação**: Após mesclar os dados em uma unidade padronizada (`µg/m3`), o Coletor monta a medição no padrão InterSCity e envia (POST) as atualizações para o Catálogo (Capabilities/Recursos) através do gateway de API Kong.
 
+#### ⚙️ Resiliência sob carga (Fila + Cache em memória)
+Para aguentar rajadas de requisições (ex.: ~1000 coletas) sem perder dados nem estourar o limite das APIs externas, o Coletor usa duas peças de infraestrutura **100% em memória** (sem dependências externas como Redis):
+
+- **Fila de requisições** (`RequestQueueService`): em vez de processar os bairros inline, o cron apenas *enfileira* um job por bairro. A fila consome os jobs com **concorrência limitada**, **retry com backoff exponencial** e uma **dead-letter** para jobs que esgotam as tentativas — garantindo que nenhuma requisição se perca.
+- **Cache em memória** (`CacheService`): respostas da Open-Meteo e da OpenWeatherMap são cacheadas por coordenada com **TTL** configurável. Dentro da janela, coletas repetidas dos mesmos bairros respondem da memória, reduzindo drasticamente o número de chamadas externas.
+
+Variáveis de ambiente relevantes (ver `.env.example`): `QUEUE_CONCURRENCY`, `QUEUE_MAX_ATTEMPTS`, `CACHE_TTL_MS`.
+
+#### 🩺 Alta disponibilidade do InterSCity (Primário + Fallback + Healthcheck)
+A integração com o InterSCity é tolerante a falhas:
+
+- **Endpoint primário** (`INTERSCITY_CATALOG_URL` / `INTERSCITY_ADAPTOR_URL`, padrão LSDI/UFMA) é **sempre preferido**.
+- Se o primário cair, há **failover automático** para o **fallback** (`*_FALLBACK`).
+- Um **healthcheck periódico** (a cada 60s, via `GET {catalog}/capabilities`) verifica primário e fallback, religando o primário assim que ele volta. Também roda na inicialização, antes de registrar capabilities/resources.
+
+**Endpoints de observabilidade / teste de carga:**
+
+| Método | Rota                 | Descrição                                                        |
+| ------ | -------------------- | ---------------------------------------------------------------- |
+| `GET`  | `/`                  | Healthcheck do serviço.                                          |
+| `GET`  | `/stats`             | Estado em tempo real da fila (pendentes, ativos, processados, falhos, dead-letter), do cache (hits, misses, hit rate) e do InterSCity (endpoint ativo, primário/fallback up). |
+| `GET`  | `/interscity/health` | Dispara um healthcheck **ao vivo** do primário + fallback.       |
+| `POST` | `/collect`           | Enfileira manualmente a coleta de todos os bairros (simular carga). |
+
+```bash
+# dispara uma rodada de coleta e observa a fila/cache absorvendo a carga
+curl -X POST http://localhost:3000/collect
+curl http://localhost:3000/stats
+
+# checa ao vivo se o InterSCity (primário e fallback) está no ar
+curl http://localhost:3000/interscity/health
+```
+
+#### 🔥 Teste de carga (stress test com rampa)
+Para comprovar que a aplicação aguenta rajadas, há um teste de carga que **sobe a concorrência aos poucos** — `10 → 25 → 50 → 100 → 250 → 500 → 1000 → 2000 → 3000 → 5000` requisições simultâneas — mantendo cada nível por alguns segundos e medindo throughput, taxa de sucesso e latência (p50/p95/p99) por estágio.
+
+```bash
+# 1) suba o coletor
+npm run start:dev
+
+# 2) em outro terminal, rode a rampa (dura ~4 min com os padrões)
+npm run load:test
+```
+
+Configurável por variáveis de ambiente:
+
+| Variável             | Padrão                          | Descrição                                  |
+| -------------------- | ------------------------------- | ------------------------------------------ |
+| `LOAD_URL`           | `http://localhost:3000`         | Base do servidor alvo                      |
+| `LOAD_PATH`          | `/stats`                        | Rota alvo (leve, sem rede externa)         |
+| `LOAD_METHOD`        | `GET`                           | `GET` ou `POST` (use `POST` p/ `/collect`) |
+| `LOAD_STAGE_SECONDS` | `20`                            | Duração de cada nível da rampa             |
+| `LOAD_STAGES`        | `10,25,...,5000`                | Níveis de concorrência                     |
+
+```bash
+# rampa mais longa (30s por nível)
+LOAD_STAGE_SECONDS=30 npm run load:test
+
+# martelando a fila de coleta (cuidado: cresce a fila em memória)
+LOAD_PATH=/collect LOAD_METHOD=POST LOAD_STAGES=10,50,100 npm run load:test
+```
+
 ### 2. Microsserviço 2: Motor de Alertas (Diretório `/motor-alertas` - NestJS)
 É o cérebro avaliativo do sistema. Possui banco de dados embutido (SQLite via TypeORM) e age como consumidor final do barramento da cidade inteligente.
 - Consulta ativamente a API de dados recentes do **InterSCity**.

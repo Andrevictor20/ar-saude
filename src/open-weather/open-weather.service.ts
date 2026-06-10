@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
 
 import { retryWithBackoff } from '../common/utils/retry.util.js';
+import { CacheService } from '../common/cache/cache.service.js';
 
 export interface ExtraPollutants {
   co: number | null;
@@ -19,10 +20,12 @@ export class OpenWeatherService {
   private readonly apiKey: string;
   private readonly maxRetries: number;
   private readonly retryBaseDelay: number;
+  private readonly cacheTtlMs: number;
 
   constructor(
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
+    private readonly cacheService: CacheService,
   ) {
     this.baseUrl = this.configService.get<string>(
       'OPENWEATHER_BASE_URL',
@@ -35,7 +38,11 @@ export class OpenWeatherService {
     }
 
     this.maxRetries = this.configService.get<number>('MAX_RETRIES', 5);
-    this.retryBaseDelay = this.configService.get<number>('RETRY_BASE_DELAY_MS', 1000);
+    this.retryBaseDelay = this.configService.get<number>(
+      'RETRY_BASE_DELAY_MS',
+      1000,
+    );
+    this.cacheTtlMs = this.configService.get<number>('CACHE_TTL_MS', 600_000);
   }
 
   /** Busca APENAS os poluentes complementares (CO, SO₂, NH₃, NO). */
@@ -52,11 +59,18 @@ export class OpenWeatherService {
       `Coletando dados extras para ${neighborhoodName} via OpenWeatherMap...`,
     );
 
-    const data = await retryWithBackoff<ExtraPollutants>(
-      () => this.callOpenWeatherApi(latitude, longitude),
-      this.maxRetries,
-      this.retryBaseDelay,
-      `OpenWeather.fetchExtraPollutants(${neighborhoodName})`,
+    const cacheKey = `owm:${latitude},${longitude}`;
+
+    const data = await this.cacheService.wrap<ExtraPollutants>(
+      cacheKey,
+      this.cacheTtlMs,
+      () =>
+        retryWithBackoff<ExtraPollutants>(
+          () => this.callOpenWeatherApi(latitude, longitude),
+          this.maxRetries,
+          this.retryBaseDelay,
+          `OpenWeather.fetchExtraPollutants(${neighborhoodName})`,
+        ),
     );
 
     return data;
@@ -80,7 +94,7 @@ export class OpenWeatherService {
 
     if (!components) {
       throw new Error(
-        'Resposta da API OpenWeatherMap não contém dados de poluentes.'
+        'Resposta da API OpenWeatherMap não contém dados de poluentes.',
       );
     }
 

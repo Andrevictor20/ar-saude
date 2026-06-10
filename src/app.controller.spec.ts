@@ -1,6 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
+import { CollectorService } from './collector/collector.service.js';
+import { CacheService } from './common/cache/cache.service.js';
+import { InterscityService } from './interscity/interscity.service.js';
 
 describe('AppController', () => {
   let appController: AppController;
@@ -8,7 +11,48 @@ describe('AppController', () => {
   beforeEach(async () => {
     const app: TestingModule = await Test.createTestingModule({
       controllers: [AppController],
-      providers: [AppService],
+      providers: [
+        AppService,
+        {
+          provide: CollectorService,
+          useValue: {
+            getExecutionCount: () => 0,
+            getQueueStats: () => ({
+              pending: 0,
+              active: 0,
+              processed: 0,
+              failed: 0,
+              deadLetter: 0,
+              concurrency: 5,
+            }),
+            enqueueAllNeighborhoods: () => 0,
+          },
+        },
+        {
+          provide: CacheService,
+          useValue: {
+            getStats: () => ({ size: 0, hits: 0, misses: 0, hitRate: '0%' }),
+          },
+        },
+        {
+          provide: InterscityService,
+          useValue: {
+            getHealth: () => ({
+              active: 'primary',
+              primaryUp: true,
+              fallbackUp: false,
+              lastCheckedAt: null,
+            }),
+            checkHealth: () =>
+              Promise.resolve({
+                active: 'primary',
+                primaryUp: true,
+                fallbackUp: false,
+                lastCheckedAt: new Date().toISOString(),
+              }),
+          },
+        },
+      ],
     }).compile();
 
     appController = app.get<AppController>(AppController);
