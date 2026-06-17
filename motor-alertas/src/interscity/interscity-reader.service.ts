@@ -1,6 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
+import { Interval } from '@nestjs/schedule';
 import { firstValueFrom } from 'rxjs';
 
 import { retryWithBackoff } from '../common/retry';
@@ -10,6 +11,19 @@ import {
   slugify,
 } from '../common/air-quality';
 import { SAO_LUIS_NEIGHBORHOODS } from '../common/constants/neighborhoods';
+
+export interface InterscityEndpoint {
+  name: string;
+  catalogUrl: string;
+  collectorUrl: string;
+}
+
+export interface InterscityHealth {
+  active: string;
+  primaryUp: boolean;
+  fallbackUp: boolean;
+  lastCheckedAt: string | null;
+}
 
 export interface InterscityResource {
   resourceUuid: string;
@@ -47,27 +61,60 @@ interface SeriesEntry {
 }
 
 @Injectable()
-export class InterscityReaderService {
+export class InterscityReaderService implements OnModuleInit {
   private readonly logger = new Logger(InterscityReaderService.name);
 
-  private readonly catalogUrl: string;
-  private readonly collectorUrl: string;
+  private readonly primaryEndpoint: InterscityEndpoint;
+  private readonly fallbackEndpoint: InterscityEndpoint;
+  private activeEndpoint: InterscityEndpoint;
+
+  private health: InterscityHealth = {
+    active: '',
+    primaryUp: false,
+    fallbackUp: false,
+    lastCheckedAt: null,
+  };
+
   private readonly maxRetries: number;
   private readonly retryBaseDelay: number;
   private readonly catalogPageSize: number;
+  private readonly healthTimeoutMs: number;
+  private readonly firstHealthTimeoutMs: number;
+
+  private firstCheckDone = false;
+  private chaosPrimaryDown = false;
 
   constructor(
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
   ) {
-    this.catalogUrl = this.configService.get<string>(
-      'INTERSCITY_CATALOG_URL',
-      'https://interscity.rasppi.cloud/catalog',
-    );
-    this.collectorUrl = this.configService.get<string>(
-      'INTERSCITY_COLLECTOR_URL',
-      'https://interscity.rasppi.cloud/collector',
-    );
+    this.primaryEndpoint = {
+      name: 'primary',
+      catalogUrl: this.configService.get<string>(
+        'INTERSCITY_CATALOG_URL',
+        'https://cidadesinteligentes.lsdi.ufma.br/interscity_lh/catalog',
+      ),
+      collectorUrl: this.configService.get<string>(
+        'INTERSCITY_COLLECTOR_URL',
+        'https://cidadesinteligentes.lsdi.ufma.br/interscity_lh/collector',
+      ),
+    };
+
+    this.fallbackEndpoint = {
+      name: 'fallback',
+      catalogUrl: this.configService.get<string>(
+        'INTERSCITY_CATALOG_URL_FALLBACK',
+        'https://interscity.rasppi.cloud/catalog',
+      ),
+      collectorUrl: this.configService.get<string>(
+        'INTERSCITY_COLLECTOR_URL_FALLBACK',
+        'https://interscity.rasppi.cloud/collector',
+      ),
+    };
+
+    this.activeEndpoint = this.primaryEndpoint;
+    this.health.active = this.activeEndpoint.name;
+
     this.maxRetries = Number(this.configService.get('MAX_RETRIES', 5));
     this.retryBaseDelay = Number(
       this.configService.get('RETRY_BASE_DELAY_MS', 1000),
@@ -75,13 +122,114 @@ export class InterscityReaderService {
     this.catalogPageSize = Number(
       this.configService.get('CATALOG_PAGE_SIZE', 500),
     );
+    this.healthTimeoutMs = this.configService.get<number>(
+      'INTERSCITY_HEALTH_TIMEOUT_MS',
+      8000,
+    );
+    this.firstHealthTimeoutMs = this.configService.get<number>(
+      'INTERSCITY_FIRST_HEALTH_TIMEOUT_MS',
+      30_000,
+    );
+  }
+
+  async onModuleInit(): Promise<void> {
+    this.logger.log('🔧 Inicializando InterscityReaderService e checando health...');
+    await this.checkHealth();
+  }
+
+  private async isEndpointUp(
+    endpoint: InterscityEndpoint,
+    timeoutMs: number = this.healthTimeoutMs,
+  ): Promise<boolean> {
+    try {
+      const response = await firstValueFrom(
+        this.httpService.get(`${endpoint.catalogUrl}/resources`, {
+          timeout: timeoutMs,
+          params: { per_page: 1 },
+        }),
+      );
+      return response.status >= 200 && response.status < 300;
+    } catch (error) {
+      this.logger.debug(
+        `Healthcheck DOWN para ${endpoint.name} (${endpoint.catalogUrl}): ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+      return false;
+    }
+  }
+
+  async checkHealth(): Promise<InterscityHealth> {
+    const timeoutMs = this.firstCheckDone ? this.healthTimeoutMs : this.firstHealthTimeoutMs;
+
+    if (!this.firstCheckDone) {
+      this.logger.log(`⏳ Primeiro healthcheck do InterSCity (timeout ${timeoutMs}ms)...`);
+    }
+
+    const [primaryProbe, fallbackUp] = await Promise.all([
+      this.isEndpointUp(this.primaryEndpoint, timeoutMs),
+      this.isEndpointUp(this.fallbackEndpoint, timeoutMs),
+    ]);
+
+    const primaryUp = this.chaosPrimaryDown ? false : primaryProbe;
+    if (this.chaosPrimaryDown) {
+      this.logger.warn('🧪 [CHAOS] Primário do InterSCity forçado como DOWN no Motor de Alertas.');
+    }
+
+    this.firstCheckDone = true;
+    const previous = this.activeEndpoint.name;
+
+    if (primaryUp) {
+      this.activeEndpoint = this.primaryEndpoint;
+    } else if (fallbackUp) {
+      this.activeEndpoint = this.fallbackEndpoint;
+    }
+
+    if (this.activeEndpoint.name !== previous) {
+      this.logger.warn(`🔀 Failover: endpoint ativo ${previous} → ${this.activeEndpoint.name}`);
+    }
+
+    this.health = {
+      active: this.activeEndpoint.name,
+      primaryUp,
+      fallbackUp,
+      lastCheckedAt: new Date().toISOString(),
+    };
+
+    const overall = primaryUp ? '🟢' : fallbackUp ? '🟡' : '🔴';
+    this.logger.log(
+      `${overall} Healthcheck Leitor - primário: ${primaryUp ? 'UP' : 'DOWN'} | fallback: ${
+        fallbackUp ? 'UP' : 'DOWN'
+      } | ativo: ${this.activeEndpoint.name}`,
+    );
+
+    return this.health;
+  }
+
+  @Interval('interscity-health-reader', 60_000)
+  async scheduledHealthCheck(): Promise<void> {
+    await this.checkHealth();
+  }
+
+  getHealth(): InterscityHealth {
+    return this.health;
+  }
+
+  async setChaosPrimaryDown(down: boolean): Promise<InterscityHealth> {
+    this.chaosPrimaryDown = down;
+    this.logger.warn(`🧪 [CHAOS] Simulação de primário DOWN no Motor ${down ? 'ATIVADA' : 'DESATIVADA'}.`);
+    return this.checkHealth();
+  }
+
+  isChaosPrimaryDown(): boolean {
+    return this.chaosPrimaryDown;
   }
 
   async fetchResources(): Promise<InterscityResource[]> {
     const response = await retryWithBackoff(
       () =>
         firstValueFrom(
-          this.httpService.get(`${this.catalogUrl}/resources`, {
+          this.httpService.get(`${this.activeEndpoint.catalogUrl}/resources`, {
             params: { per_page: this.catalogPageSize },
           }),
         ),
@@ -130,7 +278,7 @@ export class InterscityReaderService {
         () =>
           firstValueFrom(
             this.httpService.get(
-              `${this.collectorUrl}/resources/${resource.resourceUuid}/data`,
+              `${this.activeEndpoint.collectorUrl}/resources/${resource.resourceUuid}/data`,
             ),
           ),
         this.maxRetries,
