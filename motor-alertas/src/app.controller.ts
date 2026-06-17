@@ -52,4 +52,14 @@ export class AppController {
       interscity,
     };
   }
+
+  @Post('sync')
+  async triggerSync(): Promise<{ status: string; message: string }> {
+    // Roda o ciclo em background para não travar a requisição HTTP
+    this.monitorService.runCycle().catch(console.error);
+    return {
+      status: 'accepted',
+      message: 'Ciclo do monitor de alertas acionado em background.',
+    };
+  }
 }
