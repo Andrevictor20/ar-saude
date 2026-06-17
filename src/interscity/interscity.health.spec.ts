@@ -2,6 +2,7 @@ import { of, throwError } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { InterscityService } from './interscity.service.js';
+import { MetricsService } from '../common/metrics/metrics.service.js';
 
 /**
  * Testa exclusivamente a lógica de healthcheck/failover de endpoints,
@@ -12,6 +13,11 @@ describe('InterscityService — healthcheck e failover', () => {
   const configService = {
     get: <T>(_key: string, def: T): T => def,
   } as unknown as ConfigService;
+
+  /** MetricsService falso — só registra contadores, sem dependências. */
+  const metricsService = {
+    incFailover: () => undefined,
+  } as unknown as MetricsService;
 
   /** Timeouts observados em cada chamada de healthcheck (na ordem). */
   let observedTimeouts: number[] = [];
@@ -35,7 +41,7 @@ describe('InterscityService — healthcheck e failover', () => {
       },
     } as unknown as HttpService;
 
-    return new InterscityService(httpService, configService);
+    return new InterscityService(httpService, configService, metricsService);
   }
 
   const isPrimary = (url: string): boolean => url.includes('lsdi.ufma.br');

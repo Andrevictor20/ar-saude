@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 
 /** Job enfileirado, com payload e contador de tentativas. */
 interface QueueJob<T> {
@@ -23,6 +23,7 @@ export interface QueueOptions {
   concurrency?: number;
   maxAttempts?: number;
   retryDelayMs?: number;
+  drainTimeoutMs?: number;
 }
 
 /**
@@ -35,7 +36,7 @@ export interface QueueOptions {
  * aguardam na fila e são processadas em ritmo controlado.
  */
 @Injectable()
-export class RequestQueueService {
+export class RequestQueueService implements OnModuleDestroy {
   private readonly logger = new Logger(RequestQueueService.name);
 
   private readonly pending: QueueJob<unknown>[] = [];
@@ -52,6 +53,12 @@ export class RequestQueueService {
   private maxAttempts = 5;
   private retryDelayMs = 1000;
 
+  /** Quando true, a fila para de iniciar novos jobs (drenagem para shutdown). */
+  private draining = false;
+
+  /** Tempo máximo de espera pela drenagem dos jobs ativos (ms). */
+  private drainTimeoutMs = 10_000;
+
   /** Ajusta os parâmetros da fila. */
   configure(options: QueueOptions): void {
     if (options.concurrency !== undefined)
@@ -60,6 +67,8 @@ export class RequestQueueService {
       this.maxAttempts = options.maxAttempts;
     if (options.retryDelayMs !== undefined)
       this.retryDelayMs = options.retryDelayMs;
+    if (options.drainTimeoutMs !== undefined)
+      this.drainTimeoutMs = options.drainTimeoutMs;
     this.logger.log(
       `Fila configurada → concorrência=${this.concurrency}, ` +
         `maxTentativas=${this.maxAttempts}, retryBase=${this.retryDelayMs}ms`,
@@ -102,12 +111,42 @@ export class RequestQueueService {
 
   /** Puxa jobs da fila respeitando o limite de concorrência. */
   private drain(): void {
-    if (!this.worker) return;
+    if (!this.worker || this.draining) return;
 
     while (this.active < this.concurrency && this.pending.length > 0) {
       const job = this.pending.shift()!;
       this.active++;
       void this.run(job);
+    }
+  }
+
+  /**
+   * Drenagem para shutdown gracioso: para de iniciar novos jobs e aguarda os
+   * jobs em andamento terminarem (até `drainTimeoutMs`). Chamado pelo Nest via
+   * enableShutdownHooks() no SIGTERM/SIGINT, evitando perder trabalho em voo.
+   */
+  async onModuleDestroy(): Promise<void> {
+    this.draining = true;
+    if (this.active === 0 && this.pending.length === 0) return;
+
+    this.logger.log(
+      `Drenando fila para shutdown — ativos=${this.active}, pendentes=${this.pending.length} ` +
+        `(timeout ${this.drainTimeoutMs}ms)...`,
+    );
+
+    const deadline = Date.now() + this.drainTimeoutMs;
+    while (this.active > 0 && Date.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+
+    if (this.active > 0) {
+      this.logger.warn(
+        `Shutdown com ${this.active} job(s) ainda ativos após o timeout de drenagem.`,
+      );
+    } else {
+      this.logger.log(
+        `Fila drenada. ${this.pending.length} job(s) pendentes não iniciados foram descartados.`,
+      );
     }
   }
 

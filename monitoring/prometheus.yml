@@ -1,0 +1,24 @@
+# Configuração de scrape do Prometheus para a plataforma Ar-Saúde.
+# Os alvos usam os nomes de serviço da rede do docker-compose.
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+scrape_configs:
+  - job_name: 'coletor'
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['coletor:3000']
+        labels:
+          microservice: coletor
+
+  - job_name: 'motor-alertas'
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['motor-alertas:3001']
+        labels:
+          microservice: motor-alertas
+
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']

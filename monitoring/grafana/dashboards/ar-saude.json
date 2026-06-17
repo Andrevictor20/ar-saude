@@ -1,0 +1,129 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "graphTooltip": 0,
+  "schemaVersion": 39,
+  "title": "Ar-Saúde — Observabilidade",
+  "uid": "ar-saude-overview",
+  "tags": ["ar-saude", "microservices"],
+  "time": { "from": "now-15m", "to": "now" },
+  "refresh": "5s",
+  "templating": { "list": [] },
+  "panels": [
+    {
+      "type": "row",
+      "title": "Coletor — Fila & Cache",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 }
+    },
+    {
+      "type": "timeseries",
+      "title": "Fila do Coletor (pendentes / ativos)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 1 },
+      "targets": [
+        { "expr": "arsaude_queue_pending", "legendFormat": "pendentes" },
+        { "expr": "arsaude_queue_active", "legendFormat": "ativos" },
+        { "expr": "arsaude_queue_dead_letter", "legendFormat": "dead-letter" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Taxa de acerto do cache",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "max": 1 } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 1 },
+      "targets": [
+        { "expr": "arsaude_cache_hit_rate", "legendFormat": "hit rate" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Vazão de medições (req/s)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 9 },
+      "targets": [
+        { "expr": "rate(arsaude_measurements_sent_total[1m])", "legendFormat": "enviadas/s" },
+        { "expr": "rate(arsaude_measurements_failed_total[1m])", "legendFormat": "falhas/s" }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "InterSCity — Disponibilidade & Failover",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 17 }
+    },
+    {
+      "type": "stat",
+      "title": "Primário no ar",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "UP", "color": "green" } } }
+          ]
+        }
+      },
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 18 },
+      "targets": [{ "expr": "arsaude_interscity_primary_up" }]
+    },
+    {
+      "type": "stat",
+      "title": "Fallback no ar",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "UP", "color": "green" } } }
+          ]
+        }
+      },
+      "gridPos": { "h": 6, "w": 6, "x": 6, "y": 18 },
+      "targets": [{ "expr": "arsaude_interscity_fallback_up" }]
+    },
+    {
+      "type": "stat",
+      "title": "Failovers (total)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 6, "w": 6, "x": 12, "y": 18 },
+      "targets": [{ "expr": "arsaude_interscity_failover_total" }]
+    },
+    {
+      "type": "timeseries",
+      "title": "Endpoint ativo",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 6, "w": 6, "x": 18, "y": 18 },
+      "targets": [
+        { "expr": "arsaude_interscity_active_endpoint", "legendFormat": "{{endpoint}}" }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "Motor de Alertas",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 24 }
+    },
+    {
+      "type": "stat",
+      "title": "Alertas ativos",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 25 },
+      "targets": [{ "expr": "arsaude_active_alerts" }]
+    },
+    {
+      "type": "timeseries",
+      "title": "Alertas criados / resolvidos (taxa)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 6, "w": 12, "x": 6, "y": 25 },
+      "targets": [
+        { "expr": "rate(arsaude_alerts_created_total[5m])", "legendFormat": "criados/s" },
+        { "expr": "rate(arsaude_alerts_resolved_total[5m])", "legendFormat": "resolvidos/s" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Duração do ciclo do monitor (ms)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "ms" } },
+      "gridPos": { "h": 6, "w": 6, "x": 18, "y": 25 },
+      "targets": [{ "expr": "arsaude_last_cycle_duration_ms" }]
+    }
+  ]
+}

@@ -13,6 +13,7 @@ import {
 } from '../common/interfaces/index.js';
 import { retryWithBackoff } from '../common/utils/retry.util.js';
 import { SAO_LUIS_NEIGHBORHOODS } from '../common/constants/neighborhoods.js';
+import { MetricsService } from '../common/metrics/metrics.service.js';
 
 /** Um destino do InterSCity (catálogo + adaptor). */
 export interface InterscityEndpoint {
@@ -62,6 +63,9 @@ export class InterscityService implements OnModuleInit {
 
   /** Indica se o primeiro healthcheck já rodou. */
   private firstCheckDone = false;
+
+  /** Chaos: quando true, o primário é tratado como DOWN (ver setChaosPrimaryDown). */
+  private chaosPrimaryDown = false;
 
   /** Catálogo do endpoint ativo. */
   private get catalogUrl(): string {
@@ -134,6 +138,7 @@ export class InterscityService implements OnModuleInit {
   constructor(
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
+    private readonly metrics: MetricsService,
   ) {
     // Endpoint primário (LSDI/UFMA) — preferido sempre que estiver no ar.
     this.primaryEndpoint = {
@@ -228,10 +233,19 @@ export class InterscityService implements OnModuleInit {
       );
     }
 
-    const [primaryUp, fallbackUp] = await Promise.all([
+    const [primaryProbe, fallbackUp] = await Promise.all([
       this.isEndpointUp(this.primaryEndpoint, timeoutMs),
       this.isEndpointUp(this.fallbackEndpoint, timeoutMs),
     ]);
+
+    // Chaos engineering: quando ligado, o primário é tratado como DOWN mesmo
+    // que esteja no ar, permitindo demonstrar o failover ao vivo (ver #7).
+    const primaryUp = this.chaosPrimaryDown ? false : primaryProbe;
+    if (this.chaosPrimaryDown) {
+      this.logger.warn(
+        '🧪 [CHAOS] Primário do InterSCity forçado como DOWN (chaos ativo).',
+      );
+    }
 
     this.firstCheckDone = true;
 
@@ -245,6 +259,7 @@ export class InterscityService implements OnModuleInit {
     // ambos down → mantém o ativo atual
 
     if (this.activeEndpoint.name !== previous) {
+      this.metrics.incFailover();
       this.logger.warn(
         `🔀 Failover do InterSCity: endpoint ativo ${previous} → ${this.activeEndpoint.name}`,
       );
@@ -275,6 +290,23 @@ export class InterscityService implements OnModuleInit {
   /** Último retrato de saúde conhecido (sem disparar nova checagem). */
   getHealth(): InterscityHealth {
     return this.health;
+  }
+
+  /**
+   * Chaos engineering: liga/desliga a simulação de queda do primário.
+   * Reavalia a saúde imediatamente para refletir o novo estado.
+   */
+  async setChaosPrimaryDown(down: boolean): Promise<InterscityHealth> {
+    this.chaosPrimaryDown = down;
+    this.logger.warn(
+      `🧪 [CHAOS] Simulação de primário DOWN ${down ? 'ATIVADA' : 'DESATIVADA'}.`,
+    );
+    return this.checkHealth();
+  }
+
+  /** Estado atual da simulação de chaos. */
+  isChaosPrimaryDown(): boolean {
+    return this.chaosPrimaryDown;
   }
 
   /** Registra capabilities e resources ao iniciar o módulo. */

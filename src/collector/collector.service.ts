@@ -12,6 +12,7 @@ import {
   RequestQueueService,
   QueueStats,
 } from '../common/queue/request-queue.service.js';
+import { MetricsService } from '../common/metrics/metrics.service.js';
 import {
   SAO_LUIS_NEIGHBORHOODS,
   Neighborhood,
@@ -38,6 +39,7 @@ export class CollectorService implements OnModuleInit {
     private readonly interscityService: InterscityService,
     private readonly queue: RequestQueueService,
     private readonly configService: ConfigService,
+    private readonly metrics: MetricsService,
   ) {}
 
   /** Configura a fila e registra o worker que processa cada bairro. */
@@ -46,6 +48,10 @@ export class CollectorService implements OnModuleInit {
       concurrency: this.configService.get<number>('QUEUE_CONCURRENCY', 5),
       maxAttempts: this.configService.get<number>('QUEUE_MAX_ATTEMPTS', 5),
       retryDelayMs: this.configService.get<number>('RETRY_BASE_DELAY_MS', 1000),
+      drainTimeoutMs: this.configService.get<number>(
+        'QUEUE_DRAIN_TIMEOUT_MS',
+        10_000,
+      ),
     });
 
     this.queue.setWorker<Neighborhood>((neighborhood) =>
@@ -60,6 +66,7 @@ export class CollectorService implements OnModuleInit {
   })
   handleCollection(): void {
     this.executionCount++;
+    this.metrics.incCollections();
     const executionId = this.executionCount;
 
     this.logger.log('═══════════════════════════════════════════════════');
@@ -122,8 +129,16 @@ export class CollectorService implements OnModuleInit {
 
     const enrichedData = { ...airQualityData, ...extraPollutants };
 
-    await this.interscityService.sendMeasurement(enrichedData);
+    try {
+      await this.interscityService.sendMeasurement(enrichedData);
+    } catch (error) {
+      // Falha após os retries internos: contabiliza e propaga para a fila
+      // reenfileirar/mandar para a dead-letter.
+      this.metrics.incMeasurementFailed();
+      throw error;
+    }
 
+    this.metrics.incMeasurementSent();
     this.logger.log(
       `[3/3] ✅ Medição de ${neighborhood.name} enviada com sucesso!`,
     );

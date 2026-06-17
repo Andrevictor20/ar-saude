@@ -8,11 +8,15 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD:-arsaude}
       POSTGRES_DB: ${DB_NAME:-arsaude_alertas}
     ports:
-      - "${DB_HOST_PORT:-5433}:5432"
+      - '${DB_HOST_PORT:-5433}:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-arsaude} -d ${DB_NAME:-arsaude_alertas}"]
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -U ${DB_USER:-arsaude} -d ${DB_NAME:-arsaude_alertas}',
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -25,7 +29,7 @@ services:
     environment:
       PORT: 3000
       OPEN_METEO_BASE_URL: ${OPEN_METEO_BASE_URL:-https://air-quality-api.open-meteo.com/v1/air-quality}
-      OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY:-}
+      OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY:-313e9589d80e64758e636be87b5ab8dc}
       OPENWEATHER_BASE_URL: ${OPENWEATHER_BASE_URL:-http://api.openweathermap.org/data/2.5/air_pollution}
       INTERSCITY_CATALOG_URL: ${INTERSCITY_CATALOG_URL:-https://interscity.rasppi.cloud/catalog}
       INTERSCITY_ADAPTOR_URL: ${INTERSCITY_ADAPTOR_URL:-https://interscity.rasppi.cloud/adaptor}
@@ -34,8 +38,12 @@ services:
       CRON_COLLECT_INTERVAL: ${CRON_COLLECT_INTERVAL:-*/30 * * * *}
       MAX_RETRIES: ${MAX_RETRIES:-5}
       RETRY_BASE_DELAY_MS: ${RETRY_BASE_DELAY_MS:-1000}
+      # OpenTelemetry → Jaeger (OTLP/HTTP). OTEL_SDK_DISABLED=true desliga.
+      OTEL_SERVICE_NAME: ar-saude-coletor
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://jaeger:4318}
+      OTEL_SDK_DISABLED: ${OTEL_SDK_DISABLED:-false}
     ports:
-      - "${COLETOR_PORT:-3000}:3000"
+      - '${COLETOR_PORT:-3000}:3000'
 
   motor-alertas:
     build:
@@ -59,8 +67,12 @@ services:
       MAX_RETRIES: ${MAX_RETRIES:-5}
       RETRY_BASE_DELAY_MS: ${RETRY_BASE_DELAY_MS:-1000}
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:${FRONTEND_PORT:-3002}}
+      # OpenTelemetry → Jaeger (OTLP/HTTP). OTEL_SDK_DISABLED=true desliga.
+      OTEL_SERVICE_NAME: ar-saude-motor-alertas
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://jaeger:4318}
+      OTEL_SDK_DISABLED: ${OTEL_SDK_DISABLED:-false}
     ports:
-      - "${MOTOR_PORT:-3001}:3001"
+      - '${MOTOR_PORT:-3001}:3001'
 
   frontend:
     build:
@@ -72,7 +84,51 @@ services:
     depends_on:
       - motor-alertas
     ports:
-      - "${FRONTEND_PORT:-3002}:3002"
+      - '${FRONTEND_PORT:-3002}:3002'
+
+  # ── Observabilidade ─────────────────────────────────────────────────────
+  # Jaeger all-in-one: recebe spans via OTLP (4318/HTTP) e mostra os traces.
+  jaeger:
+    image: jaegertracing/all-in-one:1.57
+    container_name: ar-saude-jaeger
+    restart: unless-stopped
+    environment:
+      COLLECTOR_OTLP_ENABLED: 'true'
+    ports:
+      - '${JAEGER_UI_PORT:-16686}:16686' # UI web
+      - '4318:4318' # OTLP/HTTP
+
+  # Prometheus: coleta /metrics dos dois microsserviços.
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: ar-saude-prometheus
+    restart: unless-stopped
+    depends_on:
+      - coletor
+      - motor-alertas
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - '${PROMETHEUS_PORT:-9090}:9090'
+
+  # Grafana: dashboard provisionado (datasource Prometheus + painéis Ar-Saúde).
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: ar-saude-grafana
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: 'false'
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    ports:
+      - '${GRAFANA_PORT:-3003}:3000'
 
 volumes:
   postgres_data:
+  grafana_data:

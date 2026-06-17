@@ -94,7 +94,7 @@ LOAD_PATH=/collect LOAD_METHOD=POST LOAD_STAGES=10,50,100 npm run load:test
 ```
 
 ### 2. Microsserviço 2: Motor de Alertas (Diretório `/motor-alertas` - NestJS)
-É o cérebro avaliativo do sistema. Possui banco de dados embutido (SQLite via TypeORM) e age como consumidor final do barramento da cidade inteligente.
+É o cérebro avaliativo do sistema. Possui banco de dados próprio (**PostgreSQL** via TypeORM, provisionado pelo Docker Compose) e age como consumidor final do barramento da cidade inteligente.
 - Consulta ativamente a API de dados recentes do **InterSCity**.
 - Cruza as concentrações de poluentes contra limiares e diretrizes globais da Organização Mundial da Saúde (OMS 2021).
 - Identifica picos críticos (ex: PM2.5 muito alto) e gera **Alertas** persistentes com base na periculosidade daquela amostra de ar específica para o bairro afetado.
@@ -104,6 +104,7 @@ Interface voltada para o usuário final e gestores, construída em React com foc
 - Fornece um painel robusto contendo o histórico temporal da poluição, estatísticas gerais e um mapa geolocalizado de calor de São Luís.
 - Suporta **Light Mode** e **Dark Mode**.
 - Contém explicações toxicológicas sobre os poluentes exibidos nas colunas de dados (tooltips) e a respectiva margem de segurança da OMS, traduzindo dados brutos em orientações amigáveis.
+- **Alertas em tempo real**: além do polling periódico, o painel se inscreve no fluxo **SSE** (`GET /alerts/stream`) do Motor de Alertas e reage na hora a cada alerta criado/resolvido.
 
 ---
 
@@ -140,16 +141,75 @@ Na raiz do repositório, faça o *build* estrutural e levante os containers:
 docker-compose up --build
 ```
 
-O comando irá criar, compilar e executar de forma orquestrada as três instâncias:
+O comando irá criar, compilar e executar de forma orquestrada todos os serviços:
 - 🌬️ `coletor-ar` na porta **3000** (Responsável por rodar o cron de coleta)
 - 🚨 `motor-alertas` na porta **3001** (Fornecedor da API de dados consumíveis)
 - 📊 `frontend` na porta **3002** (Servidor web SSR para a interface)
+- 🐘 `postgres` na porta **5433** (Banco do Motor de Alertas)
+- 📈 `prometheus` na porta **9090** (Coleta as métricas dos microsserviços)
+- 📊 `grafana` na porta **3003** (Dashboards de observabilidade — `admin`/`admin`)
+- 🔭 `jaeger` na porta **16686** (Tracing distribuído)
 
 ### Passo 3: Acessando a Aplicação
 Com os terminais rodando limpos sem erros:
-- Abra seu navegador de internet e vá até: **http://localhost:3002** para acessar o **Dashboard Web**.
+- **Dashboard Web**: **http://localhost:3002**
+- **Grafana** (dashboard Ar-Saúde já provisionado): **http://localhost:3003**
+- **Prometheus**: **http://localhost:9090**
+- **Jaeger** (traces): **http://localhost:16686**
 
 > **Nota**: Ao rodar pela primeiríssima vez, a página inicial pode demorar de 10 a 20 segundos para popular a tabela de bairros, pois o Coletor precisa executar o primeiro turno do *Cron Job* em segundo plano, ir até as APIs externas e enviar a primeira leva pro banco de dados da nuvem.
+
+---
+
+## 📈 Observabilidade (Métricas + Tracing)
+
+A plataforma é instrumentada de ponta a ponta para inspeção em tempo real.
+
+### Métricas (Prometheus + Grafana)
+Ambos os microsserviços expõem `GET /metrics` no formato Prometheus:
+- **Coletor**: fila (pendentes, ativos, processados, falhos, dead-letter), cache (hits/misses/hit rate), InterSCity (primário/fallback up, endpoint ativo, total de failovers), coletas e medições enviadas/falhas.
+- **Motor de Alertas**: ciclos de monitoramento, leituras salvas/avaliadas, alertas criados/atualizados/resolvidos, alertas ativos e duração do último ciclo.
+
+O **Prometheus** (`:9090`) faz scrape dos dois serviços a cada 5s e o **Grafana** (`:3003`, `admin`/`admin`) já vem com o dashboard **"Ar-Saúde — Observabilidade"** provisionado.
+
+```bash
+curl http://localhost:3000/metrics   # métricas do Coletor
+curl http://localhost:3001/metrics   # métricas do Motor de Alertas
+```
+
+### Tracing distribuído (OpenTelemetry + Jaeger)
+Cada serviço inicializa o **OpenTelemetry** (`src/tracing.ts`, carregado antes de tudo no `main.ts`) com auto-instrumentação de HTTP/Express/Nest/axios, exportando spans via **OTLP/HTTP** para o **Jaeger** (`:16686`). Assim é possível seguir um trace atravessando *Coletor → Kong → InterSCity* e *Motor → InterSCity*.
+
+Controlado por variáveis padrão do OTel: `OTEL_SERVICE_NAME`, `OTEL_EXPORTER_OTLP_ENDPOINT` e `OTEL_SDK_DISABLED=true` (para desligar). Rodando fora do Docker:
+
+```bash
+OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318 npm run start:dev
+```
+
+---
+
+## 🧪 Chaos Test — Failover do InterSCity ao vivo
+
+Para **comprovar** (e não só descrever) o failover automático, há um teste de chaos que derruba o primário do InterSCity no meio da operação e observa o endpoint ativo migrar para o fallback — e voltar quando o primário se recupera.
+
+```bash
+# 1) suba o coletor
+npm run start:dev
+
+# 2) em outro terminal, rode o chaos test
+npm run chaos:test
+```
+
+Ele usa o endpoint de chaos (também útil manualmente):
+
+```bash
+# força o primário como DOWN → failover para o fallback
+curl -X POST http://localhost:3000/chaos/interscity-primary -H 'Content-Type: application/json' -d '{"down":true}'
+# recupera o primário
+curl -X POST http://localhost:3000/chaos/interscity-primary -H 'Content-Type: application/json' -d '{"down":false}'
+```
+
+> **Shutdown gracioso**: no `SIGTERM`/`SIGINT` o Coletor para de iniciar novos jobs e **drena** os que estão em andamento (até `QUEUE_DRAIN_TIMEOUT_MS`, padrão 10s) antes de encerrar, evitando perder trabalho em voo.
 
 ---
 

@@ -4,6 +4,7 @@ import { Cron } from '@nestjs/schedule';
 import { InterscityReaderService } from '../interscity/interscity-reader.service';
 import { MeasurementsService } from '../measurements/measurements.service';
 import { AlertsService } from '../alerts/alerts.service';
+import { MetricsService } from '../metrics/metrics.service';
 
 @Injectable()
 export class MonitorService implements OnModuleInit {
@@ -15,6 +16,7 @@ export class MonitorService implements OnModuleInit {
     private readonly reader: InterscityReaderService,
     private readonly measurements: MeasurementsService,
     private readonly alerts: AlertsService,
+    private readonly metrics: MetricsService,
   ) {}
 
   onModuleInit(): void {
@@ -84,6 +86,12 @@ export class MonitorService implements OnModuleInit {
     }
 
     const elapsed = Date.now() - startedAt;
+    this.metrics.recordCycle({
+      resources: resources.length,
+      saved,
+      evaluated,
+      durationMs: elapsed,
+    });
     this.logger.log(
       `Ciclo #${cycleId} concluido em ${elapsed}ms. Avaliados: ${evaluated}, novas medicoes: ${saved}.`,
     );

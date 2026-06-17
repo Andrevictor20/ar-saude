@@ -10,6 +10,7 @@ import PollutantsLegend from '@/components/PollutantsLegend';
 import HistoryChart from '@/components/HistoryChart';
 
 import {
+  apiBaseUrl,
   getActiveAlerts,
   getHistory,
   getLatestMeasurements,
@@ -75,6 +76,29 @@ export default function DashboardPage() {
     const timer = setInterval(() => void load(), REFRESH_MS);
     return () => clearInterval(timer);
   }, [load]);
+
+  // Alertas em tempo real via Server-Sent Events (push do Motor de Alertas).
+  // Em vez de depender só do polling, reagimos a cada evento created/resolved.
+  useEffect(() => {
+    const source = new EventSource(`${apiBaseUrl}/alerts/stream`);
+
+    const refreshAlerts = () => {
+      getActiveAlerts()
+        .then((a) => {
+          setAlerts(a);
+          setConnected(true);
+          setUpdatedAt(new Date());
+        })
+        .catch(() => undefined);
+    };
+
+    source.addEventListener('created', refreshAlerts);
+    source.addEventListener('resolved', refreshAlerts);
+    source.addEventListener('updated', refreshAlerts);
+    source.onerror = () => setConnected(false);
+
+    return () => source.close();
+  }, []);
 
   useEffect(() => {
     const stored = localStorage.getItem('arSaudeTheme');

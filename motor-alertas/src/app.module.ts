@@ -10,6 +10,7 @@ import { MeasurementsModule } from './measurements/measurements.module';
 import { AlertsModule } from './alerts/alerts.module';
 import { InterscityModule } from './interscity/interscity.module';
 import { MonitorModule } from './monitor/monitor.module';
+import { MetricsModule } from './metrics/metrics.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { MonitorModule } from './monitor/monitor.module';
     AlertsModule,
     InterscityModule,
     MonitorModule,
+    MetricsModule,
   ],
   controllers: [AppController],
 })
