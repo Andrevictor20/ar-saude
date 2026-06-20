@@ -10,7 +10,7 @@ O projeto foi construído utilizando **TypeScript**, **Nest.js**, e **Next.js**,
 
 O sistema foi arquitetado para ser resiliente e distribuído em múltiplos ambientes, garantindo alta disponibilidade. A topologia de produção divide a carga de processamento e os serviços da seguinte maneira:
 
-### 🍓 1. Raspberry Pi 4 (IP Interno: `192.168.100.17`)
+### 🍓 1. Raspberry Pi 4 
 O hardware principal responsável por rodar os microsserviços da aplicação, a interface do usuário e a camada de observabilidade.
 - **Microsserviço 1 (Coletor)**: Roda internamente na porta **3000**.
 - **Microsserviço 2 (Motor de Alertas)**: Roda na porta **3001**.
@@ -20,7 +20,7 @@ O hardware principal responsável por rodar os microsserviços da aplicação, a
   - **Grafana**: Porta **3003**.
   - **Jaeger** (Tracing): Porta **16686**.
 
-### 💻 2. Máquina Virtual Debian 12 (IP Interno: `10.0.2.15`)
+### 💻 2. Máquina Virtual Debian 12 
 Uma VM dedicada a atuar como nó de fallback para a plataforma InterSCity e gerenciar o tráfego da API.
 - **InterSCity (Instância de Fallback)**: Roda na porta **8000**.
 - **Kong API Gateway**: Roda na porta **8001**, atuando como proxy reverso e gerenciador de APIs para o InterSCity.
