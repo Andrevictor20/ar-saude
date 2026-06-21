@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { Measurement } from '@/lib/types';
 import { aqiColor, formatNumber, formatTime, levelColor } from '@/lib/format';
+import { exportToCsv, exportToXlsx, exportToPdf } from '@/lib/exportUtils';
 
 interface Props {
   measurements: Measurement[];
@@ -25,11 +26,52 @@ export default function NeighborhoodTable({
     return [...list].sort((a, b) => (b.aqi ?? -1) - (a.aqi ?? -1));
   }, [measurements, query]);
 
+  const btnStyle = {
+    background: 'var(--panel-2)',
+    border: '1px solid var(--border)',
+    color: 'var(--text-muted)',
+    borderRadius: '6px',
+    padding: '6px 12px',
+    fontSize: '12px',
+    fontWeight: 600,
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+  };
+
   return (
     <div className="panel">
       <div className="panel-header">
         <h2>Qualidade do ar por bairro</h2>
         <div className="toolbar">
+          <div style={{ display: 'flex', gap: '6px', marginRight: '8px' }}>
+            <button
+              onClick={() => exportToCsv(measurements, 'qualidade_ar_bairros')}
+              style={btnStyle}
+              onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text)')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
+              title="Baixar todos em CSV"
+            >
+              CSV
+            </button>
+            <button
+              onClick={() => exportToXlsx(measurements, 'qualidade_ar_bairros')}
+              style={btnStyle}
+              onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text)')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
+              title="Baixar todos em XLSX"
+            >
+              XLSX
+            </button>
+            <button
+              onClick={() => exportToPdf(measurements, 'qualidade_ar_bairros', 'Relatório de Qualidade do Ar - Todos os Bairros')}
+              style={btnStyle}
+              onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text)')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
+              title="Baixar todos em PDF"
+            >
+              PDF
+            </button>
+          </div>
           <input
             type="text"
             placeholder="Buscar bairro..."

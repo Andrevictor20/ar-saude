@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Measurement } from '@/lib/types';
 import { aqiColor, formatNumber, formatDateTime } from '@/lib/format';
+import { exportToCsv, exportToXlsx, exportToPdf } from '@/lib/exportUtils';
 
 /* ─── Types ─── */
 interface HistoryPointData {
@@ -176,6 +177,67 @@ export default function HistoryChart({
           <span className="muted" style={{ marginLeft: 8 }}>
             {neighborhoodName ?? 'Selecione um bairro'}
           </span>
+          {neighborhoodName && filteredHistory.length > 0 && (
+            <div style={{ display: 'flex', gap: '6px', marginLeft: 'auto' }}>
+              <button
+                onClick={() => exportToCsv(filteredHistory, `historico_${neighborhoodName}`)}
+                style={{
+                  background: 'var(--panel-2)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text-muted)',
+                  borderRadius: '6px',
+                  padding: '4px 10px',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text)')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
+                title="Baixar em CSV"
+              >
+                CSV
+              </button>
+              <button
+                onClick={() => exportToXlsx(filteredHistory, `historico_${neighborhoodName}`)}
+                style={{
+                  background: 'var(--panel-2)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text-muted)',
+                  borderRadius: '6px',
+                  padding: '4px 10px',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text)')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
+                title="Baixar em XLSX"
+              >
+                XLSX
+              </button>
+              <button
+                onClick={() => exportToPdf(filteredHistory, `historico_${neighborhoodName}`, `Relatório de Qualidade do Ar - ${neighborhoodName}`)}
+                style={{
+                  background: 'var(--panel-2)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text-muted)',
+                  borderRadius: '6px',
+                  padding: '4px 10px',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text)')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
+                title="Baixar em PDF"
+              >
+                PDF
+              </button>
+            </div>
+          )}
         </div>
       </div>
       <div className="panel-body">
