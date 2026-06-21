@@ -92,12 +92,12 @@ export class CollectorService implements OnModuleInit {
    * InterSCity. Lança erro em caso de falha no envio, para que a fila reenfileire.
    */
   private async processNeighborhood(neighborhood: Neighborhood): Promise<void> {
-    this.logger.log(`--- Bairro: ${neighborhood.name} ---`);
+    this.logger.debug(`--- Bairro: ${neighborhood.name} ---`);
 
     const airQualityData =
       await this.openMeteoService.fetchAirQuality(neighborhood);
 
-    this.logger.log(
+    this.logger.debug(
       `[1/3] ✅ Open-Meteo — AQI: ${airQualityData.aqi} (${airQualityData.level}) | ` +
         `PM10: ${airQualityData.pm10} | PM2.5: ${airQualityData.pm2_5} | ` +
         `NO₂: ${airQualityData.no2} | O₃: ${airQualityData.ozone}`,
@@ -115,7 +115,7 @@ export class CollectorService implements OnModuleInit {
         neighborhood.longitude,
         neighborhood.name,
       );
-      this.logger.log(
+      this.logger.debug(
         `[2/3] ✅ OpenWeather — CO: ${extraPollutants.co} | SO₂: ${extraPollutants.so2} | ` +
           `NH₃: ${extraPollutants.nh3} | NO: ${extraPollutants.no}`,
       );
@@ -139,7 +139,7 @@ export class CollectorService implements OnModuleInit {
     }
 
     this.metrics.incMeasurementSent();
-    this.logger.log(
+    this.logger.debug(
       `[3/3] ✅ Medição de ${neighborhood.name} enviada com sucesso!`,
     );
   }

@@ -4,32 +4,29 @@ import {
   NotFoundException,
   Param,
   Query,
-} from '@nestjs/common';
+} from "@nestjs/common";
 
-import {
-  DashboardStats,
-  MeasurementsService,
-} from './measurements.service';
-import { Measurement } from '../entities/measurement.entity';
+import { DashboardStats, MeasurementsService } from "./measurements.service";
+import { Measurement } from "../entities/measurement.entity";
 
-@Controller('measurements')
+@Controller("measurements")
 export class MeasurementsController {
   constructor(private readonly measurementsService: MeasurementsService) {}
 
-  @Get('latest')
+  @Get("latest")
   findLatest(): Promise<Measurement[]> {
     return this.measurementsService.findLatestPerNeighborhood();
   }
 
-  @Get('stats')
+  @Get("stats")
   getStats(): Promise<DashboardStats> {
     return this.measurementsService.getStats();
   }
 
-  @Get('history')
+  @Get("history")
   findHistory(
-    @Query('neighborhoodId') neighborhoodId: string,
-    @Query('limit') limit?: string,
+    @Query("neighborhoodId") neighborhoodId: string,
+    @Query("limit") limit?: string,
   ): Promise<Measurement[]> {
     return this.measurementsService.findHistory(
       neighborhoodId,
@@ -37,17 +34,17 @@ export class MeasurementsController {
     );
   }
 
-  @Get('export')
+  @Get("export")
   exportData(
-    @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string,
+    @Query("startDate") startDate?: string,
+    @Query("endDate") endDate?: string,
   ): Promise<Measurement[]> {
     return this.measurementsService.exportData(startDate, endDate);
   }
 
-  @Get('latest/:neighborhoodId')
+  @Get("latest/:neighborhoodId")
   async findLatestForNeighborhood(
-    @Param('neighborhoodId') neighborhoodId: string,
+    @Param("neighborhoodId") neighborhoodId: string,
   ): Promise<Measurement> {
     const measurement =
       await this.measurementsService.findLatestForNeighborhood(neighborhoodId);

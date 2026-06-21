@@ -1,7 +1,7 @@
-import { Module } from '@nestjs/common';
-import { HttpModule } from '@nestjs/axios';
-import { InterscityReaderService } from './interscity-reader.service';
-import * as https from 'https'; // <-- 1. Importação necessária
+import { Module } from "@nestjs/common";
+import { HttpModule } from "@nestjs/axios";
+import { InterscityReaderService } from "./interscity-reader.service";
+import * as https from "https"; // <-- 1. Importação necessária
 
 @Module({
   imports: [

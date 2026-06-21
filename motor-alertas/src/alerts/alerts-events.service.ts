@@ -1,9 +1,9 @@
-import { Injectable } from '@nestjs/common';
-import { Observable, Subject } from 'rxjs';
-import { Alert } from '../entities/alert.entity';
-import { MetricsService } from '../metrics/metrics.service';
+import { Injectable } from "@nestjs/common";
+import { Observable, Subject } from "rxjs";
+import { Alert } from "../entities/alert.entity";
+import { MetricsService } from "../metrics/metrics.service";
 
-export type AlertEventType = 'created' | 'updated' | 'resolved';
+export type AlertEventType = "created" | "updated" | "resolved";
 
 export interface AlertEvent {
   type: AlertEventType;

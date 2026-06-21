@@ -22,10 +22,12 @@ import { CollectorModule } from './collector/collector.module.js';
       envFilePath: '.env',
     }),
 
-    ThrottlerModule.forRoot([{
-      ttl: 60000,
-      limit: 100,
-    }]),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 100,
+      },
+    ]),
 
     ScheduleModule.forRoot(),
 

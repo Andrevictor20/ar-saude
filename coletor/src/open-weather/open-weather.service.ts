@@ -13,6 +13,17 @@ export interface ExtraPollutants {
   no: number | null;
 }
 
+interface OpenWeatherApiResponse {
+  list?: Array<{
+    components?: {
+      co?: number;
+      so2?: number;
+      nh3?: number;
+      no?: number;
+    };
+  }>;
+}
+
 @Injectable()
 export class OpenWeatherService {
   private readonly logger = new Logger(OpenWeatherService.name);
@@ -55,7 +66,7 @@ export class OpenWeatherService {
       return { co: null, so2: null, nh3: null, no: null };
     }
 
-    this.logger.log(
+    this.logger.debug(
       `Coletando dados extras para ${neighborhoodName} via OpenWeatherMap...`,
     );
 
@@ -76,6 +87,8 @@ export class OpenWeatherService {
     return data;
   }
 
+
+
   private async callOpenWeatherApi(
     latitude: number,
     longitude: number,
@@ -87,7 +100,7 @@ export class OpenWeatherService {
     };
 
     const response = await firstValueFrom(
-      this.httpService.get(this.baseUrl, { params }),
+      this.httpService.get<OpenWeatherApiResponse>(this.baseUrl, { params }),
     );
 
     const components = response.data?.list?.[0]?.components;

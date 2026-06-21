@@ -30,10 +30,9 @@ const sdk = new NodeSDK({
 if (!disabled) {
   try {
     sdk.start();
-    // eslint-disable-next-line no-console
+
     console.log('🔭 OpenTelemetry tracing iniciado (Coletor).');
   } catch (error) {
-    // eslint-disable-next-line no-console
     console.error('Falha ao iniciar OpenTelemetry:', error);
   }
 

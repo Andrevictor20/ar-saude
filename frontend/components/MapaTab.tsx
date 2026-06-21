@@ -116,7 +116,6 @@ export default function MapaTab({ measurements, stats }: MapaTabProps) {
     const map = mapInstanceRef.current;
     if (!map) return;
     if (!geoJsonData || !geoJsonData.features) {
-      console.log('GeoJSON Data não carregado ou sem features:', geoJsonData);
       return;
     }
 
@@ -126,8 +125,6 @@ export default function MapaTab({ measurements, stats }: MapaTabProps) {
     if (dynamicLayersRef.current) {
       map.removeLayer(dynamicLayersRef.current);
     }
-
-    console.log('Adicionando GeoJSON com', geoJsonData.features.length, 'bairros.');
 
     dynamicLayersRef.current = L.featureGroup().addTo(map);
     const dynamicLayers = dynamicLayersRef.current;

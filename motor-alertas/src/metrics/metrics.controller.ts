@@ -1,7 +1,7 @@
-import { Controller, Get, Header } from '@nestjs/common';
+import { Controller, Get, Header } from "@nestjs/common";
 
-import { MetricsService } from './metrics.service';
-import { AlertsService } from '../alerts/alerts.service';
+import { MetricsService } from "./metrics.service";
+import { AlertsService } from "../alerts/alerts.service";
 
 /** Expõe as métricas do Motor de Alertas no formato Prometheus. */
 @Controller()
@@ -12,8 +12,8 @@ export class MetricsController {
   ) {}
 
   /** GET /metrics — formato de exposição do Prometheus. */
-  @Get('metrics')
-  @Header('Content-Type', 'text/plain; version=0.0.4; charset=utf-8')
+  @Get("metrics")
+  @Header("Content-Type", "text/plain; version=0.0.4; charset=utf-8")
   async scrape(): Promise<string> {
     this.metrics.updateRuntimeGauges({
       activeAlerts: await this.alerts.countActive(),

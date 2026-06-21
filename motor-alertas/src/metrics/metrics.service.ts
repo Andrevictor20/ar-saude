@@ -1,5 +1,5 @@
-import { Injectable } from '@nestjs/common';
-import * as client from 'prom-client';
+import { Injectable } from "@nestjs/common";
+import * as client from "prom-client";
 
 /** Resumo de um ciclo do monitor, para as métricas. */
 export interface MonitorCycleResult {
@@ -21,49 +21,49 @@ export class MetricsService {
   readonly registry = new client.Registry();
 
   private readonly monitorCyclesTotal = new client.Counter({
-    name: 'arsaude_monitor_cycles_total',
-    help: 'Total de ciclos de monitoramento executados.',
+    name: "arsaude_monitor_cycles_total",
+    help: "Total de ciclos de monitoramento executados.",
   });
   private readonly readingsSavedTotal = new client.Counter({
-    name: 'arsaude_readings_saved_total',
-    help: 'Total de leituras persistidas.',
+    name: "arsaude_readings_saved_total",
+    help: "Total de leituras persistidas.",
   });
   private readonly readingsEvaluatedTotal = new client.Counter({
-    name: 'arsaude_readings_evaluated_total',
-    help: 'Total de leituras avaliadas contra os limiares da OMS.',
+    name: "arsaude_readings_evaluated_total",
+    help: "Total de leituras avaliadas contra os limiares da OMS.",
   });
   private readonly alertsCreatedTotal = new client.Counter({
-    name: 'arsaude_alerts_created_total',
-    help: 'Total de alertas criados.',
+    name: "arsaude_alerts_created_total",
+    help: "Total de alertas criados.",
   });
   private readonly alertsUpdatedTotal = new client.Counter({
-    name: 'arsaude_alerts_updated_total',
-    help: 'Total de alertas atualizados.',
+    name: "arsaude_alerts_updated_total",
+    help: "Total de alertas atualizados.",
   });
   private readonly alertsResolvedTotal = new client.Counter({
-    name: 'arsaude_alerts_resolved_total',
-    help: 'Total de alertas resolvidos.',
+    name: "arsaude_alerts_resolved_total",
+    help: "Total de alertas resolvidos.",
   });
 
   private readonly activeAlerts = new client.Gauge({
-    name: 'arsaude_active_alerts',
-    help: 'Alertas atualmente ativos.',
+    name: "arsaude_active_alerts",
+    help: "Alertas atualmente ativos.",
   });
   private readonly aqiThreshold = new client.Gauge({
-    name: 'arsaude_aqi_threshold',
-    help: 'Limiar de AQI configurado para disparar alertas.',
+    name: "arsaude_aqi_threshold",
+    help: "Limiar de AQI configurado para disparar alertas.",
   });
   private readonly lastCycleResources = new client.Gauge({
-    name: 'arsaude_last_cycle_resources',
-    help: 'Recursos Ar-Saúde encontrados no último ciclo.',
+    name: "arsaude_last_cycle_resources",
+    help: "Recursos Ar-Saúde encontrados no último ciclo.",
   });
   private readonly lastCycleDurationMs = new client.Gauge({
-    name: 'arsaude_last_cycle_duration_ms',
-    help: 'Duração do último ciclo de monitoramento (ms).',
+    name: "arsaude_last_cycle_duration_ms",
+    help: "Duração do último ciclo de monitoramento (ms).",
   });
 
   constructor() {
-    this.registry.setDefaultLabels({ service: 'ar-saude-motor-alertas' });
+    this.registry.setDefaultLabels({ service: "ar-saude-motor-alertas" });
     client.collectDefaultMetrics({ register: this.registry });
     for (const metric of [
       this.monitorCyclesTotal,
@@ -91,9 +91,9 @@ export class MetricsService {
   }
 
   /** Incrementa o contador correspondente ao tipo de evento de alerta. */
-  recordAlertEvent(type: 'created' | 'updated' | 'resolved'): void {
-    if (type === 'created') this.alertsCreatedTotal.inc();
-    else if (type === 'updated') this.alertsUpdatedTotal.inc();
+  recordAlertEvent(type: "created" | "updated" | "resolved"): void {
+    if (type === "created") this.alertsCreatedTotal.inc();
+    else if (type === "updated") this.alertsUpdatedTotal.inc();
     else this.alertsResolvedTotal.inc();
   }
 

@@ -1,8 +1,8 @@
-import { Global, Module } from '@nestjs/common';
+import { Global, Module } from "@nestjs/common";
 
-import { MetricsService } from './metrics.service';
-import { MetricsController } from './metrics.controller';
-import { AlertsModule } from '../alerts/alerts.module';
+import { MetricsService } from "./metrics.service";
+import { MetricsController } from "./metrics.controller";
+import { AlertsModule } from "../alerts/alerts.module";
 
 /**
  * Módulo global de métricas. Disponibiliza o MetricsService para qualquer

@@ -1,11 +1,11 @@
-import { Controller, Get, Post, Body } from '@nestjs/common';
+import { Controller, Get, Post, Body } from "@nestjs/common";
 
-import { AlertsService } from './alerts/alerts.service';
-import { MonitorService } from './monitor/monitor.service';
+import { AlertsService } from "./alerts/alerts.service";
+import { MonitorService } from "./monitor/monitor.service";
 import {
   InterscityReaderService,
   InterscityHealth,
-} from './interscity/interscity-reader.service';
+} from "./interscity/interscity-reader.service";
 
 @Controller()
 export class AppController {
@@ -26,8 +26,8 @@ export class AppController {
     timestamp: string;
   }> {
     return {
-      status: 'ok',
-      service: 'ar-saude-motor-alertas',
+      status: "ok",
+      service: "ar-saude-motor-alertas",
       aqiThreshold: this.alertsService.getThreshold(),
       activeAlerts: await this.alertsService.countActive(),
       monitorCycles: this.monitorService.getCycleCount(),
@@ -36,12 +36,12 @@ export class AppController {
     };
   }
 
-  @Get('interscity/health')
+  @Get("interscity/health")
   checkInterscity(): Promise<InterscityHealth> {
     return this.interscityReader.checkHealth();
   }
 
-  @Post('chaos/interscity-primary')
+  @Post("chaos/interscity-primary")
   async chaosInterscityPrimary(
     @Body() body: { down?: boolean },
   ): Promise<{ chaosPrimaryDown: boolean; interscity: InterscityHealth }> {
@@ -53,13 +53,13 @@ export class AppController {
     };
   }
 
-  @Post('sync')
+  @Post("sync")
   async triggerSync(): Promise<{ status: string; message: string }> {
     // Roda o ciclo em background para não travar a requisição HTTP
     this.monitorService.runCycle().catch(console.error);
     return {
-      status: 'accepted',
-      message: 'Ciclo do monitor de alertas acionado em background.',
+      status: "accepted",
+      message: "Ciclo do monitor de alertas acionado em background.",
     };
   }
 }

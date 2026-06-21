@@ -163,8 +163,14 @@ export class MetricsService {
 
     this.interscityPrimaryUp.set(interscity.primaryUp ? 1 : 0);
     this.interscityFallbackUp.set(interscity.fallbackUp ? 1 : 0);
-    this.interscityActive.set({ endpoint: 'primary' }, interscity.active === 'primary' ? 1 : 0);
-    this.interscityActive.set({ endpoint: 'fallback' }, interscity.active === 'fallback' ? 1 : 0);
+    this.interscityActive.set(
+      { endpoint: 'primary' },
+      interscity.active === 'primary' ? 1 : 0,
+    );
+    this.interscityActive.set(
+      { endpoint: 'fallback' },
+      interscity.active === 'fallback' ? 1 : 0,
+    );
   }
 
   /** Texto no formato de exposição do Prometheus. */

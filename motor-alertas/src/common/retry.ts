@@ -1,12 +1,12 @@
-import { Logger } from '@nestjs/common';
+import { Logger } from "@nestjs/common";
 
-const logger = new Logger('RetryUtil');
+const logger = new Logger("RetryUtil");
 
 export async function retryWithBackoff<T>(
   fn: () => Promise<T>,
   maxRetries = 5,
   baseDelayMs = 1000,
-  context = 'retryWithBackoff',
+  context = "retryWithBackoff",
   shouldRetry?: (error: unknown) => boolean,
 ): Promise<T> {
   let lastError: Error | undefined;

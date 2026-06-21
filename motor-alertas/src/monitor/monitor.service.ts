@@ -1,10 +1,10 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { Cron } from '@nestjs/schedule';
+import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
+import { Cron } from "@nestjs/schedule";
 
-import { InterscityReaderService } from '../interscity/interscity-reader.service';
-import { MeasurementsService } from '../measurements/measurements.service';
-import { AlertsService } from '../alerts/alerts.service';
-import { MetricsService } from '../metrics/metrics.service';
+import { InterscityReaderService } from "../interscity/interscity-reader.service";
+import { MeasurementsService } from "../measurements/measurements.service";
+import { AlertsService } from "../alerts/alerts.service";
+import { MetricsService } from "../metrics/metrics.service";
 
 @Injectable()
 export class MonitorService implements OnModuleInit {
@@ -25,9 +25,9 @@ export class MonitorService implements OnModuleInit {
     }, 3000);
   }
 
-  @Cron(process.env.MONITOR_INTERVAL ?? '*/1 * * * *', {
-    name: 'air-quality-monitor',
-    timeZone: 'America/Sao_Paulo',
+  @Cron(process.env.MONITOR_INTERVAL ?? "*/1 * * * *", {
+    name: "air-quality-monitor",
+    timeZone: "America/Sao_Paulo",
   })
   async handleCron(): Promise<void> {
     await this.runCycle();
@@ -35,7 +35,7 @@ export class MonitorService implements OnModuleInit {
 
   async runCycle(): Promise<void> {
     if (this.running) {
-      this.logger.warn('Ciclo anterior ainda em execucao. Pulando.');
+      this.logger.warn("Ciclo anterior ainda em execucao. Pulando.");
       return;
     }
 

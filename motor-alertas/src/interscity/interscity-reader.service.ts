@@ -1,16 +1,12 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { HttpService } from '@nestjs/axios';
-import { ConfigService } from '@nestjs/config';
-import { Interval } from '@nestjs/schedule';
-import { firstValueFrom } from 'rxjs';
+import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
+import { HttpService } from "@nestjs/axios";
+import { ConfigService } from "@nestjs/config";
+import { Interval } from "@nestjs/schedule";
+import { firstValueFrom } from "rxjs";
 
-import { retryWithBackoff } from '../common/retry';
-import {
-  AirQualityLevel,
-  classifyAqi,
-  slugify,
-} from '../common/air-quality';
-import { SAO_LUIS_NEIGHBORHOODS } from '../common/constants/neighborhoods';
+import { retryWithBackoff } from "../common/retry";
+import { AirQualityLevel, classifyAqi, slugify } from "../common/air-quality";
+import { SAO_LUIS_NEIGHBORHOODS } from "../common/constants/neighborhoods";
 
 export interface InterscityEndpoint {
   name: string;
@@ -52,7 +48,7 @@ export interface InterscityReading {
   measuredAt: Date;
 }
 
-const RESOURCE_DESCRIPTION_PREFIX = 'Monitoramento Ar-Saude - Bairro: ';
+const RESOURCE_DESCRIPTION_PREFIX = "Monitoramento Ar-Saude - Bairro: ";
 
 interface SeriesEntry {
   value: unknown;
@@ -69,7 +65,7 @@ export class InterscityReaderService implements OnModuleInit {
   private activeEndpoint: InterscityEndpoint;
 
   private health: InterscityHealth = {
-    active: '',
+    active: "",
     primaryUp: false,
     fallbackUp: false,
     lastCheckedAt: null,
@@ -89,51 +85,53 @@ export class InterscityReaderService implements OnModuleInit {
     private readonly configService: ConfigService,
   ) {
     this.primaryEndpoint = {
-      name: 'primary',
+      name: "primary",
       catalogUrl: this.configService.get<string>(
-        'INTERSCITY_CATALOG_URL',
-        'https://cidadesinteligentes.lsdi.ufma.br/interscity_lh/catalog',
+        "INTERSCITY_CATALOG_URL",
+        "https://cidadesinteligentes.lsdi.ufma.br/interscity_lh/catalog",
       ),
       collectorUrl: this.configService.get<string>(
-        'INTERSCITY_COLLECTOR_URL',
-        'https://cidadesinteligentes.lsdi.ufma.br/interscity_lh/collector',
+        "INTERSCITY_COLLECTOR_URL",
+        "https://cidadesinteligentes.lsdi.ufma.br/interscity_lh/collector",
       ),
     };
 
     this.fallbackEndpoint = {
-      name: 'fallback',
+      name: "fallback",
       catalogUrl: this.configService.get<string>(
-        'INTERSCITY_CATALOG_URL_FALLBACK',
-        'https://interscity.rasppi.cloud/catalog',
+        "INTERSCITY_CATALOG_URL_FALLBACK",
+        "https://interscity.rasppi.cloud/catalog",
       ),
       collectorUrl: this.configService.get<string>(
-        'INTERSCITY_COLLECTOR_URL_FALLBACK',
-        'https://interscity.rasppi.cloud/collector',
+        "INTERSCITY_COLLECTOR_URL_FALLBACK",
+        "https://interscity.rasppi.cloud/collector",
       ),
     };
 
     this.activeEndpoint = this.primaryEndpoint;
     this.health.active = this.activeEndpoint.name;
 
-    this.maxRetries = Number(this.configService.get('MAX_RETRIES', 5));
+    this.maxRetries = Number(this.configService.get("MAX_RETRIES", 5));
     this.retryBaseDelay = Number(
-      this.configService.get('RETRY_BASE_DELAY_MS', 1000),
+      this.configService.get("RETRY_BASE_DELAY_MS", 1000),
     );
     this.catalogPageSize = Number(
-      this.configService.get('CATALOG_PAGE_SIZE', 500),
+      this.configService.get("CATALOG_PAGE_SIZE", 500),
     );
     this.healthTimeoutMs = this.configService.get<number>(
-      'INTERSCITY_HEALTH_TIMEOUT_MS',
+      "INTERSCITY_HEALTH_TIMEOUT_MS",
       8000,
     );
     this.firstHealthTimeoutMs = this.configService.get<number>(
-      'INTERSCITY_FIRST_HEALTH_TIMEOUT_MS',
+      "INTERSCITY_FIRST_HEALTH_TIMEOUT_MS",
       30_000,
     );
   }
 
   async onModuleInit(): Promise<void> {
-    this.logger.log('🔧 Inicializando InterscityReaderService e checando health...');
+    this.logger.log(
+      "🔧 Inicializando InterscityReaderService e checando health...",
+    );
     await this.checkHealth();
   }
 
@@ -160,10 +158,14 @@ export class InterscityReaderService implements OnModuleInit {
   }
 
   async checkHealth(): Promise<InterscityHealth> {
-    const timeoutMs = this.firstCheckDone ? this.healthTimeoutMs : this.firstHealthTimeoutMs;
+    const timeoutMs = this.firstCheckDone
+      ? this.healthTimeoutMs
+      : this.firstHealthTimeoutMs;
 
     if (!this.firstCheckDone) {
-      this.logger.log(`⏳ Primeiro healthcheck do InterSCity (timeout ${timeoutMs}ms)...`);
+      this.logger.log(
+        `⏳ Primeiro healthcheck do InterSCity (timeout ${timeoutMs}ms)...`,
+      );
     }
 
     const [primaryProbe, fallbackUp] = await Promise.all([
@@ -173,7 +175,9 @@ export class InterscityReaderService implements OnModuleInit {
 
     const primaryUp = this.chaosPrimaryDown ? false : primaryProbe;
     if (this.chaosPrimaryDown) {
-      this.logger.warn('🧪 [CHAOS] Primário do InterSCity forçado como DOWN no Motor de Alertas.');
+      this.logger.warn(
+        "🧪 [CHAOS] Primário do InterSCity forçado como DOWN no Motor de Alertas.",
+      );
     }
 
     this.firstCheckDone = true;
@@ -186,7 +190,9 @@ export class InterscityReaderService implements OnModuleInit {
     }
 
     if (this.activeEndpoint.name !== previous) {
-      this.logger.warn(`🔀 Failover: endpoint ativo ${previous} → ${this.activeEndpoint.name}`);
+      this.logger.warn(
+        `🔀 Failover: endpoint ativo ${previous} → ${this.activeEndpoint.name}`,
+      );
     }
 
     this.health = {
@@ -196,17 +202,17 @@ export class InterscityReaderService implements OnModuleInit {
       lastCheckedAt: new Date().toISOString(),
     };
 
-    const overall = primaryUp ? '🟢' : fallbackUp ? '🟡' : '🔴';
+    const overall = primaryUp ? "🟢" : fallbackUp ? "🟡" : "🔴";
     this.logger.log(
-      `${overall} Healthcheck Leitor - primário: ${primaryUp ? 'UP' : 'DOWN'} | fallback: ${
-        fallbackUp ? 'UP' : 'DOWN'
+      `${overall} Healthcheck Leitor - primário: ${primaryUp ? "UP" : "DOWN"} | fallback: ${
+        fallbackUp ? "UP" : "DOWN"
       } | ativo: ${this.activeEndpoint.name}`,
     );
 
     return this.health;
   }
 
-  @Interval('interscity-health-reader', 60_000)
+  @Interval("interscity-health-reader", 60_000)
   async scheduledHealthCheck(): Promise<void> {
     await this.checkHealth();
   }
@@ -217,7 +223,9 @@ export class InterscityReaderService implements OnModuleInit {
 
   async setChaosPrimaryDown(down: boolean): Promise<InterscityHealth> {
     this.chaosPrimaryDown = down;
-    this.logger.warn(`🧪 [CHAOS] Simulação de primário DOWN no Motor ${down ? 'ATIVADA' : 'DESATIVADA'}.`);
+    this.logger.warn(
+      `🧪 [CHAOS] Simulação de primário DOWN no Motor ${down ? "ATIVADA" : "DESATIVADA"}.`,
+    );
     return this.checkHealth();
   }
 
@@ -235,7 +243,7 @@ export class InterscityReaderService implements OnModuleInit {
         ),
       this.maxRetries,
       this.retryBaseDelay,
-      'InterSCity.fetchResources',
+      "InterSCity.fetchResources",
     );
 
     const resources: any[] = response.data?.resources ?? [];
@@ -243,8 +251,9 @@ export class InterscityReaderService implements OnModuleInit {
     const mappedResources = resources
       .filter(
         (r) =>
-          typeof r?.description === 'string' &&
-          (r.description.includes('Ar-Saúde') || r.description.includes('Ar-Saude')),
+          typeof r?.description === "string" &&
+          (r.description.includes("Ar-Saúde") ||
+            r.description.includes("Ar-Saude")),
       )
       .map((r) => {
         const name = this.parseNeighborhoodName(r.description);
@@ -256,7 +265,11 @@ export class InterscityReaderService implements OnModuleInit {
           longitude: this.toNumber(r.lon),
         };
       })
-      .filter((r) => Boolean(r.resourceUuid) && SAO_LUIS_NEIGHBORHOODS.some(n => n.id === r.neighborhoodId));
+      .filter(
+        (r) =>
+          Boolean(r.resourceUuid) &&
+          SAO_LUIS_NEIGHBORHOODS.some((n) => n.id === r.neighborhoodId),
+      );
 
     // Remove duplicatas mantendo apenas o UUID mais recente (primeiro que aparece na API)
     const uniqueResources = new Map<string, InterscityResource>();
@@ -269,6 +282,22 @@ export class InterscityReaderService implements OnModuleInit {
     return Array.from(uniqueResources.values());
   }
 
+interface InterscityCollectorResponse {
+  resources?: Array<{
+    capabilities?: {
+      air_quality_index?: SeriesEntry[];
+      pm10?: SeriesEntry[];
+      pm2_5?: SeriesEntry[];
+      no2?: SeriesEntry[];
+      ozone?: SeriesEntry[];
+      co?: SeriesEntry[];
+      so2?: SeriesEntry[];
+      nh3?: SeriesEntry[];
+      no?: SeriesEntry[];
+    };
+  }>;
+}
+
   async fetchLatestReading(
     resource: InterscityResource,
   ): Promise<InterscityReading | null> {
@@ -277,7 +306,7 @@ export class InterscityReaderService implements OnModuleInit {
       response = await retryWithBackoff(
         () =>
           firstValueFrom(
-            this.httpService.get(
+            this.httpService.get<InterscityCollectorResponse>(
               `${this.activeEndpoint.collectorUrl}/resources/${resource.resourceUuid}/data`,
             ),
           ),
@@ -326,11 +355,11 @@ export class InterscityReaderService implements OnModuleInit {
   }
 
   private parseNeighborhoodName(description: string): string {
-    const idx = description.indexOf('Bairro: ');
+    const idx = description.indexOf("Bairro: ");
     if (idx >= 0) {
-      return description.slice(idx + 'Bairro: '.length).trim();
+      return description.slice(idx + "Bairro: ".length).trim();
     }
-    return description.replace(RESOURCE_DESCRIPTION_PREFIX, '').trim();
+    return description.replace(RESOURCE_DESCRIPTION_PREFIX, "").trim();
   }
 
   private latestEntry(series: SeriesEntry[] | undefined): SeriesEntry | null {
@@ -360,7 +389,7 @@ export class InterscityReaderService implements OnModuleInit {
   }
 
   private toNumber(value: unknown): number | null {
-    if (value === null || value === undefined || value === '') return null;
+    if (value === null || value === undefined || value === "") return null;
     const n = Number(value);
     return Number.isNaN(n) ? null : n;
   }

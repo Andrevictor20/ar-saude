@@ -1,10 +1,10 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Injectable, Logger } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
 
-import { Measurement } from '../entities/measurement.entity';
-import { InterscityReading } from '../interscity/interscity-reader.service';
-import { SAO_LUIS_NEIGHBORHOODS } from '../common/constants/neighborhoods';
+import { Measurement } from "../entities/measurement.entity";
+import { InterscityReading } from "../interscity/interscity-reader.service";
+import { SAO_LUIS_NEIGHBORHOODS } from "../common/constants/neighborhoods";
 
 export interface LevelDistribution {
   level: string;
@@ -70,34 +70,42 @@ export class MeasurementsService {
   ): Promise<Measurement[]> {
     return this.repo.find({
       where: { neighborhoodId },
-      order: { measuredAt: 'DESC' },
+      order: { measuredAt: "DESC" },
       take: Math.min(Math.max(limit, 1), 1000),
     });
   }
 
-  async exportData(startDate?: string, endDate?: string): Promise<Measurement[]> {
-    const qb = this.repo.createQueryBuilder('m')
-      .orderBy('m.measuredAt', 'DESC')
-      .addOrderBy('m.neighborhoodId', 'ASC');
+  async exportData(
+    startDate?: string,
+    endDate?: string,
+  ): Promise<Measurement[]> {
+    const qb = this.repo
+      .createQueryBuilder("m")
+      .orderBy("m.measuredAt", "DESC")
+      .addOrderBy("m.neighborhoodId", "ASC");
 
     if (startDate) {
-      qb.andWhere('m.measuredAt >= :startDate', { startDate: new Date(startDate).toISOString() });
+      qb.andWhere("m.measuredAt >= :startDate", {
+        startDate: new Date(startDate).toISOString(),
+      });
     }
     if (endDate) {
-      qb.andWhere('m.measuredAt <= :endDate', { endDate: new Date(endDate + 'T23:59:59Z').toISOString() });
+      qb.andWhere("m.measuredAt <= :endDate", {
+        endDate: new Date(endDate + "T23:59:59Z").toISOString(),
+      });
     }
 
     return qb.getMany();
   }
 
   async findLatestPerNeighborhood(): Promise<Measurement[]> {
-    const validIds = SAO_LUIS_NEIGHBORHOODS.map(n => n.id);
+    const validIds = SAO_LUIS_NEIGHBORHOODS.map((n) => n.id);
     return this.repo
-      .createQueryBuilder('m')
-      .where('m.neighborhoodId IN (:...validIds)', { validIds })
-      .distinctOn(['m.neighborhoodId'])
-      .orderBy('m.neighborhoodId', 'ASC')
-      .addOrderBy('m.measuredAt', 'DESC')
+      .createQueryBuilder("m")
+      .where("m.neighborhoodId IN (:...validIds)", { validIds })
+      .distinctOn(["m.neighborhoodId"])
+      .orderBy("m.neighborhoodId", "ASC")
+      .addOrderBy("m.measuredAt", "DESC")
       .getMany();
   }
 
@@ -106,14 +114,14 @@ export class MeasurementsService {
   ): Promise<Measurement | null> {
     return this.repo.findOne({
       where: { neighborhoodId },
-      order: { measuredAt: 'DESC' },
+      order: { measuredAt: "DESC" },
     });
   }
 
   async getStats(): Promise<DashboardStats> {
     const latest = await this.findLatestPerNeighborhood();
     const withAqi = latest.filter(
-      (m): m is Measurement & { aqi: number } => typeof m.aqi === 'number',
+      (m): m is Measurement & { aqi: number } => typeof m.aqi === "number",
     );
 
     const averageAqi =

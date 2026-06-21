@@ -2,7 +2,10 @@
 import './tracing.js';
 
 import { NestFactory } from '@nestjs/core';
-import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
+import {
+  FastifyAdapter,
+  NestFastifyApplication,
+} from '@nestjs/platform-fastify';
 import { AppModule } from './app.module';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import helmet from '@fastify/helmet';
@@ -11,7 +14,7 @@ import helmet from '@fastify/helmet';
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
-    new FastifyAdapter({ trustProxy: true })
+    new FastifyAdapter({ trustProxy: true }),
   );
   const port = process.env.PORT ?? 3000;
 
@@ -26,7 +29,9 @@ async function bootstrap(): Promise<void> {
   );
 
   app.enableCors({
-    origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : false,
+    origin: process.env.CORS_ORIGIN
+      ? process.env.CORS_ORIGIN.split(',')
+      : false,
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
   });
 
@@ -40,4 +45,4 @@ async function bootstrap(): Promise<void> {
   Logger.log(`🌬️  Ar-Saúde Coletor rodando na porta ${port}`, 'Bootstrap');
 }
 
-bootstrap();
+void bootstrap();

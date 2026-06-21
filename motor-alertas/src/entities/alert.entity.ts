@@ -5,14 +5,14 @@ import {
   Index,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
-} from 'typeorm';
-import { AlertSeverity } from '../common/air-quality';
+} from "typeorm";
+import { AlertSeverity } from "../common/air-quality";
 
-export type AlertStatus = 'active' | 'resolved';
+export type AlertStatus = "active" | "resolved";
 
-@Entity('alerts')
+@Entity("alerts")
 export class Alert {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
   @Index()
@@ -25,40 +25,40 @@ export class Alert {
   @Column()
   resourceUuid: string;
 
-  @Column({ type: 'int' })
+  @Column({ type: "int" })
   aqi: number;
 
-  @Column({ type: 'int' })
+  @Column({ type: "int" })
   peakAqi: number;
 
   @Column()
   level: string;
 
-  @Column({ type: 'varchar' })
+  @Column({ type: "varchar" })
   severity: AlertSeverity;
 
   @Column()
   message: string;
 
   @Index()
-  @Column({ type: 'varchar', default: 'active' })
+  @Column({ type: "varchar", default: "active" })
   status: AlertStatus;
 
-  @Column({ type: 'double precision', nullable: true })
+  @Column({ type: "double precision", nullable: true })
   latitude: number | null;
 
-  @Column({ type: 'double precision', nullable: true })
+  @Column({ type: "double precision", nullable: true })
   longitude: number | null;
 
-  @Column({ type: 'simple-array', nullable: true })
+  @Column({ type: "simple-array", nullable: true })
   triggeredBy: string[] | null;
 
-  @CreateDateColumn({ type: 'timestamptz' })
+  @CreateDateColumn({ type: "timestamptz" })
   triggeredAt: Date;
 
-  @UpdateDateColumn({ type: 'timestamptz' })
+  @UpdateDateColumn({ type: "timestamptz" })
   updatedAt: Date;
 
-  @Column({ type: 'timestamptz', nullable: true })
+  @Column({ type: "timestamptz", nullable: true })
   resolvedAt: Date | null;
 }
