@@ -24,6 +24,8 @@ services:
 
   coletor:
     image: ghcr.io/andrevictor20/ar-saude-coletor:latest
+    security_opt:
+      - no-new-privileges:true
     build:
       context: ./coletor
     container_name: ar-saude-coletor
@@ -54,6 +56,8 @@ services:
 
   motor-alertas:
     image: ghcr.io/andrevictor20/ar-saude-motor-alertas:latest
+    security_opt:
+      - no-new-privileges:true
     build:
       context: ./motor-alertas
     container_name: ar-saude-motor-alertas
@@ -89,6 +93,8 @@ services:
 
   frontend:
     image: ghcr.io/andrevictor20/ar-saude-frontend:latest
+    security_opt:
+      - no-new-privileges:true
     build:
       context: ./frontend
       args:
