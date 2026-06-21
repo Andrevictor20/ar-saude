@@ -23,7 +23,7 @@ services:
 
   coletor:
     build:
-      context: .
+      context: ./coletor
     container_name: ar-saude-coletor
     restart: unless-stopped
     environment:
