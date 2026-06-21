@@ -12,8 +12,13 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3002
 
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
+RUN addgroup -g 1001 -S nextjs && \
+    adduser -S nextjs -u 1001 -G nextjs
+
+COPY --from=builder --chown=nextjs:nextjs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nextjs /app/.next/static ./.next/static
+
+USER nextjs
 
 EXPOSE 3002
 CMD ["node", "server.js"]

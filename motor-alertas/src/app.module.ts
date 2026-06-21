@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 
 import { AppController } from './app.controller';
 import { Measurement } from './entities/measurement.entity';
@@ -18,6 +20,11 @@ import { MetricsModule } from './metrics/metrics.module';
       isGlobal: true,
       envFilePath: '.env',
     }),
+
+    ThrottlerModule.forRoot([{
+      ttl: 60000, // 1 minuto
+      limit: 100, // max 100 requisições por minuto por IP
+    }]),
 
     ScheduleModule.forRoot(),
 
@@ -42,5 +49,11 @@ import { MetricsModule } from './metrics/metrics.module';
     MetricsModule,
   ],
   controllers: [AppController],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {}

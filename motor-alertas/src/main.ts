@@ -2,12 +2,19 @@
 import './tracing';
 
 import { NestFactory } from '@nestjs/core';
+import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Logger } from '@nestjs/common';
 import { AppModule } from './app.module';
+import helmet from '@fastify/helmet';
 
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestFastifyApplication>(
+    AppModule,
+    new FastifyAdapter()
+  );
   const port = process.env.PORT ?? 3001;
+
+  await app.register(helmet);
 
   app.enableCors({
     origin: process.env.CORS_ORIGIN?.split(',') ?? '*',
@@ -17,7 +24,8 @@ async function bootstrap(): Promise<void> {
   // Hooks de ciclo de vida para shutdown limpo.
   app.enableShutdownHooks();
 
-  await app.listen(port);
+  // '0.0.0.0' para expor externamente no container
+  await app.listen(port, '0.0.0.0');
 
   Logger.log(
     `Ar-Saude Motor de Alertas rodando na porta ${port}`,
