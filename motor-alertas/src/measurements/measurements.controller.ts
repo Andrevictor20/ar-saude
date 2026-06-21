@@ -37,6 +37,14 @@ export class MeasurementsController {
     );
   }
 
+  @Get('export')
+  exportData(
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ): Promise<Measurement[]> {
+    return this.measurementsService.exportData(startDate, endDate);
+  }
+
   @Get('latest/:neighborhoodId')
   async findLatestForNeighborhood(
     @Param('neighborhoodId') neighborhoodId: string,

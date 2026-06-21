@@ -30,6 +30,21 @@ export function getHistory(
   );
 }
 
+export function exportMeasurements(
+  startDate?: string,
+  endDate?: string,
+): Promise<Measurement[]> {
+  let url = '/measurements/export';
+  const params = new URLSearchParams();
+  if (startDate) params.append('startDate', startDate);
+  if (endDate) params.append('endDate', endDate);
+  
+  const query = params.toString();
+  if (query) url += `?${query}`;
+  
+  return request<Measurement[]>(url);
+}
+
 export function getActiveAlerts(): Promise<Alert[]> {
   return request<Alert[]>('/alerts/active');
 }

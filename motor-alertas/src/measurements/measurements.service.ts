@@ -75,6 +75,21 @@ export class MeasurementsService {
     });
   }
 
+  async exportData(startDate?: string, endDate?: string): Promise<Measurement[]> {
+    const qb = this.repo.createQueryBuilder('m')
+      .orderBy('m.measuredAt', 'DESC')
+      .addOrderBy('m.neighborhoodId', 'ASC');
+
+    if (startDate) {
+      qb.andWhere('m.measuredAt >= :startDate', { startDate: new Date(startDate).toISOString() });
+    }
+    if (endDate) {
+      qb.andWhere('m.measuredAt <= :endDate', { endDate: new Date(endDate + 'T23:59:59Z').toISOString() });
+    }
+
+    return qb.getMany();
+  }
+
   async findLatestPerNeighborhood(): Promise<Measurement[]> {
     const validIds = SAO_LUIS_NEIGHBORHOODS.map(n => n.id);
     return this.repo

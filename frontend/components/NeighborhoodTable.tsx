@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import { Measurement } from '@/lib/types';
 import { aqiColor, formatNumber, formatTime, levelColor } from '@/lib/format';
-import { exportToCsv, exportToXlsx, exportToPdf } from '@/lib/exportUtils';
+import ExportModal from './ExportModal';
 
 interface Props {
   measurements: Measurement[];
@@ -17,6 +17,7 @@ export default function NeighborhoodTable({
   onSelect,
 }: Props) {
   const [query, setQuery] = useState('');
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -45,31 +46,13 @@ export default function NeighborhoodTable({
         <div className="toolbar">
           <div style={{ display: 'flex', gap: '6px', marginRight: '8px' }}>
             <button
-              onClick={() => exportToCsv(measurements, 'qualidade_ar_bairros')}
+              onClick={() => setIsExportModalOpen(true)}
               style={btnStyle}
               onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text)')}
               onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
-              title="Baixar todos em CSV"
+              title="Opções de Exportação"
             >
-              CSV
-            </button>
-            <button
-              onClick={() => exportToXlsx(measurements, 'qualidade_ar_bairros')}
-              style={btnStyle}
-              onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text)')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
-              title="Baixar todos em XLSX"
-            >
-              XLSX
-            </button>
-            <button
-              onClick={() => exportToPdf(measurements, 'qualidade_ar_bairros', 'Relatório de Qualidade do Ar - Todos os Bairros')}
-              style={btnStyle}
-              onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text)')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
-              title="Baixar todos em PDF"
-            >
-              PDF
+              📥 Exportar Dados
             </button>
           </div>
           <input
@@ -244,6 +227,13 @@ export default function NeighborhoodTable({
           </div>
         )}
       </div>
+
+      {isExportModalOpen && (
+        <ExportModal
+          onClose={() => setIsExportModalOpen(false)}
+          currentMeasurements={measurements}
+        />
+      )}
     </div>
   );
 }
