@@ -9,7 +9,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD:-arsaude}
       POSTGRES_DB: ${DB_NAME:-arsaude_alertas}
     ports:
-      - '${DB_HOST_PORT:-5433}:5432'
+      - '127.0.0.1:${DB_HOST_PORT:-5433}:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -74,7 +74,7 @@ services:
       ALERT_AQI_THRESHOLD: ${ALERT_AQI_THRESHOLD:-61}
       MAX_RETRIES: ${MAX_RETRIES:-5}
       RETRY_BASE_DELAY_MS: ${RETRY_BASE_DELAY_MS:-1000}
-      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:${FRONTEND_PORT:-3002}}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:${FRONTEND_PORT:-3002},https://arsaude.rasppi.cloud}
       # OpenTelemetry → Jaeger (OTLP/HTTP). OTEL_SDK_DISABLED=true desliga.
       OTEL_SERVICE_NAME: ar-saude-motor-alertas
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://jaeger:4318}

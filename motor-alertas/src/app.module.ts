@@ -38,7 +38,7 @@ import { MetricsModule } from './metrics/metrics.module';
         password: config.get<string>('DB_PASSWORD', 'arsaude'),
         database: config.get<string>('DB_NAME', 'arsaude_alertas'),
         entities: [Measurement, Alert],
-        synchronize: true,
+        synchronize: process.env.NODE_ENV !== 'production',
       }),
     }),
 

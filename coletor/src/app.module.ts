@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { HttpModule } from '@nestjs/axios';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
@@ -20,6 +22,11 @@ import { CollectorModule } from './collector/collector.module.js';
       envFilePath: '.env',
     }),
 
+    ThrottlerModule.forRoot([{
+      ttl: 60000,
+      limit: 100,
+    }]),
+
     ScheduleModule.forRoot(),
 
     HttpModule.register({
@@ -34,6 +41,12 @@ import { CollectorModule } from './collector/collector.module.js';
     CollectorModule,
   ],
   controllers: [AppController, MetricsController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {}
