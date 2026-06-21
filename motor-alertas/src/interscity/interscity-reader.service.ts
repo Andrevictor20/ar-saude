@@ -56,6 +56,22 @@ interface SeriesEntry {
   timestamp?: string;
 }
 
+interface InterscityCollectorResponse {
+  resources?: Array<{
+    capabilities?: {
+      air_quality_index?: SeriesEntry[];
+      pm10?: SeriesEntry[];
+      pm2_5?: SeriesEntry[];
+      no2?: SeriesEntry[];
+      ozone?: SeriesEntry[];
+      co?: SeriesEntry[];
+      so2?: SeriesEntry[];
+      nh3?: SeriesEntry[];
+      no?: SeriesEntry[];
+    };
+  }>;
+}
+
 @Injectable()
 export class InterscityReaderService implements OnModuleInit {
   private readonly logger = new Logger(InterscityReaderService.name);
@@ -281,22 +297,6 @@ export class InterscityReaderService implements OnModuleInit {
 
     return Array.from(uniqueResources.values());
   }
-
-interface InterscityCollectorResponse {
-  resources?: Array<{
-    capabilities?: {
-      air_quality_index?: SeriesEntry[];
-      pm10?: SeriesEntry[];
-      pm2_5?: SeriesEntry[];
-      no2?: SeriesEntry[];
-      ozone?: SeriesEntry[];
-      co?: SeriesEntry[];
-      so2?: SeriesEntry[];
-      nh3?: SeriesEntry[];
-      no?: SeriesEntry[];
-    };
-  }>;
-}
 
   async fetchLatestReading(
     resource: InterscityResource,
