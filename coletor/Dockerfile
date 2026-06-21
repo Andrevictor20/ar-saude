@@ -33,7 +33,7 @@ RUN addgroup -g 1001 -S nestjs && \
 
 USER nestjs
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
   CMD wget --no-verbose --tries=1 -qO- http://127.0.0.1:3000/ > /dev/null || exit 1
 
 CMD ["node", "--max-old-space-size=256", "dist/main.js"]
