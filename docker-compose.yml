@@ -28,6 +28,7 @@ services:
       retries: 5
 
   coletor:
+    image: ghcr.io/andrevictor20/ar-saude-coletor:latest
     build:
       context: ./coletor
     container_name: ar-saude-coletor
@@ -57,6 +58,7 @@ services:
           memory: 256M
 
   motor-alertas:
+    image: ghcr.io/andrevictor20/ar-saude-motor-alertas:latest
     build:
       context: ./motor-alertas
     container_name: ar-saude-motor-alertas
@@ -91,6 +93,7 @@ services:
           memory: 256M
 
   frontend:
+    image: ghcr.io/andrevictor20/ar-saude-frontend:latest
     build:
       context: ./frontend
       args:
@@ -149,6 +152,15 @@ services:
       - grafana_data:/var/lib/grafana
     ports:
       - '${GRAFANA_PORT:-3003}:3000'
+
+  # Watchtower: Atualizador automático de containers via GHCR
+  watchtower:
+    image: containrrr/watchtower
+    container_name: ar-saude-watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 300 ar-saude-coletor ar-saude-motor-alertas ar-saude-frontend
 
 volumes:
   postgres_data:
