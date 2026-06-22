@@ -87,8 +87,6 @@ export class OpenWeatherService {
     return data;
   }
 
-
-
   private async callOpenWeatherApi(
     latitude: number,
     longitude: number,

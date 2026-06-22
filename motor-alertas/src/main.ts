@@ -1,6 +1,3 @@
-// Tracing PRIMEIRO — antes de qualquer import que carregue http/express/nest/pg.
-import "./tracing";
-
 import { NestFactory } from "@nestjs/core";
 import {
   FastifyAdapter,

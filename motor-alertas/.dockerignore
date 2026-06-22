@@ -3,7 +3,14 @@ dist
 .git
 .env
 .env.local
+.env.*.local
 *.md
 .vscode
 .idea
 coverage
+test
+eslint.config.mjs
+docker-compose.yml
+tsc_errors.log
+*.tsbuildinfo
+.gitignore

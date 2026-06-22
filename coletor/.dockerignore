@@ -3,9 +3,14 @@ dist
 .git
 .env
 .env.local
+.env.*.local
 *.md
 .vscode
 .idea
 coverage
 test
 verificar_ar.sh
+eslint.config.mjs
+.prettierrc
+*.tsbuildinfo
+.gitignore

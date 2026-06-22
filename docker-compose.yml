@@ -42,7 +42,6 @@ services:
       CRON_COLLECT_INTERVAL: ${CRON_COLLECT_INTERVAL:-*/30 * * * *}
       MAX_RETRIES: ${MAX_RETRIES:-5}
       RETRY_BASE_DELAY_MS: ${RETRY_BASE_DELAY_MS:-1000}
-      OTEL_SDK_DISABLED: 'true'
     ports:
       - '${COLETOR_PORT:-3000}:3000'
     deploy:
@@ -76,7 +75,6 @@ services:
       MAX_RETRIES: ${MAX_RETRIES:-5}
       RETRY_BASE_DELAY_MS: ${RETRY_BASE_DELAY_MS:-1000}
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:${FRONTEND_PORT:-3002},https://arsaude.rasppi.cloud}
-      OTEL_SDK_DISABLED: 'true'
     ports:
       - '${MOTOR_PORT:-3001}:3001'
     deploy:
