@@ -18,7 +18,6 @@ O hardware principal responsável por rodar os microsserviços da aplicação, a
 - **Stack de Monitoramento**:
   - **Prometheus**: Porta **9090**.
   - **Grafana**: Porta **3003**.
-  - **Jaeger** (Tracing): Porta **16686**.
 
 ### 💻 2. Máquina Virtual Debian 12 
 Uma VM dedicada a atuar como nó de fallback para a plataforma InterSCity e gerenciar o tráfego da API.
@@ -34,7 +33,6 @@ Para garantir acesso seguro aos serviços locais a partir da internet, sem a nec
 | **Motor de Alertas (API)** | `https://alertas.rasppi.cloud` | `http://192.168.100.17:3001` (Raspberry Pi) |
 | **Grafana (Observabilidade)** | `https://grafana-ar-saude.rasppi.cloud` | `http://192.168.100.17:3003` (Raspberry Pi) |
 | **Prometheus (Métricas)** | `https://prometheus-ar-saude.rasppi.cloud` | `http://192.168.100.17:9090` (Raspberry Pi) |
-| **Jaeger (Tracing)** | `https://jaeger-ar-saude.rasppi.cloud` | `http://192.168.100.17:16686` (Raspberry Pi) |
 | **InterSCity (Fallback)** | `https://interscity.rasppi.cloud` | `http://10.0.2.15:8000` (VM Debian 12) |
 | **Kong (Gateway)** | `https://kong.rasppi.cloud` | `http://10.0.2.15:8001` (VM Debian 12) |
 
@@ -112,7 +110,7 @@ Isso iniciará localmente:
 - Motor-alertas (`:3001`)
 - Frontend (`:3002`)
 - PostgreSQL (`:5433`)
-- Prometheus (`:9090`), Grafana (`:3003`), Jaeger (`:16686`)
+- Prometheus (`:9090`), Grafana (`:3003`)
 
 Acesse o Dashboard Web em: **http://localhost:3002**
 
@@ -125,7 +123,7 @@ Acesse o Dashboard Web em: **http://localhost:3002**
 A plataforma foi construída com instrumentação nativa:
 
 - **Métricas**: `GET /metrics` no Coletor e no Motor de Alertas no formato **Prometheus**. Exibidas dinamicamente via **Grafana** (dashboards pré-configurados).
-- **Tracing**: O fluxo das requisições (ex: *Coletor → Kong → InterSCity*) pode ser visualizado via **OpenTelemetry + Jaeger**.
+- **Tracing**: O tracing via OpenTelemetry pode ser reativado definindo `OTEL_SDK_DISABLED=false` e configurando um coletor OTLP externo.
 
 ### Teste de Carga e Chaos (Failover)
 

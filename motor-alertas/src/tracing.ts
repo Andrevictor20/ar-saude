@@ -5,8 +5,11 @@
  *
  * Configuração por variáveis de ambiente padrão do OTel:
  *   OTEL_SERVICE_NAME=ar-saude-motor-alertas
- *   OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4318   (OTLP/HTTP)
- *   OTEL_SDK_DISABLED=true                            (desliga o tracing)
+ *   OTEL_EXPORTER_OTLP_ENDPOINT=<url-do-coletor-otlp>  (OTLP/HTTP)
+ *   OTEL_SDK_DISABLED=true                              (desliga o tracing)
+ *
+ * Tracing desabilitado por padrão. Para reativar, defina
+ * OTEL_SDK_DISABLED=false e configure um coletor OTLP externo.
  */
 import { NodeSDK } from "@opentelemetry/sdk-node";
 import { getNodeAutoInstrumentations } from "@opentelemetry/auto-instrumentations-node";
