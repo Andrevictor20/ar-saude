@@ -13,6 +13,7 @@ FROM node:22-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3002
+ENV HOSTNAME="0.0.0.0"
 
 RUN addgroup -g 1001 -S nextjs && \
     adduser -S nextjs -u 1001 -G nextjs
