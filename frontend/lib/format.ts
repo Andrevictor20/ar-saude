@@ -26,7 +26,7 @@ export function levelColor(level: string): string {
       return '#22c55e';
     case 'Moderado':
       return '#84cc16';
-    case 'Ruim para grupos sensiveis':
+    case 'Ruim para grupos sensíveis':
       return '#eab308';
     case 'Ruim':
       return '#f97316';

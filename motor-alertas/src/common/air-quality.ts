@@ -1,19 +1,19 @@
 export type AirQualityLevel =
   | "Bom"
   | "Moderado"
-  | "Ruim para grupos sensiveis"
+  | "Ruim para grupos sensíveis"
   | "Ruim"
   | "Muito Ruim"
   | "Perigoso"
-  | "Indisponivel";
+  | "Indisponível";
 
 export type AlertSeverity = "atencao" | "alerta" | "critico" | "emergencia";
 
 export function classifyAqi(aqi: number | null | undefined): AirQualityLevel {
-  if (aqi === null || aqi === undefined) return "Indisponivel";
+  if (aqi === null || aqi === undefined) return "Indisponível";
   if (aqi <= 20) return "Bom";
   if (aqi <= 40) return "Moderado";
-  if (aqi <= 60) return "Ruim para grupos sensiveis";
+  if (aqi <= 60) return "Ruim para grupos sensíveis";
   if (aqi <= 80) return "Ruim";
   if (aqi <= 100) return "Muito Ruim";
   return "Perigoso";
