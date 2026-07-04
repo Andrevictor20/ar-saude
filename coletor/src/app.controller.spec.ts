@@ -25,7 +25,7 @@ describe('AppController', () => {
               deadLetter: 0,
               concurrency: 5,
             }),
-            enqueueAllNeighborhoods: () => 0,
+            enqueueAllLocations: () => 0,
           },
         },
         {
