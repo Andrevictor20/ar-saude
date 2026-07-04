@@ -4,14 +4,36 @@ import {
   NotFoundException,
   Param,
   Query,
+  Post,
+  Body,
+  Logger,
 } from "@nestjs/common";
 
 import { DashboardStats, MeasurementsService } from "./measurements.service";
 import { Measurement } from "../entities/measurement.entity";
+import { IngestMeasurementDto } from "./dto/ingest-measurement.dto";
+import { AlertsService } from "../alerts/alerts.service";
 
 @Controller("measurements")
 export class MeasurementsController {
-  constructor(private readonly measurementsService: MeasurementsService) {}
+  private readonly logger = new Logger(MeasurementsController.name);
+
+  constructor(
+    private readonly measurementsService: MeasurementsService,
+    private readonly alertsService: AlertsService,
+  ) {}
+
+  @Post("ingest")
+  async ingest(@Body() dto: IngestMeasurementDto): Promise<void> {
+    try {
+      await this.measurementsService.saveReading(dto);
+      await this.alertsService.evaluate(dto);
+      this.logger.log(`Medicao ingerida e avaliada: ${dto.neighborhoodName} (AQI ${dto.aqi})`);
+    } catch (error) {
+      this.logger.error(`Erro ao ingerir medicao: ${error instanceof Error ? error.message : String(error)}`);
+      throw error;
+    }
+  }
 
   @Get("latest")
   findLatest(): Promise<Measurement[]> {

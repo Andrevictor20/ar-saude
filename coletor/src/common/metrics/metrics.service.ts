@@ -4,17 +4,10 @@ import * as client from 'prom-client';
 import { QueueStats } from '../queue/request-queue.service.js';
 import { CacheStats } from '../cache/cache.service.js';
 
-/** Saúde do InterSCity no formato consumido pelas métricas. */
-export interface InterscityMetricSnapshot {
-  active: string;
-  primaryUp: boolean;
-  fallbackUp: boolean;
-}
-
 /**
  * Registro central de métricas Prometheus do Coletor.
  *
- * - Counters (eventos cumulativos): coletas, medições enviadas/falhas, failover.
+ * - Counters (eventos cumulativos): coletas, medições enviadas/falhas.
  * - Gauges (estado instantâneo): fila e cache são amostrados no momento do
  *   scrape (`updateRuntimeGauges`), evitando dependência circular entre o
  *   MetricsService e os serviços que ele observa.
@@ -36,11 +29,6 @@ export class MetricsService {
     name: 'arsaude_measurements_failed_total',
     help: 'Total de medições que falharam ao enviar (após retries).',
   });
-  private readonly interscityFailoverTotal = new client.Counter({
-    name: 'arsaude_interscity_failover_total',
-    help: 'Total de trocas de endpoint ativo do InterSCity (failover).',
-  });
-
   // ── Gauges (amostrados no scrape) ───────────────────────────────────────
   private readonly queuePending = new client.Gauge({
     name: 'arsaude_queue_pending',
@@ -82,27 +70,12 @@ export class MetricsService {
     name: 'arsaude_cache_hit_rate',
     help: 'Taxa de acerto do cache (0..1).',
   });
-  private readonly interscityPrimaryUp = new client.Gauge({
-    name: 'arsaude_interscity_primary_up',
-    help: 'Primário do InterSCity no ar (1) ou fora (0).',
-  });
-  private readonly interscityFallbackUp = new client.Gauge({
-    name: 'arsaude_interscity_fallback_up',
-    help: 'Fallback do InterSCity no ar (1) ou fora (0).',
-  });
-  private readonly interscityActive = new client.Gauge({
-    name: 'arsaude_interscity_active_endpoint',
-    help: 'Endpoint ativo do InterSCity (1 = aquele rótulo está ativo).',
-    labelNames: ['endpoint'] as const,
-  });
-
   constructor() {
     this.registry.setDefaultLabels({ service: 'ar-saude-coletor' });
     client.collectDefaultMetrics({ register: this.registry });
     this.registry.registerMetric(this.collectionsTotal);
     this.registry.registerMetric(this.measurementsSentTotal);
     this.registry.registerMetric(this.measurementsFailedTotal);
-    this.registry.registerMetric(this.interscityFailoverTotal);
     for (const gauge of [
       this.queuePending,
       this.queueActive,
@@ -114,9 +87,6 @@ export class MetricsService {
       this.cacheHits,
       this.cacheMisses,
       this.cacheHitRate,
-      this.interscityPrimaryUp,
-      this.interscityFallbackUp,
-      this.interscityActive,
     ]) {
       this.registry.registerMetric(gauge);
     }
@@ -137,16 +107,10 @@ export class MetricsService {
     this.measurementsFailedTotal.inc();
   }
 
-  /** Registra um failover de endpoint do InterSCity. */
-  incFailover(): void {
-    this.interscityFailoverTotal.inc();
-  }
-
-  /** Amostra fila, cache e InterSCity no instante do scrape. */
+  /** Amostra fila e cache no instante do scrape. */
   updateRuntimeGauges(
     queue: QueueStats,
     cache: CacheStats,
-    interscity: InterscityMetricSnapshot,
   ): void {
     this.queuePending.set(queue.pending);
     this.queueActive.set(queue.active);
@@ -160,17 +124,6 @@ export class MetricsService {
     this.cacheMisses.set(cache.misses);
     const total = cache.hits + cache.misses;
     this.cacheHitRate.set(total === 0 ? 0 : cache.hits / total);
-
-    this.interscityPrimaryUp.set(interscity.primaryUp ? 1 : 0);
-    this.interscityFallbackUp.set(interscity.fallbackUp ? 1 : 0);
-    this.interscityActive.set(
-      { endpoint: 'primary' },
-      interscity.active === 'primary' ? 1 : 0,
-    );
-    this.interscityActive.set(
-      { endpoint: 'fallback' },
-      interscity.active === 'fallback' ? 1 : 0,
-    );
   }
 
   /** Texto no formato de exposição do Prometheus. */

@@ -10,8 +10,6 @@ import { Measurement } from "./entities/measurement.entity";
 import { Alert } from "./entities/alert.entity";
 import { MeasurementsModule } from "./measurements/measurements.module";
 import { AlertsModule } from "./alerts/alerts.module";
-import { InterscityModule } from "./interscity/interscity.module";
-import { MonitorModule } from "./monitor/monitor.module";
 import { MetricsModule } from "./metrics/metrics.module";
 
 @Module({
@@ -46,8 +44,6 @@ import { MetricsModule } from "./metrics/metrics.module";
 
     MeasurementsModule,
     AlertsModule,
-    InterscityModule,
-    MonitorModule,
     MetricsModule,
   ],
   controllers: [AppController],

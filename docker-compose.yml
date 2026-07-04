@@ -35,10 +35,7 @@ services:
       OPEN_METEO_BASE_URL: ${OPEN_METEO_BASE_URL:-https://air-quality-api.open-meteo.com/v1/air-quality}
       OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY:-313e9589d80e64758e636be87b5ab8dc}
       OPENWEATHER_BASE_URL: ${OPENWEATHER_BASE_URL:-http://api.openweathermap.org/data/2.5/air_pollution}
-      INTERSCITY_CATALOG_URL: ${INTERSCITY_CATALOG_URL:-https://interscity.rasppi.cloud/catalog}
-      INTERSCITY_ADAPTOR_URL: ${INTERSCITY_ADAPTOR_URL:-https://interscity.rasppi.cloud/adaptor}
-      INTERSCITY_COLLECTOR_URL: ${INTERSCITY_COLLECTOR_URL:-https://interscity.rasppi.cloud/collector}
-      KONG_UPSTREAM_URL: ${KONG_UPSTREAM_URL:-https://kong.rasppi.cloud/upstreams}
+      MOTOR_ALERTAS_URL: http://motor-alertas:${MOTOR_PORT:-3001}
       CRON_COLLECT_INTERVAL: ${CRON_COLLECT_INTERVAL:-*/30 * * * *}
       MAX_RETRIES: ${MAX_RETRIES:-5}
       RETRY_BASE_DELAY_MS: ${RETRY_BASE_DELAY_MS:-1000}
@@ -67,10 +64,6 @@ services:
       DB_USER: ${DB_USER:-arsaude}
       DB_PASSWORD: ${DB_PASSWORD:-arsaude}
       DB_NAME: ${DB_NAME:-arsaude_alertas}
-      INTERSCITY_CATALOG_URL: ${INTERSCITY_CATALOG_URL:-https://interscity.rasppi.cloud/catalog}
-      INTERSCITY_COLLECTOR_URL: ${INTERSCITY_COLLECTOR_URL:-https://interscity.rasppi.cloud/collector}
-      CATALOG_PAGE_SIZE: ${CATALOG_PAGE_SIZE:-500}
-      MONITOR_INTERVAL: ${MONITOR_INTERVAL:-*/1 * * * *}
       ALERT_AQI_THRESHOLD: ${ALERT_AQI_THRESHOLD:-61}
       MAX_RETRIES: ${MAX_RETRIES:-5}
       RETRY_BASE_DELAY_MS: ${RETRY_BASE_DELAY_MS:-1000}

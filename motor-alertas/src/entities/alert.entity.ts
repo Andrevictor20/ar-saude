@@ -22,9 +22,6 @@ export class Alert {
   @Column()
   neighborhoodName: string;
 
-  @Column()
-  resourceUuid: string;
-
   @Column({ type: "int" })
   aqi: number;
 

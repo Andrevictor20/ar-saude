@@ -3,7 +3,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 
 import { Measurement } from "../entities/measurement.entity";
-import { InterscityReading } from "../interscity/interscity-reader.service";
+import { IngestMeasurementDto } from "./dto/ingest-measurement.dto";
 import { SAO_LUIS_NEIGHBORHOODS } from "../common/constants/neighborhoods";
 
 export interface LevelDistribution {
@@ -30,11 +30,12 @@ export class MeasurementsService {
     private readonly repo: Repository<Measurement>,
   ) {}
 
-  async saveReading(reading: InterscityReading): Promise<Measurement | null> {
+  async saveReading(reading: IngestMeasurementDto): Promise<Measurement | null> {
+    const measuredAtDate = new Date(reading.timestamp);
     const exists = await this.repo.findOne({
       where: {
-        resourceUuid: reading.resourceUuid,
-        measuredAt: reading.measuredAt,
+        neighborhoodId: reading.neighborhoodId,
+        measuredAt: measuredAtDate,
       },
     });
 
@@ -45,7 +46,6 @@ export class MeasurementsService {
     const measurement = this.repo.create({
       neighborhoodId: reading.neighborhoodId,
       neighborhoodName: reading.neighborhoodName,
-      resourceUuid: reading.resourceUuid,
       aqi: reading.aqi,
       level: reading.level,
       pm10: reading.pm10,
@@ -58,7 +58,7 @@ export class MeasurementsService {
       no: reading.no,
       latitude: reading.latitude,
       longitude: reading.longitude,
-      measuredAt: reading.measuredAt,
+      measuredAt: measuredAtDate,
     });
 
     return this.repo.save(measurement);

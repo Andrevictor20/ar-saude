@@ -7,7 +7,7 @@ import {
   OpenWeatherService,
   ExtraPollutants,
 } from '../open-weather/open-weather.service.js';
-import { InterscityService } from '../interscity/interscity.service.js';
+import { MotorAlertasService } from '../motor-alertas/motor-alertas.service.js';
 import {
   RequestQueueService,
   QueueStats,
@@ -36,7 +36,7 @@ export class CollectorService implements OnModuleInit {
   constructor(
     private readonly openMeteoService: OpenMeteoService,
     private readonly openWeatherService: OpenWeatherService,
-    private readonly interscityService: InterscityService,
+    private readonly motorAlertasService: MotorAlertasService,
     private readonly queue: RequestQueueService,
     private readonly configService: ConfigService,
     private readonly metrics: MetricsService,
@@ -130,7 +130,7 @@ export class CollectorService implements OnModuleInit {
     const enrichedData = { ...airQualityData, ...extraPollutants };
 
     try {
-      await this.interscityService.sendMeasurement(enrichedData);
+      await this.motorAlertasService.sendMeasurement(enrichedData);
     } catch (error) {
       // Falha após os retries internos: contabiliza e propaga para a fila
       // reenfileirar/mandar para a dead-letter.

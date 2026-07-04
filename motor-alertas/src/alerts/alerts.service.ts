@@ -7,7 +7,7 @@ import { SAO_LUIS_NEIGHBORHOODS } from "../common/constants/neighborhoods";
 
 import { Alert } from "../entities/alert.entity";
 import { AlertsEventsService } from "./alerts-events.service";
-import { InterscityReading } from "../interscity/interscity-reader.service";
+import { IngestMeasurementDto } from "../measurements/dto/ingest-measurement.dto";
 import { AlertSeverity, severityForAqi } from "../common/air-quality";
 
 const POLLUTANT_THRESHOLDS = {
@@ -44,7 +44,7 @@ export class AlertsService {
     return this.threshold;
   }
 
-  async evaluate(reading: InterscityReading): Promise<void> {
+  async evaluate(reading: IngestMeasurementDto): Promise<void> {
     const active = await this.repo.findOne({
       where: { neighborhoodId: reading.neighborhoodId, status: "active" },
     });
@@ -99,7 +99,6 @@ export class AlertsService {
         const alert = this.repo.create({
           neighborhoodId: reading.neighborhoodId,
           neighborhoodName: reading.neighborhoodName,
-          resourceUuid: reading.resourceUuid,
           aqi: safeAqi,
           peakAqi: safeAqi,
           level: reading.level,
@@ -160,7 +159,7 @@ export class AlertsService {
   }
 
   private buildMessage(
-    reading: InterscityReading,
+    reading: IngestMeasurementDto,
     severity: AlertSeverity,
     triggeredBy?: string[],
   ): string {
