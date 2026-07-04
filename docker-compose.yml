@@ -134,7 +134,7 @@ services:
     restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-    command: --interval 300 ar-saude-coletor ar-saude-motor-alertas ar-saude-frontend
+    command: --interval 120 ar-saude-coletor ar-saude-motor-alertas ar-saude-frontend
 
 volumes:
   postgres_data:
