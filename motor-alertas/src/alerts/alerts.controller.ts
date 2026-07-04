@@ -11,6 +11,9 @@ interface SseMessage {
   type?: string;
 }
 
+import { ApiTags, ApiOperation } from "@nestjs/swagger";
+
+@ApiTags("alerts")
 @Controller("alerts")
 export class AlertsController {
   constructor(
@@ -19,6 +22,7 @@ export class AlertsController {
   ) {}
 
   @Get()
+  @ApiOperation({ summary: "Listar alertas (com filtros)" })
   findAll(
     @Query("status") status?: "active" | "resolved",
     @Query("locationId") locationId?: string,
@@ -34,11 +38,13 @@ export class AlertsController {
   }
 
   @Get("active")
+  @ApiOperation({ summary: "Listar apenas alertas ativos" })
   findActive(): Promise<Alert[]> {
     return this.alertsService.findActive();
   }
 
   @Sse("stream")
+  @ApiOperation({ summary: "Stream Server-Sent Events de alertas" })
   stream(): Observable<SseMessage> {
     return this.events.asObservable().pipe(
       map((event) => ({

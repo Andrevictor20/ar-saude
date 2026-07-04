@@ -1,4 +1,5 @@
 import { Injectable, Logger } from "@nestjs/common";
+import { Cron } from "@nestjs/schedule";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 
@@ -168,5 +169,26 @@ export class MeasurementsService {
       distribution,
       updatedAt: new Date().toISOString(),
     };
+  }
+
+  @Cron("0 3 * * *") // Runs every day at 03:00 AM
+  async cleanupOldMeasurements(): Promise<void> {
+    const retentionDays = 30;
+    const thresholdDate = new Date();
+    thresholdDate.setDate(thresholdDate.getDate() - retentionDays);
+
+    this.logger.log(`Starting cleanup of measurements older than ${retentionDays} days (${thresholdDate.toISOString()})`);
+    
+    try {
+      const result = await this.repo
+        .createQueryBuilder()
+        .delete()
+        .where("measuredAt < :thresholdDate", { thresholdDate })
+        .execute();
+      
+      this.logger.log(`Cleanup finished. Deleted ${result.affected} old measurements.`);
+    } catch (error) {
+      this.logger.error(`Error cleaning up old measurements: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 }

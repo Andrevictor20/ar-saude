@@ -1,4 +1,5 @@
 import { Injectable, Logger } from "@nestjs/common";
+import { Cron } from "@nestjs/schedule";
 import { ConfigService } from "@nestjs/config";
 import { InjectRepository } from "@nestjs/typeorm";
 import { FindOptionsWhere, Repository, In } from "typeorm";
@@ -185,5 +186,27 @@ export class AlertsService {
     }
 
     return `${baseMessage} ${aqiMsg}.`;
+  }
+
+  @Cron("30 3 * * *") // Runs every day at 03:30 AM
+  async cleanupOldAlerts(): Promise<void> {
+    const retentionDays = 30;
+    const thresholdDate = new Date();
+    thresholdDate.setDate(thresholdDate.getDate() - retentionDays);
+
+    this.logger.log(`Starting cleanup of resolved alerts older than ${retentionDays} days (${thresholdDate.toISOString()})`);
+    
+    try {
+      const result = await this.repo
+        .createQueryBuilder()
+        .delete()
+        .where("status = :status", { status: "resolved" })
+        .andWhere("resolvedAt < :thresholdDate", { thresholdDate })
+        .execute();
+      
+      this.logger.log(`Cleanup finished. Deleted ${result.affected} old resolved alerts.`);
+    } catch (error) {
+      this.logger.error(`Error cleaning up old alerts: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 }

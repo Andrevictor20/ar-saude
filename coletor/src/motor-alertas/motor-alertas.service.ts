@@ -13,6 +13,7 @@ export class MotorAlertasService {
   private readonly motorAlertasUrl: string;
   private readonly maxRetries: number;
   private readonly retryBaseDelay: number;
+  private readonly apiKey: string;
 
   constructor(
     private readonly httpService: HttpService,
@@ -27,6 +28,7 @@ export class MotorAlertasService {
       'RETRY_BASE_DELAY_MS',
       1000,
     );
+    this.apiKey = this.configService.get<string>('API_KEY', 'default-dev-key');
   }
 
   async sendMeasurement(data: ProcessedAirQualityData & ExtraPollutants): Promise<void> {
@@ -38,7 +40,10 @@ export class MotorAlertasService {
       () =>
         firstValueFrom(
           this.httpService.post(url, data, {
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+              'Content-Type': 'application/json',
+              'x-api-key': this.apiKey
+            },
           }),
         ),
       this.maxRetries,
