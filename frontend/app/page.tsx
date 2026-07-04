@@ -1,4 +1,4 @@
-'use client';
+'use client'; // Re-trigger frontend build
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
