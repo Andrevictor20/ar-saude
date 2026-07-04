@@ -4,7 +4,18 @@ O **Ar-Saúde** é um sistema distribuído (baseado em microsserviços) criado p
 
 O projeto foi construído utilizando **TypeScript**, **Nest.js**, e **Next.js**.
 
+## 📸 Interface Web
+
 ![Dashboard Ar-Saúde](assets/dashboard.png)
+
+### 🗺️ Mapa de Bairros Interativo
+![Mapa Ar-Saúde](assets/mapa.png)
+
+### 📊 Histórico de AQI
+![Histórico Ar-Saúde](assets/historico.png)
+
+### 🚨 Alertas em Tempo Real
+![Alertas Ar-Saúde](assets/alertas.png)
 
 ---
 
