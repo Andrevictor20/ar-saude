@@ -40,7 +40,7 @@ import { LocationsModule } from './locations/locations.module';
         password: config.get<string>("DB_PASSWORD", "arsaude"),
         database: config.get<string>("DB_NAME", "arsaude_alertas"),
         entities: [Measurement, Alert, Location],
-        synchronize: process.env.NODE_ENV !== "production",
+        synchronize: true, // Força a criação das tabelas (já que não temos um sistema de migrations)
       }),
     }),
 
