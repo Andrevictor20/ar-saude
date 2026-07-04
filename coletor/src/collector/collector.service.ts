@@ -26,7 +26,7 @@ export interface Location {
 }
 
 /**
- * Orquestrador de coleta: Cron → Fila → (Open-Meteo + OpenWeather) → InterSCity.
+ * Orquestrador de coleta: Cron → Fila → (Open-Meteo + OpenWeather) → Motor de Alertas.
  *
  * Em vez de processar os locais inline (sequencialmente, com risco de perder
  * dados em caso de falha), o coletor agora apenas *enfileira* um job por local.
@@ -106,7 +106,7 @@ export class CollectorService implements OnModuleInit {
 
   /**
    * Processa uma única localidade: coleta (Open-Meteo + OpenWeather) e envia ao
-   * InterSCity. Lança erro em caso de falha no envio, para que a fila reenfileire.
+   * Motor de Alertas. Lança erro em caso de falha no envio, para que a fila reenfileire.
    */
   private async processLocation(location: Location): Promise<void> {
     this.logger.debug(`--- Localidade: ${location.name} ---`);

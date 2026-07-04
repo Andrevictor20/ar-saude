@@ -46,55 +46,7 @@
         { "expr": "rate(arsaude_measurements_failed_total[1m])", "legendFormat": "falhas/s" }
       ]
     },
-    {
-      "type": "row",
-      "title": "InterSCity — Disponibilidade & Failover",
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 17 }
-    },
-    {
-      "type": "stat",
-      "title": "Primário no ar",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "fieldConfig": {
-        "defaults": {
-          "mappings": [
-            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "UP", "color": "green" } } }
-          ]
-        }
-      },
-      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 18 },
-      "targets": [{ "expr": "arsaude_interscity_primary_up" }]
-    },
-    {
-      "type": "stat",
-      "title": "Fallback no ar",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "fieldConfig": {
-        "defaults": {
-          "mappings": [
-            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "UP", "color": "green" } } }
-          ]
-        }
-      },
-      "gridPos": { "h": 6, "w": 6, "x": 6, "y": 18 },
-      "targets": [{ "expr": "arsaude_interscity_fallback_up" }]
-    },
-    {
-      "type": "stat",
-      "title": "Failovers (total)",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 6, "w": 6, "x": 12, "y": 18 },
-      "targets": [{ "expr": "arsaude_interscity_failover_total" }]
-    },
-    {
-      "type": "timeseries",
-      "title": "Endpoint ativo",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 6, "w": 6, "x": 18, "y": 18 },
-      "targets": [
-        { "expr": "arsaude_interscity_active_endpoint", "legendFormat": "{{endpoint}}" }
-      ]
-    },
+
     {
       "type": "row",
       "title": "Motor de Alertas",

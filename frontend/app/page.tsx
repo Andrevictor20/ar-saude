@@ -238,8 +238,8 @@ export default function DashboardPage() {
               </div>
 
               <div className="footer-note">
-                Dados coletados via InterSCity, Open-Meteo e OpenWeatherMap.
-                Atualizacao automatica a cada {REFRESH_MS / 1000}s.
+                Dados coletados via Motor de Alertas, Open-Meteo e OpenWeatherMap.
+                Atualização automática a cada {REFRESH_MS / 1000}s.
               </div>
             </>
           )}

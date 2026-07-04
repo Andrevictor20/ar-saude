@@ -3,7 +3,7 @@ import { AppService } from './app.service.js';
 import { CollectorService } from './collector/collector.service.js';
 import { CacheService } from './common/cache/cache.service.js';
 
-/** Controller de healthcheck e observabilidade (fila + cache + InterSCity). */
+/** Controller de healthcheck e observabilidade (fila + cache + motor de alertas). */
 @Controller()
 export class AppController {
   constructor(
@@ -18,7 +18,7 @@ export class AppController {
     return this.appService.getHealth();
   }
 
-  /** GET /stats — Estatísticas da fila, do cache e do InterSCity. */
+  /** GET /stats — Estatísticas da fila e do cache. */
   @Get('stats')
   getStats(): {
     cycles: number;

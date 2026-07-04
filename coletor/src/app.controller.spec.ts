@@ -3,7 +3,7 @@ import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { CollectorService } from './collector/collector.service.js';
 import { CacheService } from './common/cache/cache.service.js';
-import { InterscityService } from './interscity/interscity.service.js';
+
 
 describe('AppController', () => {
   let appController: AppController;
@@ -34,24 +34,7 @@ describe('AppController', () => {
             getStats: () => ({ size: 0, hits: 0, misses: 0, hitRate: '0%' }),
           },
         },
-        {
-          provide: InterscityService,
-          useValue: {
-            getHealth: () => ({
-              active: 'primary',
-              primaryUp: true,
-              fallbackUp: false,
-              lastCheckedAt: null,
-            }),
-            checkHealth: () =>
-              Promise.resolve({
-                active: 'primary',
-                primaryUp: true,
-                fallbackUp: false,
-                lastCheckedAt: new Date().toISOString(),
-              }),
-          },
-        },
+
       ],
     }).compile();
 

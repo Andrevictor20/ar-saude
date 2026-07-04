@@ -23,7 +23,7 @@ export class MetricsService {
   });
   private readonly measurementsSentTotal = new client.Counter({
     name: 'arsaude_measurements_sent_total',
-    help: 'Total de medições enviadas com sucesso ao InterSCity.',
+    help: 'Total de medições enviadas com sucesso ao Motor de Alertas.',
   });
   private readonly measurementsFailedTotal = new client.Counter({
     name: 'arsaude_measurements_failed_total',
