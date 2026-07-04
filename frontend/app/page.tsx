@@ -139,11 +139,11 @@ export default function DashboardPage() {
     <>
       <header className="app-header">
         <div className="app-header-inner">
-          <div className="brand" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <img src="/logo.svg" alt="Ar-Saúde Logo" width="40" height="40" />
-            <div>
+            <div className="brand">
               <span className="brand-title">Ar-Saúde</span>
-              <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Monitoramento da Qualidade do Ar · Brasil</div>
+              <span className="brand-subtitle">Monitoramento da Qualidade do Ar · Brasil</span>
             </div>
           </div>
 
