@@ -1,12 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import Redis from 'ioredis';
 
-/** Entrada interna do cache com valor e instante de expiração. */
-interface CacheEntry<T> {
-  value: T;
-  expiresAt: number;
-}
-
-/** Estatísticas de uso do cache para observabilidade. */
 export interface CacheStats {
   size: number;
   hits: number;
@@ -14,57 +9,48 @@ export interface CacheStats {
   hitRate: string;
 }
 
-/**
- * Cache simples em memória com TTL (time-to-live).
- *
- * Evita refazer chamadas idênticas às APIs externas dentro de uma janela de
- * tempo — fundamental para suportar rajadas de requisições sem estourar os
- * limites das APIs (Open-Meteo / OpenWeatherMap).
- */
 @Injectable()
-export class CacheService {
+export class CacheService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(CacheService.name);
-
-  private readonly store = new Map<string, CacheEntry<unknown>>();
+  private redis: Redis;
 
   private hits = 0;
   private misses = 0;
 
-  /** Retorna o valor cacheado se existir e ainda estiver válido. */
-  get<T>(key: string): T | undefined {
-    const entry = this.store.get(key);
+  constructor(private configService: ConfigService) {}
 
-    if (!entry) {
+  onModuleInit() {
+    const redisUrl = this.configService.get<string>('REDIS_URL', 'redis://localhost:6379');
+    this.redis = new Redis(redisUrl);
+    this.redis.on('connect', () => this.logger.log('Connected to Redis'));
+    this.redis.on('error', (err) => this.logger.error('Redis error', err));
+  }
+
+  onModuleDestroy() {
+    this.redis.disconnect();
+  }
+
+  async get<T>(key: string): Promise<T | undefined> {
+    const value = await this.redis.get(key);
+    if (!value) {
       this.misses++;
       return undefined;
     }
-
-    if (Date.now() > entry.expiresAt) {
-      this.store.delete(key);
-      this.misses++;
-      return undefined;
-    }
-
     this.hits++;
-    return entry.value as T;
+    return JSON.parse(value) as T;
   }
 
-  /** Grava um valor no cache com o TTL informado (ms). */
-  set<T>(key: string, value: T, ttlMs: number): void {
-    this.store.set(key, { value, expiresAt: Date.now() + ttlMs });
+  async set<T>(key: string, value: T, ttlMs: number): Promise<void> {
+    const ttlSeconds = Math.max(1, Math.floor(ttlMs / 1000));
+    await this.redis.set(key, JSON.stringify(value), 'EX', ttlSeconds);
   }
 
-  /**
-   * Retorna o valor cacheado ou executa a `factory`, cacheando o resultado.
-   * É o atalho recomendado: na primeira chamada busca na origem, nas seguintes
-   * (dentro do TTL) devolve direto da memória.
-   */
   async wrap<T>(
     key: string,
     ttlMs: number,
     factory: () => Promise<T>,
   ): Promise<T> {
-    const cached = this.get<T>(key);
+    const cached = await this.get<T>(key);
     if (cached !== undefined) {
       this.logger.debug(`HIT  → ${key}`);
       return cached;
@@ -72,27 +58,24 @@ export class CacheService {
 
     this.logger.debug(`MISS → ${key}`);
     const value = await factory();
-    this.set(key, value, ttlMs);
+    await this.set(key, value, ttlMs);
     return value;
   }
 
-  /** Remove uma chave específica. */
-  delete(key: string): void {
-    this.store.delete(key);
+  async delete(key: string): Promise<void> {
+    await this.redis.del(key);
   }
 
-  /** Limpa todo o cache. */
-  clear(): void {
-    this.store.clear();
+  async clear(): Promise<void> {
+    await this.redis.flushdb();
   }
 
-  /** Estatísticas de hits/misses para o endpoint de observabilidade. */
-  getStats(): CacheStats {
+  async getStats(): Promise<CacheStats> {
     const total = this.hits + this.misses;
-    const hitRate =
-      total === 0 ? '0%' : `${((this.hits / total) * 100).toFixed(1)}%`;
+    const hitRate = total === 0 ? '0%' : `${((this.hits / total) * 100).toFixed(1)}%`;
+    const dbSize = await this.redis.dbsize();
     return {
-      size: this.store.size,
+      size: dbSize,
       hits: this.hits,
       misses: this.misses,
       hitRate,

@@ -22,6 +22,15 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:7-alpine
+    container_name: ar-saude-redis
+    restart: unless-stopped
+    ports:
+      - '127.0.0.1:${REDIS_PORT:-6379}:6379'
+    volumes:
+      - redis_data:/data
+
   coletor:
     image: ghcr.io/andrevictor20/ar-saude-coletor:latest
     security_opt:
@@ -30,6 +39,8 @@ services:
       context: ./coletor
     container_name: ar-saude-coletor
     restart: unless-stopped
+    depends_on:
+      - redis
     environment:
       PORT: 3000
       OPEN_METEO_BASE_URL: ${OPEN_METEO_BASE_URL:-https://air-quality-api.open-meteo.com/v1/air-quality}
@@ -39,13 +50,9 @@ services:
       CRON_COLLECT_INTERVAL: ${CRON_COLLECT_INTERVAL:-*/30 * * * *}
       MAX_RETRIES: ${MAX_RETRIES:-5}
       RETRY_BASE_DELAY_MS: ${RETRY_BASE_DELAY_MS:-1000}
+      REDIS_URL: redis://redis:6379
     ports:
       - '${COLETOR_PORT:-3004}:3000'
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 256M
 
   motor-alertas:
     image: ghcr.io/andrevictor20/ar-saude-motor-alertas:latest
@@ -57,6 +64,7 @@ services:
     restart: unless-stopped
     depends_on:
       - postgres
+      - redis
     environment:
       PORT: 3001
       DB_HOST: postgres
@@ -68,13 +76,9 @@ services:
       MAX_RETRIES: ${MAX_RETRIES:-5}
       RETRY_BASE_DELAY_MS: ${RETRY_BASE_DELAY_MS:-1000}
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:${FRONTEND_PORT:-3002},https://arsaude.rasppi.cloud}
+      REDIS_URL: redis://redis:6379
     ports:
       - '${MOTOR_PORT:-3001}:3001'
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 256M
 
   frontend:
     image: ghcr.io/andrevictor20/ar-saude-frontend:latest
@@ -90,11 +94,6 @@ services:
       - motor-alertas
     ports:
       - '${FRONTEND_PORT:-3002}:3002'
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 512M
 
   # ── Observabilidade ─────────────────────────────────────────────────────
   # Prometheus: coleta /metrics dos dois microsserviços.
@@ -140,3 +139,4 @@ services:
 volumes:
   postgres_data:
   grafana_data:
+  redis_data:

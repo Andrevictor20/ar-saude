@@ -25,8 +25,8 @@ export type AirQualityLevel =
 /** Dado processado pronto para envio ao InterSCity. */
 export interface ProcessedAirQualityData extends AirQualityData {
   level: AirQualityLevel;
-  neighborhoodId: string;
-  neighborhoodName: string;
+  locationId: string;
+  locationName: string;
   latitude: number;
   longitude: number;
 }

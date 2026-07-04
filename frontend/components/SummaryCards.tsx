@@ -13,9 +13,9 @@ export default function SummaryCards({ stats, activeAlerts }: Props) {
     <section>
       <div className="cards-grid">
         <div className="card">
-          <div className="metric-label">Bairros monitorados</div>
+          <div className="metric-label">Localidades monitoradas</div>
           <div className="metric-value">
-            {stats?.monitoredNeighborhoods ?? '-'}
+            {stats?.monitoredLocations ?? '-'}
           </div>
           <div className="metric-sub">
             {stats?.totalMeasurements ?? 0} medicoes registradas
@@ -45,7 +45,7 @@ export default function SummaryCards({ stats, activeAlerts }: Props) {
         </div>
 
         <div className="card">
-          <div className="metric-label">Pior bairro agora</div>
+          <div className="metric-label">Pior localidade agora</div>
           <div
             className="metric-value"
             style={{
@@ -53,7 +53,7 @@ export default function SummaryCards({ stats, activeAlerts }: Props) {
               color: stats?.worst ? aqiColor(stats.worst.aqi) : undefined,
             }}
           >
-            {stats?.worst?.neighborhoodName ?? '-'}
+            {stats?.worst?.locationName ?? '-'}
           </div>
           <div className="metric-sub">
             {stats?.worst

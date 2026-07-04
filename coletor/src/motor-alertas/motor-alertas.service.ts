@@ -47,7 +47,7 @@ export class MotorAlertasService {
     );
 
     this.logger.log(
-      `✅ Medição enviada com sucesso para ${data.neighborhoodName} — AQI: ${data.aqi} (${data.level})`,
+      `✅ Medição enviada com sucesso para ${data.locationName} — AQI: ${data.aqi} (${data.level})`,
     );
   }
 }

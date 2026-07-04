@@ -22,11 +22,11 @@ export function getLatestMeasurements(): Promise<Measurement[]> {
 }
 
 export function getHistory(
-  neighborhoodId: string,
+  locationId: string,
   limit = 336,
 ): Promise<Measurement[]> {
   return request<Measurement[]>(
-    `/measurements/history?neighborhoodId=${encodeURIComponent(neighborhoodId)}&limit=${limit}`,
+    `/measurements/history?locationId=${encodeURIComponent(locationId)}&limit=${limit}`,
   );
 }
 

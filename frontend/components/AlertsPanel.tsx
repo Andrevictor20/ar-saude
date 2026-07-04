@@ -8,7 +8,7 @@ interface Props {
 
 export default function AlertsPanel({ alerts }: Props) {
   const groupedAlerts = useMemo(() => {
-    const groups = new Map<string, Alert & { neighborhoods: string[] }>();
+    const groups = new Map<string, Alert & { locations: string[] }>();
     alerts.forEach((alert) => {
       const triggersSig = alert.triggeredBy
         ? [...alert.triggeredBy].sort().join('|')
@@ -16,11 +16,11 @@ export default function AlertsPanel({ alerts }: Props) {
       const key = `${alert.severity}|${alert.aqi}|${alert.peakAqi}|${triggersSig}`;
       if (groups.has(key)) {
         const existing = groups.get(key)!;
-        if (!existing.neighborhoods.includes(alert.neighborhoodName)) {
-          existing.neighborhoods.push(alert.neighborhoodName);
+        if (!existing.locations.includes(alert.locationName)) {
+          existing.locations.push(alert.locationName);
         }
       } else {
-        groups.set(key, { ...alert, neighborhoods: [alert.neighborhoodName] });
+        groups.set(key, { ...alert, locations: [alert.locationName] });
       }
     });
     return Array.from(groups.values());
@@ -90,7 +90,7 @@ export default function AlertsPanel({ alerts }: Props) {
                     <div
                       style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}
                     >
-                      {group.neighborhoods.map((n, i) => (
+                      {group.locations.map((n, i) => (
                         <span
                           key={i}
                           className="badge"
@@ -109,7 +109,7 @@ export default function AlertsPanel({ alerts }: Props) {
                     className="alert-msg"
                     style={{ flex: 1, marginTop: '12px' }}
                   >
-                    {group.message.replace(` em ${group.neighborhoodName}`, '')}
+                    {group.message.replace(` em ${group.locationName}`, '')}
                   </div>
                   <div className="alert-meta">
                     <span>AQI atual: {group.aqi}</span>

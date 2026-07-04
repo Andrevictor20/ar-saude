@@ -4,7 +4,7 @@ import { Repository } from "typeorm";
 
 import { Measurement } from "../entities/measurement.entity";
 import { IngestMeasurementDto } from "./dto/ingest-measurement.dto";
-import { SAO_LUIS_NEIGHBORHOODS } from "../common/constants/neighborhoods";
+import { LocationsService } from "../locations/locations.service";
 
 export interface LevelDistribution {
   level: string;
@@ -12,11 +12,11 @@ export interface LevelDistribution {
 }
 
 export interface DashboardStats {
-  monitoredNeighborhoods: number;
+  monitoredLocations: number;
   totalMeasurements: number;
   averageAqi: number | null;
-  worst: { neighborhoodName: string; aqi: number; level: string } | null;
-  best: { neighborhoodName: string; aqi: number; level: string } | null;
+  worst: { locationName: string; aqi: number; level: string } | null;
+  best: { locationName: string; aqi: number; level: string } | null;
   distribution: LevelDistribution[];
   updatedAt: string;
 }
@@ -28,13 +28,14 @@ export class MeasurementsService {
   constructor(
     @InjectRepository(Measurement)
     private readonly repo: Repository<Measurement>,
+    private readonly locationsService: LocationsService,
   ) {}
 
   async saveReading(reading: IngestMeasurementDto): Promise<Measurement | null> {
     const measuredAtDate = new Date(reading.timestamp);
     const exists = await this.repo.findOne({
       where: {
-        neighborhoodId: reading.neighborhoodId,
+        locationId: reading.locationId,
         measuredAt: measuredAtDate,
       },
     });
@@ -44,8 +45,8 @@ export class MeasurementsService {
     }
 
     const measurement = this.repo.create({
-      neighborhoodId: reading.neighborhoodId,
-      neighborhoodName: reading.neighborhoodName,
+      locationId: reading.locationId,
+      locationName: reading.locationName,
       aqi: reading.aqi,
       level: reading.level,
       pm10: reading.pm10,
@@ -65,11 +66,11 @@ export class MeasurementsService {
   }
 
   async findHistory(
-    neighborhoodId: string,
+    locationId: string,
     limit = 100,
   ): Promise<Measurement[]> {
     return this.repo.find({
-      where: { neighborhoodId },
+      where: { locationId },
       order: { measuredAt: "DESC" },
       take: Math.min(Math.max(limit, 1), 1000),
     });
@@ -82,7 +83,7 @@ export class MeasurementsService {
     const qb = this.repo
       .createQueryBuilder("m")
       .orderBy("m.measuredAt", "DESC")
-      .addOrderBy("m.neighborhoodId", "ASC");
+      .addOrderBy("m.locationId", "ASC");
 
     if (startDate) {
       qb.andWhere("m.measuredAt >= :startDate", {
@@ -98,28 +99,29 @@ export class MeasurementsService {
     return qb.getMany();
   }
 
-  async findLatestPerNeighborhood(): Promise<Measurement[]> {
-    const validIds = SAO_LUIS_NEIGHBORHOODS.map((n) => n.id);
+  async findLatestPerLocation(): Promise<Measurement[]> {
+    const locations = await this.locationsService.getAllLocations();
+    const validIds = locations.map((n) => n.id);
     return this.repo
       .createQueryBuilder("m")
-      .where("m.neighborhoodId IN (:...validIds)", { validIds })
-      .distinctOn(["m.neighborhoodId"])
-      .orderBy("m.neighborhoodId", "ASC")
+      .where("m.locationId IN (:...validIds)", { validIds })
+      .distinctOn(["m.locationId"])
+      .orderBy("m.locationId", "ASC")
       .addOrderBy("m.measuredAt", "DESC")
       .getMany();
   }
 
-  async findLatestForNeighborhood(
-    neighborhoodId: string,
+  async findLatestForLocation(
+    locationId: string,
   ): Promise<Measurement | null> {
     return this.repo.findOne({
-      where: { neighborhoodId },
+      where: { locationId },
       order: { measuredAt: "DESC" },
     });
   }
 
   async getStats(): Promise<DashboardStats> {
-    const latest = await this.findLatestPerNeighborhood();
+    const latest = await this.findLatestPerLocation();
     const withAqi = latest.filter(
       (m): m is Measurement & { aqi: number } => typeof m.aqi === "number",
     );
@@ -134,14 +136,14 @@ export class MeasurementsService {
     const sorted = [...withAqi].sort((a, b) => b.aqi - a.aqi);
     const worst = sorted[0]
       ? {
-          neighborhoodName: sorted[0].neighborhoodName,
+          locationName: sorted[0].locationName,
           aqi: sorted[0].aqi,
           level: sorted[0].level,
         }
       : null;
     const best = sorted[sorted.length - 1]
       ? {
-          neighborhoodName: sorted[sorted.length - 1].neighborhoodName,
+          locationName: sorted[sorted.length - 1].locationName,
           aqi: sorted[sorted.length - 1].aqi,
           level: sorted[sorted.length - 1].level,
         }
@@ -158,7 +160,7 @@ export class MeasurementsService {
     const totalMeasurements = await this.repo.count();
 
     return {
-      monitoredNeighborhoods: latest.length,
+      monitoredLocations: latest.length,
       totalMeasurements,
       averageAqi,
       worst,

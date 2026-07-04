@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic';
 
 import SummaryCards from '@/components/SummaryCards';
 import AlertsPanel from '@/components/AlertsPanel';
-import NeighborhoodTable from '@/components/NeighborhoodTable';
+import LocationTable from '@/components/LocationTable';
 import PollutantsLegend from '@/components/PollutantsLegend';
 import HistoryChart from '@/components/HistoryChart';
 
@@ -123,7 +123,7 @@ export default function DashboardPage() {
   }, []);
 
   const handleSelect = useCallback(async (m: Measurement) => {
-    const next = { id: m.neighborhoodId, name: m.neighborhoodName };
+    const next = { id: m.locationId, name: m.locationName };
     setSelected(next);
     selectedRef.current = next;
     try {
@@ -141,9 +141,7 @@ export default function DashboardPage() {
         <div className="app-header-inner">
           <div className="brand">
             <span className="brand-title">Ar-Saude</span>
-            <span className="brand-subtitle">
-              Monitoramento da Qualidade do Ar · São Luís - MA, Brasil
-            </span>
+              Monitoramento da Qualidade do Ar · Brasil
           </div>
 
           {/* ─── Tab navigation ─── */}
@@ -183,7 +181,7 @@ export default function DashboardPage() {
           </nav>
 
           <div className="header-status">
-            <span className="region-chip">São Luís - MA, Brasil</span>
+            <span className="region-chip">Brasil</span>
             <span className="status-dot">
               <span className={`dot ${connected ? 'online' : 'offline'}`} />
               {connected ? 'Conectado ao motor de alertas' : 'Sem conexao'}
@@ -228,7 +226,7 @@ export default function DashboardPage() {
                 className="layout-grid"
                 style={{ gridTemplateColumns: '1fr' }}
               >
-                <NeighborhoodTable
+                <LocationTable
                   measurements={measurements}
                   selectedId={selected?.id ?? null}
                   onSelect={handleSelect}
@@ -279,13 +277,13 @@ export default function DashboardPage() {
                     fontWeight: 600,
                   }}
                 >
-                  Selecionar Bairro:
+                  Selecionar Localidade:
                 </span>
                 <select
                   value={selected?.id ?? ''}
                   onChange={(e) => {
                     const m = measurements.find(
-                      (x) => x.neighborhoodId === e.target.value,
+                      (x) => x.locationId === e.target.value,
                     );
                     if (m) handleSelect(m);
                   }}
@@ -301,21 +299,21 @@ export default function DashboardPage() {
                   }}
                 >
                   <option value="" disabled>
-                    -- Escolha um bairro --
+                    -- Escolha uma localidade --
                   </option>
                   {[...measurements]
                     .sort((a, b) =>
-                      a.neighborhoodName.localeCompare(b.neighborhoodName),
+                      a.locationName.localeCompare(b.locationName),
                     )
                     .map((m) => (
-                      <option key={m.neighborhoodId} value={m.neighborhoodId}>
-                        {m.neighborhoodName}
+                      <option key={m.locationId} value={m.locationId}>
+                        {m.locationName}
                       </option>
                     ))}
                 </select>
               </div>
               <HistoryChart
-                neighborhoodName={selected?.name ?? null}
+                locationName={selected?.name ?? null}
                 history={history}
               />
             </div>

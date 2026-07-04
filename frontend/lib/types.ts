@@ -1,7 +1,7 @@
 export interface Measurement {
   id: string;
-  neighborhoodId: string;
-  neighborhoodName: string;
+  locationId: string;
+  locationName: string;
   resourceUuid: string;
   aqi: number | null;
   level: string;
@@ -24,8 +24,8 @@ export type AlertStatus = 'active' | 'resolved';
 
 export interface Alert {
   id: string;
-  neighborhoodId: string;
-  neighborhoodName: string;
+  locationId: string;
+  locationName: string;
   resourceUuid: string;
   aqi: number;
   peakAqi: number;
@@ -47,11 +47,11 @@ export interface LevelDistribution {
 }
 
 export interface DashboardStats {
-  monitoredNeighborhoods: number;
+  monitoredLocations: number;
   totalMeasurements: number;
   averageAqi: number | null;
-  worst: { neighborhoodName: string; aqi: number; level: string } | null;
-  best: { neighborhoodName: string; aqi: number; level: string } | null;
+  worst: { locationName: string; aqi: number; level: string } | null;
+  best: { locationName: string; aqi: number; level: string } | null;
   distribution: LevelDistribution[];
   updatedAt: string;
 }

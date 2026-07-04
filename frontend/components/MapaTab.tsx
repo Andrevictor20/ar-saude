@@ -7,13 +7,14 @@ import { aqiColor, aqiLevel, formatNumber, formatTime } from '@/lib/format';
 /* ─── Leaflet dynamic import (SSR-safe) ─── */
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-
-/* ─── GeoJSON Data ─── */
-import geoJsonDataRaw from '../public/bairros_slz.json';
+import 'leaflet.markercluster';
+import 'leaflet.markercluster/dist/MarkerCluster.css';
+import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 
 /* ─── Constants ─── */
-const MAP_CENTER: [number, number] = [-2.5307, -44.3068];
-const MAP_ZOOM = 13;
+// Brazil approx center
+const MAP_CENTER: [number, number] = [-14.2350, -51.9253];
+const MAP_ZOOM = 4;
 const TILE_URL =
   'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
 const TILE_ATTR =
@@ -38,9 +39,7 @@ interface MapaTabProps {
 export default function MapaTab({ measurements, stats }: MapaTabProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
-  const geoJsonLayerRef = useRef<L.GeoJSON | null>(null);
-  const dynamicLayersRef = useRef<L.FeatureGroup | null>(null);
-  const geoJsonData = geoJsonDataRaw as any;
+  const clusterGroupRef = useRef<L.MarkerClusterGroup | null>(null);
 
   /* Computed stats for the status bar */
   const statusData = useMemo(() => {
@@ -111,142 +110,127 @@ export default function MapaTab({ measurements, stats }: MapaTabProps) {
     };
   }, []);
 
-  /* Sync GeoJSON with measurements */
+  /* Sync Markers with measurements */
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map) return;
-    if (!geoJsonData || !geoJsonData.features) {
-      return;
+
+    if (clusterGroupRef.current) {
+      map.removeLayer(clusterGroupRef.current);
     }
 
-    if (geoJsonLayerRef.current) {
-      map.removeLayer(geoJsonLayerRef.current);
-    }
-    if (dynamicLayersRef.current) {
-      map.removeLayer(dynamicLayersRef.current);
-    }
+    const markers = L.markerClusterGroup({
+      chunkedLoading: true,
+      showCoverageOnHover: false,
+      zoomToBoundsOnClick: true,
+      spiderfyOnMaxZoom: true,
+      iconCreateFunction: (cluster) => {
+        const children = cluster.getAllChildMarkers();
+        let sumAqi = 0;
+        let countAqi = 0;
+        let maxAqi = 0;
 
-    dynamicLayersRef.current = L.featureGroup().addTo(map);
-    const dynamicLayers = dynamicLayersRef.current;
+        children.forEach((child: any) => {
+          if (child.options && child.options.aqi !== undefined && child.options.aqi !== null) {
+            sumAqi += child.options.aqi;
+            countAqi++;
+            if (child.options.aqi > maxAqi) {
+              maxAqi = child.options.aqi;
+            }
+          }
+        });
 
-    geoJsonLayerRef.current = L.geoJSON(geoJsonData, {
-      style: () => {
-        return {
-          stroke: false,
-          fill: false,
-          interactive: false,
-        };
-      },
-      onEachFeature: (feature, layer) => {
-        const name = feature?.properties?.name;
-        const m = measurements.find((x) => x.neighborhoodName === name);
-
-        // Certifique-se de que a camada é um polígono para calcular o centro
-        const l = layer as any;
-        if (!l.getBounds) return;
+        // Use the worst AQI in the cluster to color the cluster marker to highlight danger areas
+        const clusterAqi = maxAqi > 0 ? maxAqi : (countAqi > 0 ? Math.round(sumAqi / countAqi) : 0);
+        const color = clusterAqi > 0 ? aqiColor(clusterAqi) : '#475569';
         
-        const bounds = l.getBounds();
-        const center = bounds.getCenter();
-        const nw = bounds.getNorthWest();
-        const ne = bounds.getNorthEast();
-        const sw = bounds.getSouthWest();
-        
-        // Calcular área aproximada da bounding box para obter um raio equivalente realista
-        const width = map.distance(nw, ne);
-        const height = map.distance(nw, sw);
-        const area = width * height;
-        const radius = Math.sqrt(area / Math.PI) * 0.85;
+        return L.divIcon({
+          html: `<div style="background-color: ${color}dd; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; border: 2px solid rgba(255,255,255,0.5); box-shadow: 0 0 10px rgba(0,0,0,0.5);">${children.length}</div>`,
+          className: 'custom-cluster-icon',
+          iconSize: L.point(40, 40)
+        });
+      }
+    });
+    
+    clusterGroupRef.current = markers;
 
-        if (m && m.aqi !== null) {
-          // Criar círculo de área (inicialmente oculto, com stroke definido para funcionar no Firefox)
-          const areaCircle = L.circle(center, {
-            radius: radius,
-            fillColor: aqiColor(m.aqi),
-            fillOpacity: 0,
-            color: '#475569',
-            weight: 1.5,
-            opacity: 0,
-            dashArray: '5, 5',
-            interactive: false,
-            className: 'area-circle',
-          }).addTo(dynamicLayers);
+    measurements.forEach((m) => {
+      if (m.latitude == null || m.longitude == null) return;
 
-          // Criar ponto pulsante
-          const markerHtml = `
-            <div class="glowing-point-wrapper">
-               <div class="glowing-point-pulse" style="background:${aqiColor(m.aqi)}"></div>
-               <div class="glowing-point-core" style="background:${aqiColor(m.aqi)}"></div>
+      const center: [number, number] = [m.latitude, m.longitude];
+
+      if (m.aqi !== null) {
+        // Criar ponto pulsante
+        const markerHtml = `
+          <div class="glowing-point-wrapper">
+             <div class="glowing-point-pulse" style="background:${aqiColor(m.aqi)}"></div>
+             <div class="glowing-point-core" style="background:${aqiColor(m.aqi)}"></div>
+          </div>
+        `;
+        const customIcon = L.divIcon({
+          className: 'custom-glowing-icon',
+          html: markerHtml,
+          iconSize: [30, 30],
+          iconAnchor: [15, 15],
+          tooltipAnchor: [0, -15]
+        });
+
+        const marker = L.marker(center, {
+          icon: customIcon,
+          aqi: m.aqi, // custom property for cluster aggregation
+        } as any);
+
+        marker.bindTooltip(
+          `<div class="animated-popup">
+            <div class="popup-header">
+              <div class="popup-title">${m.locationName}</div>
+              <div class="popup-aqi" style="background:${aqiColor(m.aqi)}22; color:${aqiColor(m.aqi)}; border: 1px solid ${aqiColor(m.aqi)}55;">
+                AQI: <strong>${m.aqi ?? '–'}</strong>
+              </div>
             </div>
-          `;
-          const customIcon = L.divIcon({
-            className: 'custom-glowing-icon',
-            html: markerHtml,
-            iconSize: [40, 40],
-            iconAnchor: [20, 20],
-            tooltipAnchor: [0, -20]
-          });
+            <div class="popup-grid">
+              <div class="popup-item"><span>PM2.5</span><strong>${formatNumber(m.pm2_5)}</strong></div>
+              <div class="popup-item"><span>PM10</span><strong>${formatNumber(m.pm10)}</strong></div>
+              <div class="popup-item"><span>NO₂</span><strong>${formatNumber(m.no2)}</strong></div>
+              <div class="popup-item"><span>O₃</span><strong>${formatNumber(m.ozone)}</strong></div>
+              <div class="popup-item"><span>CO</span><strong>${formatNumber(m.co)}</strong></div>
+              <div class="popup-item"><span>SO₂</span><strong>${formatNumber(m.so2)}</strong></div>
+              <div class="popup-item"><span>NH₃</span><strong>${formatNumber(m.nh3)}</strong></div>
+              <div class="popup-item"><span>NO</span><strong>${formatNumber(m.no)}</strong></div>
+            </div>
+            <div class="popup-footer">
+              <span class="live-indicator"></span> Atualizado: ${formatTime(m.measuredAt)}
+            </div>
+          </div>`,
+          {
+            direction: 'top',
+            className: 'mapa-tooltip-rich',
+          },
+        );
 
-          const marker = L.marker(center, {
-            icon: customIcon
-          }).addTo(dynamicLayers);
+        markers.addLayer(marker);
 
-          // Usa bindTooltip com o HTML rico para aparecer no hover (e click no mobile)
-          marker.bindTooltip(
-            `<div class="animated-popup">
-              <div class="popup-header">
-                <div class="popup-title">${m.neighborhoodName}</div>
-                <div class="popup-aqi" style="background:${aqiColor(m.aqi)}22; color:${aqiColor(m.aqi)}; border: 1px solid ${aqiColor(m.aqi)}55;">
-                  AQI: <strong>${m.aqi ?? '–'}</strong>
-                </div>
-              </div>
-              <div class="popup-grid">
-                <div class="popup-item"><span>PM2.5</span><strong>${formatNumber(m.pm2_5)}</strong></div>
-                <div class="popup-item"><span>PM10</span><strong>${formatNumber(m.pm10)}</strong></div>
-                <div class="popup-item"><span>NO₂</span><strong>${formatNumber(m.no2)}</strong></div>
-                <div class="popup-item"><span>O₃</span><strong>${formatNumber(m.ozone)}</strong></div>
-                <div class="popup-item"><span>CO</span><strong>${formatNumber(m.co)}</strong></div>
-                <div class="popup-item"><span>SO₂</span><strong>${formatNumber(m.so2)}</strong></div>
-                <div class="popup-item"><span>NH₃</span><strong>${formatNumber(m.nh3)}</strong></div>
-                <div class="popup-item"><span>NO</span><strong>${formatNumber(m.no)}</strong></div>
-              </div>
-              <div class="popup-footer">
-                <span class="live-indicator"></span> Atualizado: ${formatTime(m.measuredAt)}
-              </div>
-            </div>`,
-            {
-              direction: 'top',
-              className: 'mapa-tooltip-rich',
-            },
-          );
+      } else {
+        // Sem dados: exibir um ponto cinza menor
+        const customIcon = L.divIcon({
+          className: 'custom-glowing-icon no-data',
+          html: `<div class="glowing-point-wrapper" style="width:16px;height:16px;"><div class="glowing-point-core" style="background:#475569;width:8px;height:8px;"></div></div>`,
+          iconSize: [20, 20],
+          iconAnchor: [10, 10],
+          tooltipAnchor: [0, -10]
+        });
 
-          // Expandir círculo ao passar o mouse
-          marker.on('mouseover', () => {
-            areaCircle.setStyle({ fillOpacity: 0.35, opacity: 0.8 });
-          });
-          
-          marker.on('mouseout', () => {
-            areaCircle.setStyle({ fillOpacity: 0, opacity: 0 });
-          });
+        const marker = L.marker(center, { icon: customIcon, aqi: null } as any);
+        marker.bindTooltip(
+          `<div style="font-size:12px;padding:4px;"><strong>${m.locationName}</strong><br/>Sem dados recentes</div>`,
+          { className: 'mapa-tooltip-rich', direction: 'top' }
+        );
+        markers.addLayer(marker);
+      }
+    });
 
-        } else {
-          // Sem dados: exibir um ponto cinza menor
-          const customIcon = L.divIcon({
-            className: 'custom-glowing-icon no-data',
-            html: `<div class="glowing-point-wrapper" style="width:16px;height:16px;"><div class="glowing-point-core" style="background:#475569;width:8px;height:8px;"></div></div>`,
-            iconSize: [32, 32],
-            iconAnchor: [16, 16],
-            tooltipAnchor: [0, -16]
-          });
-
-          const marker = L.marker(center, { icon: customIcon }).addTo(dynamicLayers);
-          marker.bindTooltip(
-            `<div style="font-size:12px;padding:4px;"><strong>${name}</strong><br/>Sem dados recentes</div>`,
-            { className: 'mapa-tooltip-rich', direction: 'top' }
-          );
-        }
-      },
-    }).addTo(map);
-  }, [measurements, geoJsonData]);
+    map.addLayer(markers);
+  }, [measurements]);
 
   return (
     <div className="mapa-tab-root">
@@ -261,18 +245,18 @@ export default function MapaTab({ measurements, stats }: MapaTabProps) {
             color={aqiColor(statusData.avg)}
           />
           <StatusItem
-            label="Bairros Críticos"
+            label="Localidades Críticas"
             value={String(statusData.criticos)}
             color={statusData.criticos > 0 ? '#ef4444' : '#22c55e'}
           />
           <StatusItem
-            label="Pior Bairro"
-            value={statusData.worst.neighborhoodName}
+            label="Pior Localidade"
+            value={statusData.worst.locationName}
             sub={`AQI ${statusData.worst.aqi ?? '–'}`}
             color={aqiColor(statusData.worst.aqi)}
           />
           <StatusItem
-            label="Bairros Bons"
+            label="Localidades Boas"
             value={String(statusData.bons)}
             color="#22c55e"
           />
@@ -305,11 +289,6 @@ export default function MapaTab({ measurements, stats }: MapaTabProps) {
 
       {/* Global Leaflet overrides scoped to this component */}
       <style>{`
-        /* Area Circle Animations */
-        path.area-circle {
-          transition: fill-opacity 0.3s ease-out, stroke-opacity 0.3s ease-out, opacity 0.3s ease-out;
-        }
-
         .mapa-tooltip-rich {
           background: var(--bg-elevated) !important;
           backdrop-filter: blur(8px) !important;
@@ -335,8 +314,8 @@ export default function MapaTab({ measurements, stats }: MapaTabProps) {
           justify-content: center;
         }
         .glowing-point-core {
-          width: 10px;
-          height: 10px;
+          width: 8px;
+          height: 8px;
           border-radius: 50%;
           z-index: 2;
           box-shadow: 0 0 4px rgba(0,0,0,0.4);

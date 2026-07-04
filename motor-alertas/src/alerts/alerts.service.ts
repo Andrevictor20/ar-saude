@@ -3,7 +3,7 @@ import { ConfigService } from "@nestjs/config";
 import { InjectRepository } from "@nestjs/typeorm";
 import { FindOptionsWhere, Repository, In } from "typeorm";
 
-import { SAO_LUIS_NEIGHBORHOODS } from "../common/constants/neighborhoods";
+import { LocationsService } from "../locations/locations.service";
 
 import { Alert } from "../entities/alert.entity";
 import { AlertsEventsService } from "./alerts-events.service";
@@ -21,7 +21,7 @@ const POLLUTANT_THRESHOLDS = {
 
 export interface AlertFilters {
   status?: "active" | "resolved";
-  neighborhoodId?: string;
+  locationId?: string;
   severity?: AlertSeverity;
   limit?: number;
 }
@@ -36,6 +36,7 @@ export class AlertsService {
     private readonly repo: Repository<Alert>,
     private readonly events: AlertsEventsService,
     private readonly configService: ConfigService,
+    private readonly locationsService: LocationsService,
   ) {
     this.threshold = Number(this.configService.get("ALERT_AQI_THRESHOLD", 61));
   }
@@ -46,7 +47,7 @@ export class AlertsService {
 
   async evaluate(reading: IngestMeasurementDto): Promise<void> {
     const active = await this.repo.findOne({
-      where: { neighborhoodId: reading.neighborhoodId, status: "active" },
+      where: { locationId: reading.locationId, status: "active" },
     });
 
     const aqi = reading.aqi;
@@ -97,8 +98,8 @@ export class AlertsService {
         this.events.emit({ type: "updated", alert: saved });
       } else {
         const alert = this.repo.create({
-          neighborhoodId: reading.neighborhoodId,
-          neighborhoodName: reading.neighborhoodName,
+          locationId: reading.locationId,
+          locationName: reading.locationName,
           aqi: safeAqi,
           peakAqi: safeAqi,
           level: reading.level,
@@ -112,7 +113,7 @@ export class AlertsService {
         });
         const saved = await this.repo.save(alert);
         this.logger.warn(
-          `Alerta gerado: ${saved.neighborhoodName} AQI ${saved.aqi} (${saved.severity})`,
+          `Alerta gerado: ${saved.locationName} AQI ${saved.aqi} (${saved.severity})`,
         );
         this.events.emit({ type: "created", alert: saved });
       }
@@ -121,18 +122,19 @@ export class AlertsService {
       active.resolvedAt = new Date();
       const saved = await this.repo.save(active);
       this.logger.log(
-        `Alerta resolvido: ${saved.neighborhoodName} (AQI atual ${aqi ?? "indisponivel"})`,
+        `Alerta resolvido: ${saved.locationName} (AQI atual ${aqi ?? "indisponivel"})`,
       );
       this.events.emit({ type: "resolved", alert: saved });
     }
   }
 
   async findAll(filters: AlertFilters = {}): Promise<Alert[]> {
-    const validIds = SAO_LUIS_NEIGHBORHOODS.map((n) => n.id);
-    const where: FindOptionsWhere<Alert> = { neighborhoodId: In(validIds) };
+    const locations = await this.locationsService.getAllLocations();
+    const validIds = locations.map((n) => n.id);
+    const where: FindOptionsWhere<Alert> = { locationId: In(validIds) };
     if (filters.status) where.status = filters.status;
-    if (filters.neighborhoodId && validIds.includes(filters.neighborhoodId)) {
-      where.neighborhoodId = filters.neighborhoodId;
+    if (filters.locationId && validIds.includes(filters.locationId)) {
+      where.locationId = filters.locationId;
     }
     if (filters.severity) where.severity = filters.severity;
 
@@ -144,17 +146,19 @@ export class AlertsService {
   }
 
   async findActive(): Promise<Alert[]> {
-    const validIds = SAO_LUIS_NEIGHBORHOODS.map((n) => n.id);
+    const locations = await this.locationsService.getAllLocations();
+    const validIds = locations.map((n) => n.id);
     return this.repo.find({
-      where: { status: "active", neighborhoodId: In(validIds) },
+      where: { status: "active", locationId: In(validIds) },
       order: { aqi: "DESC" },
     });
   }
 
   async countActive(): Promise<number> {
-    const validIds = SAO_LUIS_NEIGHBORHOODS.map((n) => n.id);
+    const locations = await this.locationsService.getAllLocations();
+    const validIds = locations.map((n) => n.id);
     return this.repo.count({
-      where: { status: "active", neighborhoodId: In(validIds) },
+      where: { status: "active", locationId: In(validIds) },
     });
   }
 
@@ -169,7 +173,7 @@ export class AlertsService {
       critico: "Critico",
       emergencia: "Emergencia",
     };
-    const baseMessage = `${labels[severity]}: qualidade do ar ${reading.level} em ${reading.neighborhoodName}`;
+    const baseMessage = `${labels[severity]}: qualidade do ar ${reading.level} em ${reading.locationName}`;
     const aqiMsg =
       reading.aqi !== null ? `(AQI ${reading.aqi})` : "(AQI Indisponivel)";
 

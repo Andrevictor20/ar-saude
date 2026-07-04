@@ -8,17 +8,17 @@ import {
 } from "typeorm";
 
 @Entity("measurements")
-@Unique("uq_measurement_resource_time", ["neighborhoodId", "measuredAt"])
+@Unique("uq_measurement_resource_time", ["locationId", "measuredAt"])
 export class Measurement {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
   @Index()
   @Column()
-  neighborhoodId: string;
+  locationId: string;
 
   @Column()
-  neighborhoodName: string;
+  locationName: string;
 
   @Column({ type: "int", nullable: true })
   aqi: number | null;

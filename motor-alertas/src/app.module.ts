@@ -8,9 +8,11 @@ import { APP_GUARD } from "@nestjs/core";
 import { AppController } from "./app.controller";
 import { Measurement } from "./entities/measurement.entity";
 import { Alert } from "./entities/alert.entity";
+import { Location } from "./entities/location.entity";
 import { MeasurementsModule } from "./measurements/measurements.module";
 import { AlertsModule } from "./alerts/alerts.module";
 import { MetricsModule } from "./metrics/metrics.module";
+import { LocationsModule } from './locations/locations.module';
 
 @Module({
   imports: [
@@ -37,7 +39,7 @@ import { MetricsModule } from "./metrics/metrics.module";
         username: config.get<string>("DB_USER", "arsaude"),
         password: config.get<string>("DB_PASSWORD", "arsaude"),
         database: config.get<string>("DB_NAME", "arsaude_alertas"),
-        entities: [Measurement, Alert],
+        entities: [Measurement, Alert, Location],
         synchronize: process.env.NODE_ENV !== "production",
       }),
     }),
@@ -45,6 +47,7 @@ import { MetricsModule } from "./metrics/metrics.module";
     MeasurementsModule,
     AlertsModule,
     MetricsModule,
+    LocationsModule,
   ],
   controllers: [AppController],
   providers: [

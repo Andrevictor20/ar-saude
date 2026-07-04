@@ -33,11 +33,10 @@ export class AppController {
   }
 
   @Post('collect')
-  triggerCollect(): {
-    enqueued: number;
-    queue: ReturnType<CollectorService['getQueueStats']>;
-  } {
-    const enqueued = this.collectorService.enqueueAllNeighborhoods();
-    return { enqueued, queue: this.collectorService.getQueueStats() };
+  async triggerCollection() {
+    const enqueued = await this.collectorService.enqueueAllLocations();
+    return {
+      message: `${enqueued} jobs enfileirados via webhook.`,
+    };
   }
 }

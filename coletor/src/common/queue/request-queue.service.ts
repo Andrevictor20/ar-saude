@@ -24,6 +24,7 @@ export interface QueueOptions {
   maxAttempts?: number;
   retryDelayMs?: number;
   drainTimeoutMs?: number;
+  rateLimitMs?: number;
 }
 
 /**
@@ -59,6 +60,11 @@ export class RequestQueueService implements OnModuleDestroy {
   /** Tempo máximo de espera pela drenagem dos jobs ativos (ms). */
   private drainTimeoutMs = 10_000;
 
+  /** Minimum time between starting jobs (ms) for rate limiting. */
+  private rateLimitMs = 0;
+  private lastRunTime = 0;
+  private nextRunTimer: NodeJS.Timeout | null = null;
+
   /** Ajusta os parâmetros da fila. */
   configure(options: QueueOptions): void {
     if (options.concurrency !== undefined)
@@ -69,9 +75,11 @@ export class RequestQueueService implements OnModuleDestroy {
       this.retryDelayMs = options.retryDelayMs;
     if (options.drainTimeoutMs !== undefined)
       this.drainTimeoutMs = options.drainTimeoutMs;
+    if (options.rateLimitMs !== undefined)
+      this.rateLimitMs = options.rateLimitMs;
     this.logger.log(
       `Fila configurada → concorrência=${this.concurrency}, ` +
-        `maxTentativas=${this.maxAttempts}, retryBase=${this.retryDelayMs}ms`,
+        `maxTentativas=${this.maxAttempts}, retryBase=${this.retryDelayMs}ms, rateLimitMs=${this.rateLimitMs}`,
     );
   }
 
@@ -109,13 +117,28 @@ export class RequestQueueService implements OnModuleDestroy {
     };
   }
 
-  /** Puxa jobs da fila respeitando o limite de concorrência. */
+  /** Puxa jobs da fila respeitando o limite de concorrência e rate limit. */
   private drain(): void {
     if (!this.worker || this.draining) return;
 
+    if (this.nextRunTimer) return; // Wait for the scheduled run
+
     while (this.active < this.concurrency && this.pending.length > 0) {
+      const now = Date.now();
+      const timeSinceLastRun = now - this.lastRunTime;
+
+      if (this.rateLimitMs > 0 && timeSinceLastRun < this.rateLimitMs) {
+        const delay = this.rateLimitMs - timeSinceLastRun;
+        this.nextRunTimer = setTimeout(() => {
+          this.nextRunTimer = null;
+          this.drain();
+        }, delay);
+        return; // Stop draining, will resume after delay
+      }
+
       const job = this.pending.shift()!;
       this.active++;
+      this.lastRunTime = Date.now();
       void this.run(job);
     }
   }

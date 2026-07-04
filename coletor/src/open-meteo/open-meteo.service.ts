@@ -10,7 +10,7 @@ import {
 } from '../common/interfaces/index.js';
 import { retryWithBackoff } from '../common/utils/retry.util.js';
 import { CacheService } from '../common/cache/cache.service.js';
-import { Neighborhood } from '../common/constants/neighborhoods.js';
+import { Location } from '../collector/collector.service.js';
 
 /** Serviço de coleta de dados de qualidade do ar via API Open-Meteo. */
 @Injectable()
@@ -40,15 +40,15 @@ export class OpenMeteoService {
     this.cacheTtlMs = this.configService.get<number>('CACHE_TTL_MS', 600_000);
   }
 
-  /** Busca dados atuais de qualidade do ar para um bairro. */
+  /** Busca dados atuais de qualidade do ar para uma localidade. */
   async fetchAirQuality(
-    neighborhood: Neighborhood,
+    location: Location,
   ): Promise<ProcessedAirQualityData> {
     this.logger.log(
-      `Iniciando coleta de dados para bairro ${neighborhood.name} (lat=${neighborhood.latitude}, lon=${neighborhood.longitude})`,
+      `Iniciando coleta de dados para localidade ${location.name} (lat=${location.latitude}, lon=${location.longitude})`,
     );
 
-    const cacheKey = `meteo:${neighborhood.latitude},${neighborhood.longitude}`;
+    const cacheKey = `meteo:${location.latitude},${location.longitude}`;
 
     const rawData = await this.cacheService.wrap<AirQualityData>(
       cacheKey,
@@ -57,22 +57,22 @@ export class OpenMeteoService {
         retryWithBackoff<AirQualityData>(
           () =>
             this.callOpenMeteoApi(
-              neighborhood.latitude,
-              neighborhood.longitude,
+              location.latitude,
+              location.longitude,
             ),
           this.maxRetries,
           this.retryBaseDelay,
-          `OpenMeteo.fetchAirQuality(${neighborhood.id})`,
+          `OpenMeteo.fetchAirQuality(${location.id})`,
         ),
     );
 
     const processed: ProcessedAirQualityData = {
       ...rawData,
       level: this.classifyAqi(rawData.aqi),
-      neighborhoodId: neighborhood.id,
-      neighborhoodName: neighborhood.name,
-      latitude: neighborhood.latitude,
-      longitude: neighborhood.longitude,
+      locationId: location.id,
+      locationName: location.name,
+      latitude: location.latitude,
+      longitude: location.longitude,
     };
 
     this.logger.log(

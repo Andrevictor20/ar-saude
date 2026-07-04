@@ -17,10 +17,10 @@ export class Alert {
 
   @Index()
   @Column()
-  neighborhoodId: string;
+  locationId: string;
 
   @Column()
-  neighborhoodName: string;
+  locationName: string;
 
   @Column({ type: "int" })
   aqi: number;

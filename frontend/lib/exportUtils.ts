@@ -6,7 +6,7 @@ import { formatDateTime } from './format';
 
 const formatExportData = (data: Measurement[]) => {
   return data.map((m) => ({
-    Bairro: m.neighborhoodName,
+    Localidade: m.locationName,
     AQI: m.aqi ?? '-',
     'Nível': m.level,
     'PM2.5 (µg/m³)': m.pm2_5 ?? '-',

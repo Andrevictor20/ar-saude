@@ -1,8 +1,8 @@
 import { AirQualityLevel } from "../../common/air-quality";
 
 export interface IngestMeasurementDto {
-  neighborhoodId: string;
-  neighborhoodName: string;
+  locationId: string;
+  locationName: string;
   latitude: number;
   longitude: number;
   aqi: number | null;

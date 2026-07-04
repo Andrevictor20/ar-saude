@@ -60,14 +60,14 @@ export class OpenWeatherService {
   async fetchExtraPollutants(
     latitude: number,
     longitude: number,
-    neighborhoodName: string,
+    locationName: string,
   ): Promise<ExtraPollutants> {
     if (!this.apiKey) {
       return { co: null, so2: null, nh3: null, no: null };
     }
 
     this.logger.debug(
-      `Coletando dados extras para ${neighborhoodName} via OpenWeatherMap...`,
+      `Coletando dados extras para ${locationName} via OpenWeatherMap...`,
     );
 
     const cacheKey = `owm:${latitude},${longitude}`;
@@ -80,7 +80,7 @@ export class OpenWeatherService {
           () => this.callOpenWeatherApi(latitude, longitude),
           this.maxRetries,
           this.retryBaseDelay,
-          `OpenWeather.fetchExtraPollutants(${neighborhoodName})`,
+          `OpenWeather.fetchExtraPollutants(${locationName})`,
         ),
     );
 

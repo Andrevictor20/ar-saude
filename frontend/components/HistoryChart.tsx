@@ -20,7 +20,7 @@ interface HistoryPointData {
 }
 
 interface Props {
-  neighborhoodName: string | null;
+  locationName: string | null;
   history: Measurement[];
   onHistoryPointSelect?: (point: HistoryPointData | null) => void;
 }
@@ -30,7 +30,7 @@ const HEIGHT = 220;
 const PADDING = { top: 16, right: 16, bottom: 28, left: 36 };
 
 export default function HistoryChart({
-  neighborhoodName,
+  locationName,
   history,
   onHistoryPointSelect,
 }: Props) {
@@ -58,7 +58,7 @@ export default function HistoryChart({
     setSelectedIndex(null);
     onHistoryPointSelect?.(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [neighborhoodName]);
+  }, [locationName]);
 
   const handlePointClick = useCallback(
     (index: number) => {
@@ -175,12 +175,12 @@ export default function HistoryChart({
             title="Data Final"
           />
           <span className="muted" style={{ marginLeft: 8 }}>
-            {neighborhoodName ?? 'Selecione um bairro'}
+            {locationName ?? 'Selecione uma localidade'}
           </span>
-          {neighborhoodName && filteredHistory.length > 0 && (
+          {locationName && filteredHistory.length > 0 && (
             <div style={{ display: 'flex', gap: '6px', marginLeft: 'auto' }}>
               <button
-                onClick={() => exportToCsv(filteredHistory, `historico_${neighborhoodName}`)}
+                onClick={() => exportToCsv(filteredHistory, `historico_${locationName}`)}
                 style={{
                   background: 'var(--panel-2)',
                   border: '1px solid var(--border)',
@@ -199,7 +199,7 @@ export default function HistoryChart({
                 CSV
               </button>
               <button
-                onClick={() => exportToXlsx(filteredHistory, `historico_${neighborhoodName}`)}
+                onClick={() => exportToXlsx(filteredHistory, `historico_${locationName}`)}
                 style={{
                   background: 'var(--panel-2)',
                   border: '1px solid var(--border)',
@@ -218,7 +218,7 @@ export default function HistoryChart({
                 XLSX
               </button>
               <button
-                onClick={() => exportToPdf(filteredHistory, `historico_${neighborhoodName}`, `Relatório de Qualidade do Ar - ${neighborhoodName}`)}
+                onClick={() => exportToPdf(filteredHistory, `historico_${locationName}`, `Relatório de Qualidade do Ar - ${locationName}`)}
                 style={{
                   background: 'var(--panel-2)',
                   border: '1px solid var(--border)',
@@ -241,13 +241,13 @@ export default function HistoryChart({
         </div>
       </div>
       <div className="panel-body">
-        {!neighborhoodName ? (
+        {!locationName ? (
           <div className="empty">
-            Clique em um bairro na tabela para ver o historico de medicoes.
+            Clique em uma localidade na tabela para ver o historico de medicoes.
           </div>
         ) : points.length < 2 ? (
           <div className="empty">
-            Historico insuficiente. Aguarde novas coletas para este bairro.
+            Historico insuficiente. Aguarde novas coletas para esta localidade.
           </div>
         ) : (
           <>
@@ -305,7 +305,7 @@ export default function HistoryChart({
           </>
         )}
 
-        {neighborhoodName && activeData && (
+        {locationName && activeData && (
           <div
             className="pollute-grid"
             style={{

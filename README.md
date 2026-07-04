@@ -1,6 +1,6 @@
 # 🌬️ Ar-Saúde — Plataforma de Monitoramento da Qualidade do Ar
 
-O **Ar-Saúde** é um sistema distribuído (baseado em microsserviços) criado para monitorar, alertar e visualizar em tempo real a qualidade do ar em diversos bairros da cidade de São Luís, Maranhão, Brasil. 
+O **Ar-Saúde** é um sistema distribuído (baseado em microsserviços) criado para monitorar, alertar e visualizar em tempo real a qualidade do ar em todos os municípios do Brasil. 
 
 O projeto foi construído utilizando **TypeScript**, **Nest.js**, e **Next.js**.
 
@@ -8,7 +8,7 @@ O projeto foi construído utilizando **TypeScript**, **Nest.js**, e **Next.js**.
 
 ![Dashboard Ar-Saúde](assets/dashboard.png)
 
-### 🗺️ Mapa de Bairros Interativo
+### 🗺️ Mapa de Municípios Interativo (Clusterizado)
 ![Mapa Ar-Saúde](assets/mapa.png)
 
 ### 📊 Histórico de AQI
@@ -63,20 +63,20 @@ O sistema é dividido em três grandes pilares, garantindo alta escalabilidade e
 ```
 
 ### 1. Microsserviço 1: Coletor (Diretório `/src` - NestJS)
-Sua principal responsabilidade é rodar rotinas agendadas (Cron Jobs) que consultam as coordenadas geográficas de cada bairro de São Luís nas APIs meteorológicas externas.
+Sua principal responsabilidade é rodar rotinas agendadas (Cron Jobs) que consultam as coordenadas geográficas dos municípios brasileiros nas APIs meteorológicas externas.
 - **Coleta Híbrida**: Consulta a **Open-Meteo API** e **OpenWeatherMap API** para capturar índices de qualidade do ar e gases (CO, NO, NO₂, SO₂, NH₃).
 - **Publicação (Push Model)**: Formata os dados enriquecidos e realiza um **HTTP POST** de ingestão de dados diretamente na API do Motor de Alertas.
-- **Resiliência**: Utiliza uma fila de processamento em memória (`RequestQueueService`) e cache (`CacheService`) para absorver rajadas de requisições sem estourar os limites das APIs públicas.
+- **Resiliência**: Utiliza uma fila de processamento em memória e um sistema de **Cache com Redis** para absorver milhares de requisições de todos os municípios, respeitando rigidamente o *rate limit* das APIs públicas e evitando falhas na carga massiva de dados.
 
 ### 2. Microsserviço 2: Motor de Alertas (Diretório `/motor-alertas` - NestJS)
 É o cérebro avaliativo e central do sistema. Possui banco de dados próprio (**PostgreSQL**).
 - Consome os dados de ingestão do **Coletor** através da rota reativa `/measurements/ingest`.
 - Avalia as concentrações de poluentes cruzando com os limites de segurança da OMS (Organização Mundial da Saúde).
-- Gera e persiste **Alertas** críticos (ex: PM2.5 muito alto) com base na periculosidade por bairro e notifica a rede conectada.
+- Gera e persiste **Alertas** críticos (ex: PM2.5 muito alto) com base na periculosidade por localidade e notifica a rede conectada.
 
 ### 3. Frontend: Dashboard (Diretório `/frontend` - Next.js)
 Interface para o usuário final, construída com React.
-- **Painel Robusto**: Histórico temporal, dados estatísticos e um **mapa geolocalizado interativo** de São Luís.
+- **Painel Robusto**: Histórico temporal, dados estatísticos e um **mapa geolocalizado interativo do Brasil**. Para garantir a performance de renderização de mais de 5000 localidades, o mapa utiliza um avançado sistema de clusterização (`Leaflet.markercluster`).
 - **Alertas em Tempo Real**: Conecta-se via **SSE** (Server-Sent Events) ao Motor de Alertas para refletir instantaneamente a criação ou resolução de problemas no ar sem precisar atualizar a página.
 - **Temas**: Suporte a Light Mode e Dark Mode, com explicações toxicológicas sobre os poluentes.
 

@@ -21,13 +21,13 @@ export class AlertsController {
   @Get()
   findAll(
     @Query("status") status?: "active" | "resolved",
-    @Query("neighborhoodId") neighborhoodId?: string,
+    @Query("locationId") locationId?: string,
     @Query("severity") severity?: AlertSeverity,
     @Query("limit") limit?: string,
   ): Promise<Alert[]> {
     return this.alertsService.findAll({
       status,
-      neighborhoodId,
+      locationId,
       severity,
       limit: limit ? Number(limit) : undefined,
     });

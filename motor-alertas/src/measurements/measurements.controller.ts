@@ -28,7 +28,7 @@ export class MeasurementsController {
     try {
       await this.measurementsService.saveReading(dto);
       await this.alertsService.evaluate(dto);
-      this.logger.log(`Medicao ingerida e avaliada: ${dto.neighborhoodName} (AQI ${dto.aqi})`);
+      this.logger.log(`Medicao ingerida e avaliada: ${dto.locationName} (AQI ${dto.aqi})`);
     } catch (error) {
       this.logger.error(`Erro ao ingerir medicao: ${error instanceof Error ? error.message : String(error)}`);
       throw error;
@@ -37,7 +37,7 @@ export class MeasurementsController {
 
   @Get("latest")
   findLatest(): Promise<Measurement[]> {
-    return this.measurementsService.findLatestPerNeighborhood();
+    return this.measurementsService.findLatestPerLocation();
   }
 
   @Get("stats")
@@ -47,11 +47,11 @@ export class MeasurementsController {
 
   @Get("history")
   findHistory(
-    @Query("neighborhoodId") neighborhoodId: string,
+    @Query("locationId") locationId: string,
     @Query("limit") limit?: string,
   ): Promise<Measurement[]> {
     return this.measurementsService.findHistory(
-      neighborhoodId,
+      locationId,
       limit ? Number(limit) : 100,
     );
   }
@@ -64,15 +64,15 @@ export class MeasurementsController {
     return this.measurementsService.exportData(startDate, endDate);
   }
 
-  @Get("latest/:neighborhoodId")
-  async findLatestForNeighborhood(
-    @Param("neighborhoodId") neighborhoodId: string,
+  @Get("latest/:locationId")
+  async findLatestForLocation(
+    @Param("locationId") locationId: string,
   ): Promise<Measurement> {
     const measurement =
-      await this.measurementsService.findLatestForNeighborhood(neighborhoodId);
+      await this.measurementsService.findLatestForLocation(locationId);
     if (!measurement) {
       throw new NotFoundException(
-        `Nenhuma medicao encontrada para o bairro ${neighborhoodId}`,
+        `Nenhuma medicao encontrada para a localidade ${locationId}`,
       );
     }
     return measurement;

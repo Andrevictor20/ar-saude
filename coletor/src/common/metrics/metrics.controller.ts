@@ -17,9 +17,10 @@ export class MetricsController {
   @Get('metrics')
   @Header('Content-Type', 'text/plain; version=0.0.4; charset=utf-8')
   async scrape(): Promise<string> {
+    const cacheStats = await this.cache.getStats();
     this.metrics.updateRuntimeGauges(
       this.collector.getQueueStats(),
-      this.cache.getStats(),
+      cacheStats,
     );
     return this.metrics.getMetrics();
   }

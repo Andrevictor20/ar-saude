@@ -11,7 +11,7 @@ interface Props {
   onSelect: (m: Measurement) => void;
 }
 
-export default function NeighborhoodTable({
+export default function LocationTable({
   measurements,
   selectedId,
   onSelect,
@@ -22,7 +22,7 @@ export default function NeighborhoodTable({
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     const list = q
-      ? measurements.filter((m) => m.neighborhoodName.toLowerCase().includes(q))
+      ? measurements.filter((m) => m.locationName.toLowerCase().includes(q))
       : measurements;
     return [...list].sort((a, b) => (b.aqi ?? -1) - (a.aqi ?? -1));
   }, [measurements, query]);
@@ -42,7 +42,7 @@ export default function NeighborhoodTable({
   return (
     <div className="panel">
       <div className="panel-header">
-        <h2>Qualidade do ar por bairro</h2>
+        <h2>Qualidade do ar por localidade</h2>
         <div className="toolbar">
           <div style={{ display: 'flex', gap: '6px', marginRight: '8px' }}>
             <button
@@ -57,7 +57,7 @@ export default function NeighborhoodTable({
           </div>
           <input
             type="text"
-            placeholder="Buscar bairro..."
+            placeholder="Buscar localidade..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
@@ -73,7 +73,7 @@ export default function NeighborhoodTable({
             <table className="table">
               <thead>
                 <tr>
-                  <th>Bairro</th>
+                  <th>Localidade</th>
                   <th>
                     <span
                       className="has-tooltip"
@@ -177,13 +177,13 @@ export default function NeighborhoodTable({
               <tbody>
                 {filtered.map((m) => (
                   <tr
-                    key={m.neighborhoodId}
+                    key={m.locationId}
                     className={
-                      m.neighborhoodId === selectedId ? 'selected' : ''
+                      m.locationId === selectedId ? 'selected' : ''
                     }
                     onClick={() => onSelect(m)}
                   >
-                    <td>{m.neighborhoodName}</td>
+                    <td>{m.locationName}</td>
                     <td>
                       <span
                         className="aqi-pill"
@@ -218,7 +218,7 @@ export default function NeighborhoodTable({
                 {filtered.length === 0 && (
                   <tr>
                     <td colSpan={12} className="empty">
-                      Nenhum bairro encontrado para a busca.
+                      Nenhuma localidade encontrada para a busca.
                     </td>
                   </tr>
                 )}
