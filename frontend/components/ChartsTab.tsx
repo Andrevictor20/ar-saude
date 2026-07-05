@@ -17,7 +17,8 @@ import {
   PolarAngleAxis,
   PolarRadiusAxis,
   Radar,
-  Legend
+  Legend,
+  LabelList
 } from 'recharts';
 import { Measurement, DashboardStats, Alert } from '@/lib/types';
 import { levelColor, aqiColor } from '@/lib/format';
@@ -200,9 +201,10 @@ export default function ChartsTab({ measurements, stats, alerts }: Props) {
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={true} vertical={false} />
                 <XAxis type="number" stroke="var(--text-muted)" />
-                <YAxis dataKey="state" type="category" stroke="var(--text-muted)" width={40} />
+                <YAxis dataKey="state" type="category" stroke="var(--text-muted)" width={40} interval={0} />
                 <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
                 <Bar dataKey="aqi" radius={[0, 4, 4, 0]}>
+                  <LabelList dataKey="aqi" position="right" style={{ fill: 'var(--text-muted)', fontSize: 11 }} />
                   {stateData.slice(0, 10).map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={aqiColor(entry.aqi)} />
                   ))}
