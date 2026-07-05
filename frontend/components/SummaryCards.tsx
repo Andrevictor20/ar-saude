@@ -1,5 +1,6 @@
 import { DashboardStats } from '@/lib/types';
 import { aqiColor } from '@/lib/format';
+import { getStateAbbr } from '@/lib/states';
 
 interface Props {
   stats: DashboardStats | null;
@@ -110,7 +111,7 @@ export default function SummaryCards({ stats, activeAlerts, onNavigateAlerts, on
             {stats?.worst?.locationName ?? '-'}
             {stats?.worst?.state && (
               <span className="badge" style={{ background: 'var(--panel-2)', color: 'var(--text-muted)', border: '1px solid var(--border)', fontSize: 10, padding: '2px 6px' }}>
-                {stats.worst.state}
+                {getStateAbbr(stats.worst.state)}
               </span>
             )}
           </div>
@@ -150,7 +151,7 @@ export default function SummaryCards({ stats, activeAlerts, onNavigateAlerts, on
             {stats?.best?.locationName ?? '-'}
             {stats?.best?.state && (
               <span className="badge" style={{ background: 'var(--panel-2)', color: 'var(--text-muted)', border: '1px solid var(--border)', fontSize: 10, padding: '2px 6px' }}>
-                {stats.best.state}
+                {getStateAbbr(stats.best.state)}
               </span>
             )}
           </div>

@@ -27,6 +27,7 @@ export interface Alert {
   id: string;
   locationId: string;
   locationName: string;
+  state?: string;
   resourceUuid: string;
   aqi: number;
   peakAqi: number;

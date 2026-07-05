@@ -21,6 +21,7 @@ import {
 } from 'recharts';
 import { Measurement, DashboardStats, Alert } from '@/lib/types';
 import { levelColor, aqiColor } from '@/lib/format';
+import { getStateAbbr } from '@/lib/states';
 
 interface Props {
   measurements: Measurement[];
@@ -54,8 +55,9 @@ export default function ChartsTab({ measurements, stats, alerts }: Props) {
     const stateMap = new Map<string, { sum: number; count: number }>();
     measurements.forEach((m) => {
       if (m.state && m.aqi !== null) {
-        const current = stateMap.get(m.state) || { sum: 0, count: 0 };
-        stateMap.set(m.state, {
+        const abbr = getStateAbbr(m.state);
+        const current = stateMap.get(abbr) || { sum: 0, count: 0 };
+        stateMap.set(abbr, {
           sum: current.sum + m.aqi,
           count: current.count + 1,
         });

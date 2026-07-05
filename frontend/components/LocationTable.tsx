@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { Measurement } from '@/lib/types';
 import { aqiColor, formatNumber, formatTime, levelColor } from '@/lib/format';
+import { getStateAbbr } from '@/lib/states';
 import ExportModal from './ExportModal';
 
 interface Props {
@@ -62,7 +63,7 @@ export default function LocationTable({
   const availableStates = useMemo(() => {
     const states = new Set<string>();
     measurements.forEach((m) => {
-      if (m.state) states.add(m.state);
+      if (m.state) states.add(getStateAbbr(m.state));
     });
     return Array.from(states).sort();
   }, [measurements]);
@@ -108,7 +109,7 @@ export default function LocationTable({
 
     /* State filter */
     if (stateFilter !== 'Todos') {
-      list = list.filter((m) => m.state === stateFilter);
+      list = list.filter((m) => getStateAbbr(m.state) === stateFilter);
     }
 
     /* Sort */
@@ -330,7 +331,7 @@ export default function LocationTable({
                               padding: '2px 6px'
                             }}
                           >
-                            {m.state}
+                            {getStateAbbr(m.state)}
                           </span>
                         )}
                       </div>

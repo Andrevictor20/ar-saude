@@ -139,20 +139,32 @@ export class AlertsService {
     }
     if (filters.severity) where.severity = filters.severity;
 
-    return this.repo.find({
+    const alerts = await this.repo.find({
       where,
       order: { triggeredAt: "DESC" },
       take: Math.min(Math.max(filters.limit ?? 100, 1), 1000),
     });
+
+    const locationMap = new Map(locations.map((loc) => [loc.id, loc.state]));
+    return alerts.map((a) => ({
+      ...a,
+      state: locationMap.get(a.locationId) || "BR",
+    })) as any;
   }
 
   async findActive(): Promise<Alert[]> {
     const locations = await this.locationsService.getAllLocations();
     const validIds = locations.map((n) => n.id);
-    return this.repo.find({
+    const alerts = await this.repo.find({
       where: { status: "active", locationId: In(validIds) },
       order: { aqi: "DESC" },
     });
+
+    const locationMap = new Map(locations.map((loc) => [loc.id, loc.state]));
+    return alerts.map((a) => ({
+      ...a,
+      state: locationMap.get(a.locationId) || "BR",
+    })) as any;
   }
 
   async countActive(): Promise<number> {

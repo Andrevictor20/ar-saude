@@ -1116,3 +1116,139 @@ body.light-mode .alert-tabs {
   border-color: var(--accent);
   box-shadow: 0 4px 12px rgba(56, 189, 248, 0.1);
 }
+
+/* ─── State Alert Group Styles ─── */
+.state-alert-group {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 24px;
+  overflow: hidden;
+}
+
+.state-alert-header {
+  padding: 16px 24px;
+  background: var(--panel-2);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.state-alert-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.state-alert-items {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ─── Mobile Bottom Navigation ─── */
+.mobile-bottom-nav {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .desktop-only {
+    display: none !important;
+  }
+  
+  .mobile-bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--bg-elevated);
+    border-top: 1px solid var(--border);
+    padding: 8px 12px;
+    padding-bottom: calc(8px + env(safe-area-inset-bottom));
+    justify-content: space-between;
+    z-index: 1000;
+    backdrop-filter: blur(10px);
+  }
+  
+  .bottom-nav-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    flex: 1;
+    cursor: pointer;
+    transition: color 0.2s, transform 0.2s;
+  }
+  
+  .bottom-nav-btn .icon {
+    font-size: 20px;
+    filter: grayscale(100%);
+    opacity: 0.6;
+    transition: filter 0.2s, opacity 0.2s;
+  }
+  
+  .bottom-nav-btn .label {
+    font-size: 10px;
+    font-weight: 600;
+  }
+  
+  .bottom-nav-btn.active {
+    color: var(--accent);
+  }
+  
+  .bottom-nav-btn.active .icon {
+    filter: grayscale(0%);
+    opacity: 1;
+    transform: scale(1.1);
+  }
+  
+  .mobile-nav-badge {
+    position: absolute;
+    top: -4px;
+    right: -8px;
+    background: var(--accent);
+    color: var(--bg);
+    font-size: 9px;
+    font-weight: 800;
+    padding: 1px 4px;
+    border-radius: 8px;
+    border: 2px solid var(--bg-elevated);
+  }
+  
+  /* Make room for bottom nav */
+  body {
+    padding-bottom: 70px;
+  }
+  
+  /* Simplify Header on Mobile */
+  .app-header {
+    padding: 12px 16px;
+    height: 60px;
+  }
+  
+  .header-left h1 {
+    font-size: 16px;
+  }
+  
+  .panel {
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+  
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .chart-card {
+    border-radius: 8px;
+  }
+}

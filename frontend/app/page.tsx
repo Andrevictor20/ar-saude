@@ -423,6 +423,33 @@ export default function DashboardPage() {
         </main>
       )}
 
+      {/* ─── Mobile Bottom Navigation ─── */}
+      <nav className="mobile-bottom-nav">
+        <button role="tab" aria-selected={activeTab === 'dashboard'} className={`bottom-nav-btn${activeTab === 'dashboard' ? ' active' : ''}`} onClick={() => setActiveTab('dashboard')}>
+          <span className="icon">📊</span>
+          <span className="label">Painel</span>
+        </button>
+        <button role="tab" aria-selected={activeTab === 'historico'} className={`bottom-nav-btn${activeTab === 'historico' ? ' active' : ''}`} onClick={() => setActiveTab('historico')}>
+          <span className="icon">📈</span>
+          <span className="label">Evolução</span>
+        </button>
+        <button role="tab" aria-selected={activeTab === 'alertas'} className={`bottom-nav-btn${activeTab === 'alertas' ? ' active' : ''}`} onClick={() => setActiveTab('alertas')}>
+          <div style={{ position: 'relative' }}>
+            <span className="icon">🚨</span>
+            {alerts.length > 0 && <span className="mobile-nav-badge">{alerts.length}</span>}
+          </div>
+          <span className="label">Alertas</span>
+        </button>
+        <button role="tab" aria-selected={activeTab === 'graficos'} className={`bottom-nav-btn${activeTab === 'graficos' ? ' active' : ''}`} onClick={() => setActiveTab('graficos')}>
+          <span className="icon">📉</span>
+          <span className="label">Gráficos</span>
+        </button>
+        <button role="tab" aria-selected={activeTab === 'mapa'} className={`bottom-nav-btn${activeTab === 'mapa' ? ' active' : ''}`} onClick={() => setActiveTab('mapa')}>
+          <span className="icon">🗺️</span>
+          <span className="label">Mapa</span>
+        </button>
+      </nav>
+
       {/* ─── Scoped styles for tabs ─── */}
       <style>{`
         .tab-nav {
