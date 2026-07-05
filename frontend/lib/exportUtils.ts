@@ -115,9 +115,9 @@ const formatAlertsData = (data: Alert[]) => {
     Estado: a.state,
     Mensagem: a.message,
     Gravidade: a.severity,
-    Valor: a.value ?? '-',
-    Ativo: a.isActive ? 'Sim' : 'Não',
-    'Data/Hora da Emissão': formatDateTime(a.issuedAt),
+    AQI: a.aqi,
+    Ativo: a.status === 'active' ? 'Sim' : 'Não',
+    'Data/Hora da Emissão': formatDateTime(a.triggeredAt),
     'Data/Hora da Resolução': a.resolvedAt ? formatDateTime(a.resolvedAt) : '-',
   }));
 };

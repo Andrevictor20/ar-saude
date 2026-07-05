@@ -373,6 +373,8 @@ export default function DashboardPage() {
                   padding: '16px 24px',
                   borderRadius: 12,
                   border: '1px solid var(--glass-border)',
+                  position: 'relative',
+                  zIndex: 20,
                 }}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
