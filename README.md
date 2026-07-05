@@ -2,20 +2,32 @@
 
 O **Ar-Saúde** é um sistema distribuído (baseado em microsserviços) criado para monitorar, alertar e visualizar em tempo real a qualidade do ar em todos os municípios do Brasil. 
 
-O projeto foi construído utilizando **TypeScript**, **Nest.js**, e **Next.js**.
+Recentemente reconstruído com foco em **Mobile-First** e **Analytics avançado**, o projeto utiliza **TypeScript**, **Nest.js**, e **Next.js** para entregar uma experiência fluida, responsiva e altamente escalável.
+
+## ✨ O que há de novo na versão atual?
+- **Redesign Mobile (Bottom Navigation)**: Experiência focada em dispositivos móveis com barra de navegação inferior estilo aplicativo, painéis responsivos e otimização de `safe-area`.
+- **Analytics e Gráficos Avançados**: Nova aba dedicada para visualização analítica (Gráficos Recharts) com ranking dos piores estados, análise de poluentes em relação aos limites da OMS e top 5 das melhores/piores cidades.
+- **Inteligência de Alertas por Estado**: Alertas críticos e emergenciais agrupados hierarquicamente por Unidade Federativa (UF), facilitando a gestão e visão macro de regiões afetadas.
+- **Nomenclatura Dinâmica**: Integração nativa de IBGE-UF mapeando automaticamente todos os municípios para suas respectivas siglas estaduais.
+
+---
 
 ## 📸 Interface Web
 
+### 📈 Painel Principal (Dashboard)
 ![Dashboard Ar-Saúde](assets/dashboard.png)
 
-### 🗺️ Mapa de Municípios Interativo (Clusterizado)
+### 📊 Gráficos e Analytics (Novo!)
+![Gráficos Ar-Saúde](assets/graficos.png)
+
+### 🚨 Alertas Agrupados por Estado
+![Alertas Ar-Saúde](assets/alertas.png)
+
+### 🗺️ Mapa Interativo (Clusterizado)
 ![Mapa Ar-Saúde](assets/mapa.png)
 
-### 📊 Histórico de AQI
+### 🕒 Histórico Temporal
 ![Histórico Ar-Saúde](assets/historico.png)
-
-### 🚨 Alertas em Tempo Real
-![Alertas Ar-Saúde](assets/alertas.png)
 
 ---
 
@@ -27,7 +39,7 @@ O sistema foi arquitetado para ser resiliente e distribuído, garantindo alta di
 O hardware principal responsável por rodar os microsserviços da aplicação, a interface do usuário e a camada de observabilidade.
 - **Microsserviço 1 (Coletor)**: Roda internamente na porta **3000**.
 - **Microsserviço 2 (Motor de Alertas)**: Roda na porta **3001**.
-- **Frontend (Dashboard)**: Roda na porta **3002**.
+- **Frontend (Dashboard Next.js)**: Roda na porta **3002**.
 - **Stack de Monitoramento**:
   - **Prometheus**: Porta **9090**.
   - **Grafana**: Porta **3003**.
@@ -58,7 +70,7 @@ O sistema é dividido em três grandes pilares, garantindo alta escalabilidade e
                                                                ▼
   ┌─────────────────┐                                 ┌─────────────────┐
   │    Usuário      │ <────────────────────────────── │    Frontend     │ 
-  │  (Dashboard)    │                                 │   (Next.js)     │ 
+  │ (Desktop/Mobile)│                                 │   (Next.js)     │ 
   └─────────────────┘                                 └─────────────────┘
 ```
 
@@ -72,13 +84,13 @@ Sua principal responsabilidade é rodar rotinas agendadas (Cron Jobs) que consul
 É o cérebro avaliativo e central do sistema. Possui banco de dados próprio (**PostgreSQL**).
 - Consome os dados de ingestão do **Coletor** através da rota reativa `/measurements/ingest`.
 - Avalia as concentrações de poluentes cruzando com os limites de segurança da OMS (Organização Mundial da Saúde).
-- Gera e persiste **Alertas** críticos (ex: PM2.5 muito alto) com base na periculosidade por localidade e notifica a rede conectada.
+- Gera e persiste **Alertas** críticos (ex: PM2.5 muito alto) agrupando-os de forma inteligente por localidade e estado.
 
 ### 3. Frontend: Dashboard (Diretório `/frontend` - Next.js)
 Interface para o usuário final, construída com React.
-- **Painel Robusto**: Histórico temporal, dados estatísticos e um **mapa geolocalizado interativo do Brasil**. Para garantir a performance de renderização de mais de 5000 localidades, o mapa utiliza um avançado sistema de clusterização (`Leaflet.markercluster`).
+- **Painel Analítico Mobile-First**: Gráficos responsivos (Top Cidades, Ranking de Estados, Distribuição Nacional) e navegação otimizada.
+- **Mapa Geolocalizado**: Para garantir a performance de renderização de mais de 5000 localidades, o mapa utiliza um avançado sistema de clusterização (`Leaflet.markercluster`).
 - **Alertas em Tempo Real**: Conecta-se via **SSE** (Server-Sent Events) ao Motor de Alertas para refletir instantaneamente a criação ou resolução de problemas no ar sem precisar atualizar a página.
-- **Temas**: Suporte a Light Mode e Dark Mode, com explicações toxicológicas sobre os poluentes.
 
 ---
 
