@@ -1,0 +1,299 @@
+'use client';
+
+import { useMemo } from 'react';
+import {
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Radar,
+  Legend
+} from 'recharts';
+import { Measurement, DashboardStats, Alert } from '@/lib/types';
+import { levelColor, aqiColor } from '@/lib/format';
+
+interface Props {
+  measurements: Measurement[];
+  stats: DashboardStats | null;
+  alerts: Alert[];
+}
+
+// WHO 24h Limits (approximate, for scaling the radar chart)
+const WHO_LIMITS = {
+  pm2_5: 15,
+  pm10: 45,
+  no2: 25,
+  ozone: 100,
+  so2: 40,
+  co: 4000,
+};
+
+export default function ChartsTab({ measurements, stats, alerts }: Props) {
+  /* 1. Donut Chart: AQI Distribution */
+  const distributionData = useMemo(() => {
+    if (!stats?.distribution) return [];
+    return stats.distribution.map((d) => ({
+      name: d.level,
+      value: d.count,
+      fill: levelColor(d.level),
+    })).filter(d => d.value > 0);
+  }, [stats]);
+
+  /* 2. Bar Chart: Average AQI by State */
+  const stateData = useMemo(() => {
+    const stateMap = new Map<string, { sum: number; count: number }>();
+    measurements.forEach((m) => {
+      if (m.state && m.aqi !== null) {
+        const current = stateMap.get(m.state) || { sum: 0, count: 0 };
+        stateMap.set(m.state, {
+          sum: current.sum + m.aqi,
+          count: current.count + 1,
+        });
+      }
+    });
+
+    return Array.from(stateMap.entries())
+      .map(([state, { sum, count }]) => ({
+        state,
+        aqi: Math.round(sum / count),
+      }))
+      .sort((a, b) => b.aqi - a.aqi); // Top worst states
+  }, [measurements]);
+
+  /* 3. Radar Chart: Pollutants vs WHO Limit */
+  const pollutantsData = useMemo(() => {
+    const sums = { pm2_5: 0, pm10: 0, no2: 0, ozone: 0, so2: 0, co: 0 };
+    const counts = { pm2_5: 0, pm10: 0, no2: 0, ozone: 0, so2: 0, co: 0 };
+
+    measurements.forEach((m) => {
+      if (m.pm2_5 !== null) { sums.pm2_5 += m.pm2_5; counts.pm2_5++; }
+      if (m.pm10 !== null) { sums.pm10 += m.pm10; counts.pm10++; }
+      if (m.no2 !== null) { sums.no2 += m.no2; counts.no2++; }
+      if (m.ozone !== null) { sums.ozone += m.ozone; counts.ozone++; }
+      if (m.so2 !== null) { sums.so2 += m.so2; counts.so2++; }
+      if (m.co !== null) { sums.co += m.co; counts.co++; }
+    });
+
+    const getPct = (key: keyof typeof WHO_LIMITS) => {
+      if (counts[key] === 0) return 0;
+      const avg = sums[key] / counts[key];
+      return Math.round((avg / WHO_LIMITS[key]) * 100);
+    };
+
+    return [
+      { subject: 'PM2.5', A: getPct('pm2_5'), fullMark: 100 },
+      { subject: 'PM10', A: getPct('pm10'), fullMark: 100 },
+      { subject: 'NO₂', A: getPct('no2'), fullMark: 100 },
+      { subject: 'O₃', A: getPct('ozone'), fullMark: 100 },
+      { subject: 'SO₂', A: getPct('so2'), fullMark: 100 },
+      { subject: 'CO', A: getPct('co'), fullMark: 100 },
+    ];
+  }, [measurements]);
+
+  /* 4. Bar Chart: Alerts by Severity */
+  const alertsData = useMemo(() => {
+    const counts = { atencao: 0, alerta: 0, critico: 0, emergencia: 0 };
+    alerts.forEach((a) => {
+      if (counts[a.severity] !== undefined) counts[a.severity]++;
+    });
+    return [
+      { name: 'Atenção', count: counts.atencao, fill: '#eab308' },
+      { name: 'Alerta', count: counts.alerta, fill: '#f97316' },
+      { name: 'Crítico', count: counts.critico, fill: '#ef4444' },
+      { name: 'Emergência', count: counts.emergencia, fill: '#a855f7' },
+    ];
+  }, [alerts]);
+
+  /* Custom Tooltip for Charts to match our dark/glass theme */
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="chart-tooltip">
+          <p className="chart-tooltip-label">{label ?? payload[0].name}</p>
+          <p className="chart-tooltip-value" style={{ color: payload[0].payload.fill || payload[0].color || 'var(--text)' }}>
+            {payload[0].value} {payload[0].dataKey === 'A' ? '% do Limite' : ''}
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  return (
+    <div className="charts-tab-root">
+      <div className="charts-grid">
+        
+        {/* Chart 1 */}
+        <div className="chart-card">
+          <h3 className="chart-title">Distribuição Nacional (Níveis AQI)</h3>
+          <p className="chart-desc">Proporção de municípios em cada nível de qualidade do ar.</p>
+          <div className="chart-container">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={distributionData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={100}
+                  paddingAngle={5}
+                  dataKey="value"
+                  stroke="none"
+                >
+                  {distributionData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.fill} />
+                  ))}
+                </Pie>
+                <Tooltip content={<CustomTooltip />} />
+                <Legend verticalAlign="bottom" height={36} iconType="circle" />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Chart 2 */}
+        <div className="chart-card">
+          <h3 className="chart-title">AQI Médio por Estado</h3>
+          <p className="chart-desc">Ranking das unidades federativas com a pior média no momento.</p>
+          <div className="chart-container">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={stateData.slice(0, 10)}
+                layout="vertical"
+                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={true} vertical={false} />
+                <XAxis type="number" stroke="var(--text-muted)" />
+                <YAxis dataKey="state" type="category" stroke="var(--text-muted)" width={40} />
+                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
+                <Bar dataKey="aqi" radius={[0, 4, 4, 0]}>
+                  {stateData.slice(0, 10).map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={aqiColor(entry.aqi)} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Chart 3 */}
+        <div className="chart-card">
+          <h3 className="chart-title">Perfil de Poluentes vs Limite OMS</h3>
+          <p className="chart-desc">Média nacional em relação ao limite diário recomendado (100%).</p>
+          <div className="chart-container">
+            <ResponsiveContainer width="100%" height="100%">
+              <RadarChart cx="50%" cy="50%" outerRadius="80%" data={pollutantsData}>
+                <PolarGrid stroke="var(--border)" />
+                <PolarAngleAxis dataKey="subject" tick={{ fill: 'var(--text-muted)', fontSize: 12 }} />
+                <PolarRadiusAxis angle={30} domain={[0, 150]} tick={false} axisLine={false} />
+                <Radar name="Brasil" dataKey="A" stroke="#38bdf8" fill="#38bdf8" fillOpacity={0.3} />
+                <Tooltip content={<CustomTooltip />} />
+              </RadarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Chart 4 */}
+        <div className="chart-card">
+          <h3 className="chart-title">Alertas Ativos por Severidade</h3>
+          <p className="chart-desc">Volume atual de incidentes mapeados pelo Motor de Alertas.</p>
+          <div className="chart-container">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={alertsData}
+                margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                <XAxis dataKey="name" stroke="var(--text-muted)" />
+                <YAxis stroke="var(--text-muted)" allowDecimals={false} />
+                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
+                <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                  {alertsData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.fill} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+      </div>
+
+      <style jsx>{`
+        .charts-tab-root {
+          padding: 24px 0;
+          animation: fade-in 0.3s ease-out;
+        }
+        .charts-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+          gap: 24px;
+        }
+        .chart-card {
+          background: var(--panel);
+          border: 1px solid var(--border);
+          border-radius: var(--radius, 12px);
+          padding: 24px;
+          display: flex;
+          flex-direction: column;
+        }
+        .chart-title {
+          margin: 0;
+          font-size: 16px;
+          font-weight: 600;
+          color: var(--text);
+        }
+        .chart-desc {
+          margin: 4px 0 24px;
+          font-size: 12px;
+          color: var(--text-muted);
+        }
+        .chart-container {
+          flex: 1;
+          min-height: 280px;
+        }
+      `}</style>
+      <style>{`
+        /* Recharts Overrides for Tooltip */
+        .chart-tooltip {
+          background: var(--bg-elevated) !important;
+          backdrop-filter: blur(8px);
+          border: 1px solid var(--border);
+          padding: 12px 16px;
+          border-radius: 8px;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        .chart-tooltip-label {
+          margin: 0 0 4px;
+          font-weight: 600;
+          font-size: 13px;
+          color: var(--text);
+        }
+        .chart-tooltip-value {
+          margin: 0;
+          font-weight: 700;
+          font-size: 16px;
+        }
+        .recharts-legend-item-text {
+          color: var(--text-muted) !important;
+          font-size: 12px;
+        }
+        @media (max-width: 768px) {
+          .charts-grid {
+            grid-template-columns: 1fr;
+          }
+        }
+      `}</style>
+    </div>
+  );
+}

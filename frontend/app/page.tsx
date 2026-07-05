@@ -9,6 +9,7 @@ import LocationTable from '@/components/LocationTable';
 import PollutantsLegend from '@/components/PollutantsLegend';
 import HistoryChart from '@/components/HistoryChart';
 import HistoryRanking from '@/components/HistoryRanking';
+import ChartsTab from '@/components/ChartsTab';
 
 import {
   apiBaseUrl,
@@ -25,7 +26,7 @@ const MapaTab = dynamic(() => import('@/components/MapaTab'), { ssr: false });
 
 const REFRESH_MS = 15000;
 
-type TabKey = 'dashboard' | 'historico' | 'alertas' | 'mapa';
+type TabKey = 'dashboard' | 'historico' | 'alertas' | 'mapa' | 'graficos';
 
 interface Selected {
   id: string;
@@ -202,6 +203,14 @@ export default function DashboardPage() {
               {alerts.length > 0 && (
                 <span className="tab-badge-count">{alerts.length}</span>
               )}
+            </button>
+            <button
+              role="tab"
+              aria-selected={activeTab === 'graficos'}
+              className={`tab-btn${activeTab === 'graficos' ? ' tab-active' : ''}`}
+              onClick={() => setActiveTab('graficos')}
+            >
+              📊 Gráficos
             </button>
             <button
               role="tab"
@@ -399,6 +408,17 @@ export default function DashboardPage() {
             <div className="skeleton" style={{ height: 'calc(100vh - 120px)', borderRadius: 12, width: '100%' }} />
           ) : (
             <MapaTab measurements={measurements} stats={stats} focus={mapFocus} />
+          )}
+        </main>
+      )}
+
+      {/* ─── Gráficos Tab ─── */}
+      {activeTab === 'graficos' && (
+        <main>
+          {loading ? (
+            <div className="skeleton" style={{ height: 'calc(100vh - 120px)', borderRadius: 12, width: '100%' }} />
+          ) : (
+            <ChartsTab measurements={measurements} stats={stats} alerts={alerts} />
           )}
         </main>
       )}
