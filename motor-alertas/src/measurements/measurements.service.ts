@@ -143,7 +143,7 @@ export class MeasurementsService {
   async getStats(): Promise<DashboardStats> {
     const latest = await this.findLatestPerLocation();
     const withAqi = latest.filter(
-      (m): m is Measurement & { aqi: number } => typeof m.aqi === "number",
+      (m): m is Measurement & { aqi: number; state: string } => typeof m.aqi === "number",
     );
 
     const averageAqi =
@@ -157,15 +157,21 @@ export class MeasurementsService {
     const worst = sorted[0]
       ? {
           locationName: sorted[0].locationName,
+          state: sorted[0].state,
           aqi: sorted[0].aqi,
           level: sorted[0].level,
+          latitude: sorted[0].latitude,
+          longitude: sorted[0].longitude,
         }
       : null;
     const best = sorted[sorted.length - 1]
       ? {
           locationName: sorted[sorted.length - 1].locationName,
+          state: sorted[sorted.length - 1].state,
           aqi: sorted[sorted.length - 1].aqi,
           level: sorted[sorted.length - 1].level,
+          latitude: sorted[sorted.length - 1].latitude,
+          longitude: sorted[sorted.length - 1].longitude,
         }
       : null;
 

@@ -68,6 +68,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabKey>('dashboard');
   const [isLightMode, setIsLightMode] = useState(false);
+  const [mapFocus, setMapFocus] = useState<[number, number] | null>(null);
 
   const selectedRef = useRef<Selected | null>(null);
   selectedRef.current = selected;
@@ -253,7 +254,15 @@ export default function DashboardPage() {
             </>
           ) : (
             <>
-              <SummaryCards stats={stats} activeAlerts={alerts.length} />
+              <SummaryCards 
+                stats={stats} 
+                activeAlerts={alerts.length} 
+                onNavigateAlerts={() => setActiveTab('alertas')}
+                onNavigateMap={(lat, lng) => {
+                  setMapFocus([lat, lng]);
+                  setActiveTab('mapa');
+                }}
+              />
 
               <div
                 className="layout-grid"
@@ -385,11 +394,11 @@ export default function DashboardPage() {
 
       {/* ─── Mapa Tab ─── */}
       {activeTab === 'mapa' && (
-        <main className="mapa-main">
+        <main className="mapa-main" style={{ display: 'flex', flex: 1, minHeight: 0 }}>
           {loading ? (
-            <div className="skeleton" style={{ height: 'calc(100vh - 120px)', borderRadius: 12 }} />
+            <div className="skeleton" style={{ height: 'calc(100vh - 120px)', borderRadius: 12, width: '100%' }} />
           ) : (
-            <MapaTab measurements={measurements} stats={stats} />
+            <MapaTab measurements={measurements} stats={stats} focus={mapFocus} />
           )}
         </main>
       )}

@@ -1106,3 +1106,13 @@ body.light-mode .alert-tabs {
   visibility: visible;
   top: calc(100% + 4px);
 }
+
+.clickable-card {
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.clickable-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.1);
+}

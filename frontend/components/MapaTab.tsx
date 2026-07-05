@@ -33,10 +33,11 @@ const AQI_LEGEND: { label: string; range: string; color: string }[] = [
 interface MapaTabProps {
   measurements: Measurement[];
   stats: DashboardStats | null;
+  focus?: [number, number] | null;
 }
 
 /* ─── Component ─── */
-export default function MapaTab({ measurements, stats }: MapaTabProps) {
+export default function MapaTab({ measurements, stats, focus }: MapaTabProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const clusterGroupRef = useRef<L.MarkerClusterGroup | null>(null);
@@ -231,6 +232,16 @@ export default function MapaTab({ measurements, stats }: MapaTabProps) {
 
     map.addLayer(markers);
   }, [measurements]);
+
+  /* Handle focus changes */
+  useEffect(() => {
+    if (focus && mapInstanceRef.current) {
+      mapInstanceRef.current.flyTo(focus, 12, {
+        duration: 1.5,
+        easeLinearity: 0.25,
+      });
+    }
+  }, [focus]);
 
   return (
     <div className="mapa-tab-root">
