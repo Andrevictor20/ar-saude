@@ -24,9 +24,13 @@ export default function LocationSelect({ measurements, selectedId, onSelect }: P
 
   const selectedMeasurement = measurements.find(m => m.locationId === selectedId);
   
+  const normalize = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
   const filtered = measurements
-    .filter(m => m.locationName.toLowerCase().includes(search.toLowerCase()))
+    .filter(m => normalize(m.locationName).includes(normalize(search)))
     .sort((a, b) => a.locationName.localeCompare(b.locationName));
+
+  const displayed = filtered.slice(0, 50);
 
   return (
     <div ref={containerRef} style={{ position: 'relative', flex: 1 }}>
@@ -96,7 +100,8 @@ export default function LocationSelect({ measurements, selectedId, onSelect }: P
                 Nenhuma localidade encontrada
               </div>
             ) : (
-              filtered.map(m => (
+              <>
+                {displayed.map(m => (
                 <div 
                   key={m.locationId}
                   onClick={() => {
@@ -119,7 +124,13 @@ export default function LocationSelect({ measurements, selectedId, onSelect }: P
                 >
                   {m.locationName}
                 </div>
-              ))
+              ))}
+              {filtered.length > 50 && (
+                <div style={{ padding: '12px', textAlign: 'center', fontSize: 12, color: 'var(--text-muted)', borderTop: '1px solid var(--border)' }}>
+                  E mais {filtered.length - 50} localidades... Continue digitando para filtrar.
+                </div>
+              )}
+            </>
             )}
           </div>
         </div>

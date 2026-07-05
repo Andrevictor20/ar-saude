@@ -233,7 +233,7 @@ export class MeasurementsService {
       .addSelect('m.locationName', 'locationName')
       .addSelect(`AVG(m.${col})`, 'avgValue')
       .addSelect('l.state', 'state')
-      .leftJoin('locations', 'l', 'l.id = m.locationId')
+      .leftJoin('locations', 'l', 'l.id = m."locationId"')
       .where(`m.${col} IS NOT NULL`)
       .groupBy('m.locationId')
       .addGroupBy('m.locationName')
