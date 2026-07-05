@@ -63,9 +63,8 @@ O sistema é dividido em três grandes pilares, garantindo alta escalabilidade e
 ```text
   ┌─────────────────┐       ┌─────────────────┐       ┌─────────────────┐
   │   APIs Externas │ ────> │ Microsserviço 1 │ ────> │ Microsserviço 2 │
-  │ (Open-Meteo &   │       │    (Coletor)    │       │(Motor Alertas)  │
-  │ OpenWeatherMap) │       └─────────────────┘       └────────┬────────┘
-  └─────────────────┘                                          │
+  │(OpenWeatherMap) │       │    (Coletor)    │       │(Motor Alertas)  │
+  └─────────────────┘       └─────────────────┘       └────────┬────────┘                                          │
                                                                │ (SSE / APIs)
                                                                ▼
   ┌─────────────────┐                                 ┌─────────────────┐
@@ -76,7 +75,7 @@ O sistema é dividido em três grandes pilares, garantindo alta escalabilidade e
 
 ### 1. Microsserviço 1: Coletor (Diretório `/src` - NestJS)
 Sua principal responsabilidade é rodar rotinas agendadas (Cron Jobs) que consultam as coordenadas geográficas dos municípios brasileiros nas APIs meteorológicas externas.
-- **Coleta Híbrida**: Consulta a **Open-Meteo API** e **OpenWeatherMap API** para capturar índices de qualidade do ar e gases (CO, NO, NO₂, SO₂, NH₃).
+- **Coleta Otimizada**: Consulta a **OpenWeatherMap API** para capturar índices de qualidade do ar (AQI) e gases poluentes (PM2.5, PM10, CO, NO, NO₂, O₃, SO₂, NH₃).
 - **Publicação (Push Model)**: Formata os dados enriquecidos e realiza um **HTTP POST** de ingestão de dados diretamente na API do Motor de Alertas.
 - **Resiliência**: Utiliza uma fila de processamento em memória e um sistema de **Cache com Redis** para absorver milhares de requisições de todos os municípios, respeitando rigidamente o *rate limit* das APIs públicas e evitando falhas na carga massiva de dados.
 

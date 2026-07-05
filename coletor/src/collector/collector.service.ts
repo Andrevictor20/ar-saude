@@ -2,11 +2,7 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
 
-import { OpenMeteoService } from '../open-meteo/open-meteo.service.js';
-import {
-  OpenWeatherService,
-  ExtraPollutants,
-} from '../open-weather/open-weather.service.js';
+import { OpenWeatherService } from '../open-weather/open-weather.service.js';
 import { MotorAlertasService } from '../motor-alertas/motor-alertas.service.js';
 import {
   RequestQueueService,
@@ -41,7 +37,6 @@ export class CollectorService implements OnModuleInit {
   private executionCount = 0;
 
   constructor(
-    private readonly openMeteoService: OpenMeteoService,
     private readonly openWeatherService: OpenWeatherService,
     private readonly motorAlertasService: MotorAlertasService,
     private readonly queue: RequestQueueService,
@@ -111,45 +106,25 @@ export class CollectorService implements OnModuleInit {
   private async processLocation(location: Location): Promise<void> {
     this.logger.debug(`--- Localidade: ${location.name} ---`);
 
-    let airQualityData;
+    let enrichedData;
     
     try {
-      airQualityData = await this.openMeteoService.fetchAirQuality(location);
-      this.logger.debug(
-        `[1/3] ✅ Open-Meteo — AQI: ${airQualityData.aqi} (${airQualityData.level}) | ` +
-          `PM10: ${airQualityData.pm10} | PM2.5: ${airQualityData.pm2_5} | ` +
-          `NO₂: ${airQualityData.no2} | O₃: ${airQualityData.ozone}`,
-      );
-    } catch (error) {
-      this.logger.error(`❌ Falha no Open-Meteo para ${location.name}: ${error instanceof Error ? error.message : String(error)}`);
-      throw error; // Re-throw the original error to be handled by the queue dead-letter/retry
-    }
-
-    let extraPollutants: ExtraPollutants = {
-      co: null,
-      so2: null,
-      nh3: null,
-      no: null,
-    };
-    try {
-      extraPollutants = await this.openWeatherService.fetchExtraPollutants(
+      enrichedData = await this.openWeatherService.fetchAirQuality(
         location.latitude,
         location.longitude,
+        location.id,
         location.name,
       );
       this.logger.debug(
-        `[2/3] ✅ OpenWeather — CO: ${extraPollutants.co} | SO₂: ${extraPollutants.so2} | ` +
-          `NH₃: ${extraPollutants.nh3} | NO: ${extraPollutants.no}`,
+        `[1/2] ✅ OpenWeather — AQI: ${enrichedData.aqi} (${enrichedData.level}) | ` +
+          `PM10: ${enrichedData.pm10} | PM2.5: ${enrichedData.pm2_5} | ` +
+          `NO₂: ${enrichedData.no2} | O₃: ${enrichedData.ozone} | ` +
+          `CO: ${enrichedData.co} | SO₂: ${enrichedData.so2}`,
       );
     } catch (error) {
-      this.logger.warn(
-        `⚠️ Falha ao buscar dados extras do OWM para ${location.name}: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
-      );
+      this.logger.error(`❌ Falha no OpenWeather para ${location.name}: ${error instanceof Error ? error.message : String(error)}`);
+      throw error; // Re-throw the original error to be handled by the queue dead-letter/retry
     }
-
-    const enrichedData = { ...airQualityData, ...extraPollutants };
 
     try {
       await this.motorAlertasService.sendMeasurement(enrichedData);
@@ -162,7 +137,7 @@ export class CollectorService implements OnModuleInit {
 
     this.metrics.incMeasurementSent();
     this.logger.debug(
-      `[3/3] ✅ Medição de ${location.name} enviada com sucesso!`,
+      `[2/2] ✅ Medição de ${location.name} enviada com sucesso!`,
     );
   }
 

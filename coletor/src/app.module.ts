@@ -9,7 +9,7 @@ import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { MetricsController } from './common/metrics/metrics.controller.js';
 import { CommonModule } from './common/common.module.js';
-import { OpenMeteoModule } from './open-meteo/open-meteo.module.js';
+
 import { OpenWeatherModule } from './open-weather/open-weather.module.js';
 import { CollectorModule } from './collector/collector.module.js';
 
@@ -36,7 +36,6 @@ import { CollectorModule } from './collector/collector.module.js';
     }),
 
     CommonModule,
-    OpenMeteoModule,
     OpenWeatherModule,
     CollectorModule,
   ],

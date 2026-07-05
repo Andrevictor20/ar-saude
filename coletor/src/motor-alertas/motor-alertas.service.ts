@@ -4,7 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
 
 import { ProcessedAirQualityData } from '../common/interfaces/index.js';
-import { ExtraPollutants } from '../open-weather/open-weather.service.js';
+
 import { retryWithBackoff } from '../common/utils/retry.util.js';
 
 @Injectable()
@@ -31,7 +31,7 @@ export class MotorAlertasService {
     this.apiKey = this.configService.get<string>('API_KEY', 'default-dev-key');
   }
 
-  async sendMeasurement(data: ProcessedAirQualityData & ExtraPollutants): Promise<void> {
+  async sendMeasurement(data: ProcessedAirQualityData): Promise<void> {
     const url = `${this.motorAlertasUrl}/measurements/ingest`;
 
     this.logger.log(`📤 Enviando medição ao Motor de Alertas — URL: ${url}`);

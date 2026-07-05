@@ -284,7 +284,7 @@ export default function MapaTab({ measurements, stats, focus }: MapaTabProps) {
         }
         .mapa-container {
           flex: 1;
-          min-height: 500px;
+          min-height: 75vh;
           width: 100%;
           border-radius: var(--radius, 10px);
           overflow: hidden;
