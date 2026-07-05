@@ -25,9 +25,9 @@ interface Props {
   onHistoryPointSelect?: (point: HistoryPointData | null) => void;
 }
 
-const WIDTH = 640;
-const HEIGHT = 220;
-const PADDING = { top: 16, right: 16, bottom: 28, left: 36 };
+const WIDTH = 960;
+const HEIGHT = 400;
+const PADDING = { top: 24, right: 24, bottom: 36, left: 48 };
 
 export default function HistoryChart({
   locationName,
@@ -120,11 +120,29 @@ export default function HistoryChart({
 
   const isHistoryMode = selectedIndex !== null;
 
+  const btnStyle = {
+    background: 'var(--panel-2)',
+    border: '1px solid var(--border)',
+    color: 'var(--text-muted)',
+    borderRadius: '8px',
+    padding: '6px 12px',
+    fontSize: '11px',
+    fontWeight: 600,
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    fontFamily: "'Inter', sans-serif",
+  } as const;
+
   return (
     <div className="panel">
-      <div className="panel-header">
-        <h2>Historico de AQI</h2>
+      <div className="panel-header" style={{ flexWrap: 'wrap', gap: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+          <h2 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>Histórico de AQI</h2>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           {isHistoryMode && (
             <button
               onClick={handleReset}
@@ -132,13 +150,14 @@ export default function HistoryChart({
                 background: 'var(--accent, #38bdf8)',
                 color: 'var(--bg, #0b1120)',
                 border: 'none',
-                borderRadius: 6,
-                padding: '4px 12px',
+                borderRadius: 8,
+                padding: '6px 14px',
                 fontSize: 11,
                 fontWeight: 700,
                 cursor: 'pointer',
                 letterSpacing: '.02em',
                 transition: 'opacity .15s',
+                fontFamily: "'Inter', sans-serif",
               }}
               onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.85')}
               onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
@@ -154,9 +173,10 @@ export default function HistoryChart({
               background: 'var(--panel-2)',
               border: '1px solid var(--border)',
               color: 'var(--text)',
-              padding: '4px 8px',
-              borderRadius: 4,
+              padding: '6px 10px',
+              borderRadius: 8,
               fontSize: 12,
+              fontFamily: "'Inter', sans-serif",
             }}
             title="Data Inicial"
           />
@@ -168,30 +188,21 @@ export default function HistoryChart({
               background: 'var(--panel-2)',
               border: '1px solid var(--border)',
               color: 'var(--text)',
-              padding: '4px 8px',
-              borderRadius: 4,
+              padding: '6px 10px',
+              borderRadius: 8,
               fontSize: 12,
+              fontFamily: "'Inter', sans-serif",
             }}
             title="Data Final"
           />
-          <span className="muted" style={{ marginLeft: 8 }}>
+          <span className="muted" style={{ fontSize: 13, fontWeight: 500 }}>
             {locationName ?? 'Selecione uma localidade'}
           </span>
           {locationName && filteredHistory.length > 0 && (
             <div style={{ display: 'flex', gap: '6px', marginLeft: 'auto' }}>
               <button
                 onClick={() => exportToCsv(filteredHistory, `historico_${locationName}`)}
-                style={{
-                  background: 'var(--panel-2)',
-                  border: '1px solid var(--border)',
-                  color: 'var(--text-muted)',
-                  borderRadius: '6px',
-                  padding: '4px 10px',
-                  fontSize: '11px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                }}
+                style={btnStyle}
                 onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text)')}
                 onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
                 title="Baixar em CSV"
@@ -200,17 +211,7 @@ export default function HistoryChart({
               </button>
               <button
                 onClick={() => exportToXlsx(filteredHistory, `historico_${locationName}`)}
-                style={{
-                  background: 'var(--panel-2)',
-                  border: '1px solid var(--border)',
-                  color: 'var(--text-muted)',
-                  borderRadius: '6px',
-                  padding: '4px 10px',
-                  fontSize: '11px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                }}
+                style={btnStyle}
                 onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text)')}
                 onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
                 title="Baixar em XLSX"
@@ -219,17 +220,7 @@ export default function HistoryChart({
               </button>
               <button
                 onClick={() => exportToPdf(filteredHistory, `historico_${locationName}`, `Relatório de Qualidade do Ar - ${locationName}`)}
-                style={{
-                  background: 'var(--panel-2)',
-                  border: '1px solid var(--border)',
-                  color: 'var(--text-muted)',
-                  borderRadius: '6px',
-                  padding: '4px 10px',
-                  fontSize: '11px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                }}
+                style={btnStyle}
                 onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text)')}
                 onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
                 title="Baixar em PDF"
@@ -243,11 +234,13 @@ export default function HistoryChart({
       <div className="panel-body">
         {!locationName ? (
           <div className="empty">
-            Clique em uma localidade na tabela para ver o historico de medicoes.
+            <div className="empty-icon">📈</div>
+            Clique em uma localidade na tabela para ver o histórico de medições.
           </div>
         ) : points.length < 2 ? (
           <div className="empty">
-            Historico insuficiente. Aguarde novas coletas para esta localidade.
+            <div className="empty-icon">⏳</div>
+            Histórico insuficiente. Aguarde novas coletas para esta localidade.
           </div>
         ) : (
           <>
@@ -258,7 +251,7 @@ export default function HistoryChart({
                   display: 'flex',
                   alignItems: 'center',
                   gap: 8,
-                  marginBottom: 8,
+                  marginBottom: 12,
                   fontSize: 12,
                   animation: 'histFadeIn .3s ease',
                 }}
@@ -267,8 +260,8 @@ export default function HistoryChart({
                   style={{
                     background: 'var(--accent, #38bdf8)',
                     color: 'var(--bg, #0b1120)',
-                    borderRadius: 4,
-                    padding: '2px 8px',
+                    borderRadius: 6,
+                    padding: '3px 10px',
                     fontWeight: 700,
                     fontSize: 11,
                   }}
@@ -450,7 +443,9 @@ function Chart({
       .join(' ') +
     ` L ${x(points.length - 1).toFixed(1)} ${(PADDING.top + innerH).toFixed(1)} Z`;
 
-  const gridLines = [0, 0.25, 0.5, 0.75, 1].map((t) => {
+  /* More grid lines for the larger chart */
+  const gridSteps = [0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 1];
+  const gridLines = gridSteps.map((t) => {
     const value = Math.round(max - t * (max - min));
     const yy = PADDING.top + t * innerH;
     return { value, yy };
@@ -490,6 +485,14 @@ function Chart({
         role="img"
         aria-label="Gráfico de histórico de AQI"
       >
+        {/* Background gradient */}
+        <defs>
+          <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={lastColor} stopOpacity={0.2} />
+            <stop offset="100%" stopColor={lastColor} stopOpacity={0.02} />
+          </linearGradient>
+        </defs>
+
         {gridLines.map((g, i) => (
           <g key={i}>
             <line
@@ -498,16 +501,27 @@ function Chart({
               y1={g.yy}
               y2={g.yy}
               stroke="var(--border)"
-              strokeWidth={1}
+              strokeWidth={0.5}
+              strokeDasharray={i % 2 === 1 ? '4,4' : 'none'}
+              opacity={i % 2 === 1 ? 0.4 : 0.7}
             />
-            <text x={8} y={g.yy + 4} fill="var(--text-dim)" fontSize={10}>
-              {g.value}
-            </text>
+            {i % 2 === 0 && (
+              <text x={12} y={g.yy + 4} fill="var(--text-dim)" fontSize={11} fontFamily="Inter, sans-serif" fontWeight={500}>
+                {g.value}
+              </text>
+            )}
           </g>
         ))}
 
-        <path d={area} fill={lastColor} opacity={0.12} />
-        <path d={line} fill="none" stroke={lastColor} strokeWidth={2} />
+        <path d={area} fill="url(#areaGrad)" />
+        <path
+          d={line}
+          fill="none"
+          stroke={lastColor}
+          strokeWidth={2.5}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
 
         {/* Crosshair line */}
         {selectedIndex !== null && (
@@ -538,10 +552,10 @@ function Chart({
               <circle
                 cx={x(i)}
                 cy={y(p.aqi)}
-                r={isSelected ? 5 : 2.5}
+                r={isSelected ? 6 : 3}
                 fill={aqiColor(p.aqi)}
                 stroke={isSelected ? '#fff' : 'none'}
-                strokeWidth={isSelected ? 2 : 0}
+                strokeWidth={isSelected ? 2.5 : 0}
                 style={{
                   cursor: 'pointer',
                   transition: 'r .15s ease, stroke-width .15s ease',
@@ -551,7 +565,7 @@ function Chart({
               <circle
                 cx={x(i)}
                 cy={y(p.aqi)}
-                r={8}
+                r={10}
                 fill="transparent"
                 style={{ cursor: 'pointer' }}
                 onClick={() => onPointClick(i)}
@@ -565,7 +579,7 @@ function Chart({
           <circle
             cx={x(selectedIndex)}
             cy={y(points[selectedIndex].aqi)}
-            r={8}
+            r={10}
             fill="none"
             stroke={aqiColor(points[selectedIndex].aqi)}
             strokeWidth={1.5}
@@ -573,7 +587,7 @@ function Chart({
           >
             <animate
               attributeName="r"
-              values="5;10;8"
+              values="6;12;10"
               dur="0.4s"
               fill="freeze"
             />
@@ -590,7 +604,9 @@ function Chart({
           x={PADDING.left}
           y={HEIGHT - 8}
           fill="var(--text-dim)"
-          fontSize={10}
+          fontSize={11}
+          fontFamily="Inter, sans-serif"
+          fontWeight={500}
         >
           {formatDateTime(points[0].measuredAt)}
         </text>
@@ -598,8 +614,10 @@ function Chart({
           x={WIDTH - PADDING.right}
           y={HEIGHT - 8}
           fill="var(--text-dim)"
-          fontSize={10}
+          fontSize={11}
           textAnchor="end"
+          fontFamily="Inter, sans-serif"
+          fontWeight={500}
         >
           {formatDateTime(points[points.length - 1].measuredAt)}
         </text>

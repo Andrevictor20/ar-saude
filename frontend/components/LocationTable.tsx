@@ -11,6 +11,41 @@ interface Props {
   onSelect: (m: Measurement) => void;
 }
 
+type SortKey =
+  | 'locationName'
+  | 'aqi'
+  | 'pm2_5'
+  | 'pm10'
+  | 'no2'
+  | 'ozone'
+  | 'co'
+  | 'so2'
+  | 'nh3'
+  | 'no';
+
+type SortDir = 'asc' | 'desc';
+
+const LEVELS = [
+  'Todos',
+  'Bom',
+  'Moderado',
+  'Ruim para grupos sensíveis',
+  'Ruim',
+  'Muito Ruim',
+  'Perigoso',
+] as const;
+
+const COLUMNS: { key: SortKey; label: string; tooltip?: string; unit?: string }[] = [
+  { key: 'pm2_5', label: 'PM2.5', unit: '(µg/m³)', tooltip: 'Material Particulado < 2.5µm. Partículas finas que penetram profundamente nos pulmões e corrente sanguínea.' },
+  { key: 'pm10', label: 'PM10', unit: '(µg/m³)', tooltip: 'Material Particulado < 10µm. Poeira e partículas inaláveis que causam irritação e problemas respiratórios.' },
+  { key: 'no2', label: 'NO₂', unit: '(µg/m³)', tooltip: 'Dióxido de Nitrogênio. Gás emitido por veículos e queima de combustíveis fósseis; causa inflamação pulmonar.' },
+  { key: 'ozone', label: 'O₃', unit: '(µg/m³)', tooltip: 'Ozônio. Poluente secundário formado sob luz solar; agrava asma e afeta os pulmões.' },
+  { key: 'co', label: 'CO', unit: '(µg/m³)', tooltip: 'Monóxido de Carbono. Gás incolor e tóxico que reduz a capacidade de transporte de oxigênio no sangue.' },
+  { key: 'so2', label: 'SO₂', unit: '(µg/m³)', tooltip: 'Dióxido de Enxofre. Gás irritante resultante da combustão; causa broncoconstrição e tosse aguda.' },
+  { key: 'nh3', label: 'NH₃', unit: '(µg/m³)', tooltip: 'Amônia. Gás de forte odor, atua na atmosfera como precursor de partículas finas.' },
+  { key: 'no', label: 'NO', unit: '(µg/m³)', tooltip: 'Óxido Nítrico. Gás reativo de escapamentos que rapidamente contribui para formar poluição fotoquímica (ozônio).' },
+];
+
 export default function LocationTable({
   measurements,
   selectedId,
@@ -18,25 +53,97 @@ export default function LocationTable({
 }: Props) {
   const [query, setQuery] = useState('');
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [levelFilter, setLevelFilter] = useState<string>('Todos');
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
+  const [sortDir, setSortDir] = useState<SortDir>('desc');
+
+  /* Count per level */
+  const levelCounts = useMemo(() => {
+    const counts: Record<string, number> = { Todos: measurements.length };
+    measurements.forEach((m) => {
+      counts[m.level] = (counts[m.level] || 0) + 1;
+    });
+    return counts;
+  }, [measurements]);
+
+  /* Handle column header click */
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      if (sortDir === 'desc') {
+        setSortDir('asc');
+      } else {
+        /* Reset */
+        setSortKey(null);
+        setSortDir('desc');
+      }
+    } else {
+      setSortKey(key);
+      setSortDir('desc');
+    }
+  };
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const list = q
-      ? measurements.filter((m) => m.locationName.toLowerCase().includes(q))
-      : measurements;
-    return [...list].sort((a, b) => (b.aqi ?? -1) - (a.aqi ?? -1));
-  }, [measurements, query]);
+    let list = measurements;
+
+    /* Text filter */
+    if (q) {
+      list = list.filter((m) => m.locationName.toLowerCase().includes(q));
+    }
+
+    /* Level filter */
+    if (levelFilter !== 'Todos') {
+      list = list.filter((m) => m.level === levelFilter);
+    }
+
+    /* Sort */
+    const sorted = [...list];
+    if (sortKey) {
+      sorted.sort((a, b) => {
+        let aVal: number | string | null;
+        let bVal: number | string | null;
+
+        if (sortKey === 'locationName') {
+          aVal = a.locationName;
+          bVal = b.locationName;
+          const cmp = (aVal as string).localeCompare(bVal as string);
+          return sortDir === 'asc' ? cmp : -cmp;
+        }
+
+        aVal = a[sortKey] as number | null;
+        bVal = b[sortKey] as number | null;
+        const na = aVal ?? -Infinity;
+        const nb = bVal ?? -Infinity;
+        return sortDir === 'asc' ? na - nb : nb - na;
+      });
+    } else {
+      /* Default: sort by AQI desc */
+      sorted.sort((a, b) => (b.aqi ?? -1) - (a.aqi ?? -1));
+    }
+
+    return sorted;
+  }, [measurements, query, levelFilter, sortKey, sortDir]);
 
   const btnStyle = {
     background: 'var(--panel-2)',
     border: '1px solid var(--border)',
     color: 'var(--text-muted)',
-    borderRadius: '6px',
-    padding: '6px 12px',
+    borderRadius: '8px',
+    padding: '7px 14px',
     fontSize: '12px',
     fontWeight: 600,
     cursor: 'pointer',
     transition: 'all 0.2s',
+    fontFamily: "'Inter', sans-serif",
+  };
+
+  const renderSortIndicator = (key: SortKey) => {
+    if (sortKey !== key) return null;
+    return (
+      <span className="sort-indicator">
+        {sortDir === 'asc' ? '▲' : '▼'}
+      </span>
+    );
   };
 
   return (
@@ -57,15 +164,38 @@ export default function LocationTable({
           </div>
           <input
             type="text"
-            placeholder="Buscar localidade..."
+            placeholder="🔍 Buscar localidade..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            style={{ minWidth: 180 }}
           />
         </div>
       </div>
+
+      {/* Filter Chips */}
+      <div className="filter-chips">
+        {LEVELS.map((level) => (
+          <button
+            key={level}
+            className={`filter-chip${levelFilter === level ? ' active' : ''}`}
+            onClick={() => setLevelFilter(level)}
+          >
+            {level !== 'Todos' && (
+              <span
+                className="chip-dot"
+                style={{ background: levelColor(level) }}
+              />
+            )}
+            {level === 'Ruim para grupos sensíveis' ? 'Sensíveis' : level}
+            <span className="chip-count">{levelCounts[level] || 0}</span>
+          </button>
+        ))}
+      </div>
+
       <div className="panel-body" style={{ padding: 0 }}>
         {measurements.length === 0 ? (
           <div className="empty">
+            <div className="empty-icon">📡</div>
             Aguardando primeira coleta do motor de monitoramento.
           </div>
         ) : (
@@ -73,104 +203,43 @@ export default function LocationTable({
             <table className="table">
               <thead>
                 <tr>
-                  <th>Localidade</th>
-                  <th>
+                  <th
+                    className={`sortable${sortKey === 'locationName' ? ' sort-active' : ''}`}
+                    onClick={() => handleSort('locationName')}
+                  >
+                    Localidade {renderSortIndicator('locationName')}
+                  </th>
+                  <th
+                    className={`sortable${sortKey === 'aqi' ? ' sort-active' : ''}`}
+                    onClick={() => handleSort('aqi')}
+                  >
                     <span
                       className="has-tooltip"
                       data-tooltip="Índice de Qualidade do Ar. Medida geral e simplificada da poluição atmosférica atual."
                     >
                       AQI
                     </span>
+                    {renderSortIndicator('aqi')}
                   </th>
                   <th>Nivel</th>
-                  <th>
-                    <span
-                      className="has-tooltip"
-                      data-tooltip="Material Particulado < 2.5µm. Partículas finas que penetram profundamente nos pulmões e corrente sanguínea."
+                  {COLUMNS.map((col) => (
+                    <th
+                      key={col.key}
+                      className={`sortable${sortKey === col.key ? ' sort-active' : ''}`}
+                      onClick={() => handleSort(col.key)}
                     >
-                      PM2.5{' '}
-                      <span style={{ textTransform: 'lowercase' }}>
-                        (µg/m³)
+                      <span
+                        className="has-tooltip"
+                        data-tooltip={col.tooltip}
+                      >
+                        {col.label}{' '}
+                        <span style={{ textTransform: 'lowercase' }}>
+                          {col.unit}
+                        </span>
                       </span>
-                    </span>
-                  </th>
-                  <th>
-                    <span
-                      className="has-tooltip"
-                      data-tooltip="Material Particulado < 10µm. Poeira e partículas inaláveis que causam irritação e problemas respiratórios."
-                    >
-                      PM10{' '}
-                      <span style={{ textTransform: 'lowercase' }}>
-                        (µg/m³)
-                      </span>
-                    </span>
-                  </th>
-                  <th>
-                    <span
-                      className="has-tooltip"
-                      data-tooltip="Dióxido de Nitrogênio. Gás emitido por veículos e queima de combustíveis fósseis; causa inflamação pulmonar."
-                    >
-                      NO₂{' '}
-                      <span style={{ textTransform: 'lowercase' }}>
-                        (µg/m³)
-                      </span>
-                    </span>
-                  </th>
-                  <th>
-                    <span
-                      className="has-tooltip"
-                      data-tooltip="Ozônio. Poluente secundário formado sob luz solar; agrava asma e afeta os pulmões."
-                    >
-                      O₃{' '}
-                      <span style={{ textTransform: 'lowercase' }}>
-                        (µg/m³)
-                      </span>
-                    </span>
-                  </th>
-                  <th>
-                    <span
-                      className="has-tooltip"
-                      data-tooltip="Monóxido de Carbono. Gás incolor e tóxico que reduz a capacidade de transporte de oxigênio no sangue."
-                    >
-                      CO{' '}
-                      <span style={{ textTransform: 'lowercase' }}>
-                        (µg/m³)
-                      </span>
-                    </span>
-                  </th>
-                  <th>
-                    <span
-                      className="has-tooltip"
-                      data-tooltip="Dióxido de Enxofre. Gás irritante resultante da combustão; causa broncoconstrição e tosse aguda."
-                    >
-                      SO₂{' '}
-                      <span style={{ textTransform: 'lowercase' }}>
-                        (µg/m³)
-                      </span>
-                    </span>
-                  </th>
-                  <th>
-                    <span
-                      className="has-tooltip"
-                      data-tooltip="Amônia. Gás de forte odor, atua na atmosfera como precursor de partículas finas."
-                    >
-                      NH₃{' '}
-                      <span style={{ textTransform: 'lowercase' }}>
-                        (µg/m³)
-                      </span>
-                    </span>
-                  </th>
-                  <th>
-                    <span
-                      className="has-tooltip"
-                      data-tooltip="Óxido Nítrico. Gás reativo de escapamentos que rapidamente contribui para formar poluição fotoquímica (ozônio)."
-                    >
-                      NO{' '}
-                      <span style={{ textTransform: 'lowercase' }}>
-                        (µg/m³)
-                      </span>
-                    </span>
-                  </th>
+                      {renderSortIndicator(col.key)}
+                    </th>
+                  ))}
                   <th>Atualizado</th>
                 </tr>
               </thead>
@@ -183,7 +252,7 @@ export default function LocationTable({
                     }
                     onClick={() => onSelect(m)}
                   >
-                    <td>{m.locationName}</td>
+                    <td style={{ fontWeight: 500 }}>{m.locationName}</td>
                     <td>
                       <span
                         className="aqi-pill"
@@ -227,6 +296,22 @@ export default function LocationTable({
           </div>
         )}
       </div>
+
+      {/* Result count footer */}
+      {measurements.length > 0 && (
+        <div className="table-info">
+          <span>
+            Exibindo <strong>{filtered.length}</strong> de{' '}
+            <strong>{measurements.length}</strong> localidades
+          </span>
+          {sortKey && (
+            <span style={{ color: 'var(--accent)', fontSize: 11 }}>
+              Ordenado por {COLUMNS.find((c) => c.key === sortKey)?.label ?? sortKey}{' '}
+              {sortDir === 'asc' ? '(menor → maior)' : '(maior → menor)'}
+            </span>
+          )}
+        </div>
+      )}
 
       {isExportModalOpen && (
         <ExportModal

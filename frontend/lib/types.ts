@@ -55,3 +55,16 @@ export interface DashboardStats {
   distribution: LevelDistribution[];
   updatedAt: string;
 }
+
+export interface RankingEntry {
+  locationName: string;
+  state: string;
+  value: number;
+}
+
+export interface RankingResult {
+  index: string;
+  period: string;
+  worst: RankingEntry[];
+  best: RankingEntry[];
+}

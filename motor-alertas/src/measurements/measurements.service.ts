@@ -12,6 +12,19 @@ export interface LevelDistribution {
   count: number;
 }
 
+export interface RankingEntry {
+  locationName: string;
+  state: string;
+  value: number;
+}
+
+export interface RankingResult {
+  index: string;
+  period: string;
+  worst: RankingEntry[];
+  best: RankingEntry[];
+}
+
 export interface DashboardStats {
   monitoredLocations: number;
   totalMeasurements: number;
@@ -168,6 +181,81 @@ export class MeasurementsService {
       best,
       distribution,
       updatedAt: new Date().toISOString(),
+    };
+  }
+
+  async getRanking(
+    index: string,
+    period: string,
+  ): Promise<RankingResult> {
+    const validIndexes = ['aqi', 'pm2_5', 'pm10', 'no2', 'ozone', 'co', 'so2', 'nh3', 'no'];
+    const col = validIndexes.includes(index) ? index : 'aqi';
+
+    // Calculate start date based on period
+    const now = new Date();
+    let startDate: Date | null = null;
+
+    switch (period) {
+      case '7d':
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case '30d':
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      case '90d':
+        startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+        break;
+      case '180d':
+        startDate = new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000);
+        break;
+      case '365d':
+        startDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+        break;
+      default: // 'all'
+        startDate = null;
+    }
+
+    const qb = this.repo
+      .createQueryBuilder('m')
+      .select('m.locationId', 'locationId')
+      .addSelect('m.locationName', 'locationName')
+      .addSelect(`AVG(m.${col})`, 'avgValue')
+      .addSelect('l.state', 'state')
+      .leftJoin('locations', 'l', 'l.id = m.locationId')
+      .where(`m.${col} IS NOT NULL`)
+      .groupBy('m.locationId')
+      .addGroupBy('m.locationName')
+      .addGroupBy('l.state');
+
+    if (startDate) {
+      qb.andWhere('m.measuredAt >= :startDate', {
+        startDate: startDate.toISOString(),
+      });
+    }
+
+    const rawWorst = await qb
+      .clone()
+      .orderBy('"avgValue"', 'DESC')
+      .limit(5)
+      .getRawMany();
+
+    const rawBest = await qb
+      .clone()
+      .orderBy('"avgValue"', 'ASC')
+      .limit(5)
+      .getRawMany();
+
+    const mapEntry = (row: any): RankingEntry => ({
+      locationName: row.locationName || 'Desconhecido',
+      state: row.state || '-',
+      value: row.avgValue != null ? Math.round(parseFloat(row.avgValue) * 10) / 10 : 0,
+    });
+
+    return {
+      index: col,
+      period,
+      worst: rawWorst.map(mapEntry),
+      best: rawBest.map(mapEntry),
     };
   }
 

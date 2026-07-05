@@ -1,4 +1,4 @@
-import { Alert, DashboardStats, Measurement } from './types';
+import { Alert, DashboardStats, Measurement, RankingResult } from './types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
@@ -51,6 +51,15 @@ export function getActiveAlerts(): Promise<Alert[]> {
 
 export function getAlerts(limit = 50): Promise<Alert[]> {
   return request<Alert[]>(`/alerts?limit=${limit}`);
+}
+
+export function getRanking(
+  index: string = 'aqi',
+  period: string = '30d',
+): Promise<RankingResult> {
+  return request<RankingResult>(
+    `/measurements/ranking?index=${encodeURIComponent(index)}&period=${encodeURIComponent(period)}`,
+  );
 }
 
 export const apiBaseUrl = API_URL;

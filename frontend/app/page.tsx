@@ -8,6 +8,7 @@ import AlertsPanel from '@/components/AlertsPanel';
 import LocationTable from '@/components/LocationTable';
 import PollutantsLegend from '@/components/PollutantsLegend';
 import HistoryChart from '@/components/HistoryChart';
+import HistoryRanking from '@/components/HistoryRanking';
 
 import {
   apiBaseUrl,
@@ -29,6 +30,31 @@ type TabKey = 'dashboard' | 'historico' | 'alertas' | 'mapa';
 interface Selected {
   id: string;
   name: string;
+}
+
+/* ─── Skeleton Components ─── */
+function SkeletonCards() {
+  return (
+    <section>
+      <div className="cards-grid">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="skeleton skeleton-card" style={{ animationDelay: `${i * 0.1}s` }} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function SkeletonTable() {
+  return (
+    <div className="panel" style={{ padding: '20px' }}>
+      <div className="skeleton" style={{ height: 20, width: 200, marginBottom: 16 }} />
+      <div className="skeleton" style={{ height: 40, marginBottom: 8 }} />
+      {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+        <div key={i} className="skeleton skeleton-table-row" style={{ animationDelay: `${i * 0.05}s` }} />
+      ))}
+    </div>
+  );
 }
 
 export default function DashboardPage() {
@@ -172,6 +198,9 @@ export default function DashboardPage() {
               onClick={() => setActiveTab('alertas')}
             >
               🚨 Alertas
+              {alerts.length > 0 && (
+                <span className="tab-badge-count">{alerts.length}</span>
+              )}
             </button>
             <button
               role="tab"
@@ -218,9 +247,10 @@ export default function DashboardPage() {
       {activeTab === 'dashboard' && (
         <main>
           {loading ? (
-            <div className="spinner">
-              Carregando dados do motor de alertas...
-            </div>
+            <>
+              <SkeletonCards />
+              <SkeletonTable />
+            </>
           ) : (
             <>
               <SummaryCards stats={stats} activeAlerts={alerts.length} />
@@ -250,17 +280,17 @@ export default function DashboardPage() {
       {activeTab === 'historico' && (
         <main>
           {loading ? (
-            <div className="spinner">
-              Carregando dados do motor de alertas...
-            </div>
+            <>
+              <div className="skeleton" style={{ height: 60, borderRadius: 12 }} />
+              <div className="skeleton" style={{ height: 450, borderRadius: 12 }} />
+              <div className="skeleton" style={{ height: 300, borderRadius: 12 }} />
+            </>
           ) : (
             <div
               style={{
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 24,
-                maxWidth: 1000,
-                margin: '0 auto',
               }}
             >
               <div
@@ -268,16 +298,23 @@ export default function DashboardPage() {
                   display: 'flex',
                   gap: 16,
                   alignItems: 'center',
-                  background: 'var(--panel)',
+                  background: 'var(--glass-bg)',
+                  backdropFilter: 'blur(8px)',
+                  WebkitBackdropFilter: 'blur(8px)',
                   padding: '16px 24px',
                   borderRadius: 12,
-                  border: '1px solid var(--border)',
+                  border: '1px solid var(--glass-border)',
                 }}
               >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                  <circle cx="12" cy="10" r="3"/>
+                </svg>
                 <span
                   style={{
                     color: 'var(--text-muted)',
                     fontWeight: 600,
+                    fontSize: 13,
                   }}
                 >
                   Selecionar Localidade:
@@ -294,11 +331,13 @@ export default function DashboardPage() {
                     background: 'var(--panel-2)',
                     color: 'var(--text)',
                     border: '1px solid var(--border)',
-                    padding: '8px 16px',
-                    borderRadius: 6,
+                    padding: '10px 16px',
+                    borderRadius: 8,
                     fontSize: 14,
                     flex: 1,
                     outline: 'none',
+                    fontFamily: "'Inter', sans-serif",
+                    fontWeight: 500,
                   }}
                 >
                   <option value="" disabled>
@@ -319,6 +358,7 @@ export default function DashboardPage() {
                 locationName={selected?.name ?? null}
                 history={history}
               />
+              <HistoryRanking />
             </div>
           )}
         </main>
@@ -328,8 +368,14 @@ export default function DashboardPage() {
       {activeTab === 'alertas' && (
         <main>
           {loading ? (
-            <div className="spinner">
-              Carregando dados do motor de alertas...
+            <div className="panel" style={{ padding: 20 }}>
+              <div className="skeleton" style={{ height: 20, width: 150, marginBottom: 16 }} />
+              <div className="skeleton" style={{ height: 48, marginBottom: 12 }} />
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: 16 }}>
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <div key={i} className="skeleton" style={{ height: 180, borderRadius: 10, animationDelay: `${i * 0.08}s` }} />
+                ))}
+              </div>
             </div>
           ) : (
             <AlertsPanel alerts={alerts} />
@@ -341,9 +387,7 @@ export default function DashboardPage() {
       {activeTab === 'mapa' && (
         <main className="mapa-main">
           {loading ? (
-            <div className="spinner">
-              Carregando dados do motor de alertas...
-            </div>
+            <div className="skeleton" style={{ height: 'calc(100vh - 120px)', borderRadius: 12 }} />
           ) : (
             <MapaTab measurements={measurements} stats={stats} />
           )}
@@ -356,8 +400,8 @@ export default function DashboardPage() {
           display: flex;
           gap: 4px;
           background: var(--bg, #0b1120);
-          border-radius: 8px;
-          padding: 3px;
+          border-radius: 10px;
+          padding: 4px;
           border: 1px solid var(--border, #233047);
         }
         .tab-btn {
@@ -366,12 +410,16 @@ export default function DashboardPage() {
           color: var(--text-muted, #94a3b8);
           font-size: 12px;
           font-weight: 600;
-          padding: 6px 16px;
-          border-radius: 6px;
+          padding: 7px 16px;
+          border-radius: 8px;
           cursor: pointer;
           transition: transform 0.1s cubic-bezier(0.16, 1, 0.3, 1), background 0.15s ease, color 0.15s ease;
           letter-spacing: .02em;
           white-space: nowrap;
+          font-family: 'Inter', sans-serif;
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
         }
         .tab-btn:active {
           transform: scale(0.96);

@@ -10,7 +10,7 @@ import {
   UseGuards,
 } from "@nestjs/common";
 
-import { DashboardStats, MeasurementsService } from "./measurements.service";
+import { DashboardStats, MeasurementsService, RankingResult } from "./measurements.service";
 import { Measurement } from "../entities/measurement.entity";
 import { AlertsService } from "../alerts/alerts.service";
 import { ApiKeyGuard } from "../auth/api-key.guard";
@@ -64,6 +64,15 @@ export class MeasurementsController {
       locationId,
       limit ? Number(limit) : 100,
     );
+  }
+
+  @Get("ranking")
+  @ApiOperation({ summary: "Obter ranking top 5 melhores/piores por índice e período" })
+  getRanking(
+    @Query("index") index: string = "aqi",
+    @Query("period") period: string = "30d",
+  ): Promise<RankingResult> {
+    return this.measurementsService.getRanking(index, period);
   }
 
   @Get("export")
