@@ -870,6 +870,121 @@ select:focus {
   transform: rotate(180deg);
 }
 
+/* ─── Alerts Accordion Pattern ─── */
+.alert-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.alert-accordion {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.alert-accordion.expanded {
+  background: var(--panel-2);
+  border-color: var(--text-dim);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.alert-accordion-header {
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s ease;
+}
+
+.alert-accordion-header:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.alert-accordion.expanded .alert-accordion-header {
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+}
+
+.alert-accordion-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.alert-accordion-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.alert-accordion-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.alert-accordion-meta {
+  font-size: 13px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.alert-accordion-chevron {
+  color: var(--text-dim);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.alert-accordion.expanded .alert-accordion-chevron {
+  transform: rotate(180deg);
+  color: var(--text);
+}
+
+.alert-accordion-body {
+  padding: 0;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease, padding 0.3s ease;
+}
+
+.alert-accordion.expanded .alert-accordion-body {
+  max-height: 1000px;
+  opacity: 1;
+  padding: 20px;
+}
+
+/* Micro-animação para emergências */
+@keyframes pulseEmergency {
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  70% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+.pulse-emergency {
+  animation: pulseEmergency 2s infinite;
+  border-color: rgba(239, 68, 68, 0.5);
+}
+.light-mode .pulse-emergency {
+  border-color: rgba(220, 38, 38, 0.5);
+}
+
+
 .legend-content {
   overflow: hidden;
   transition: max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
