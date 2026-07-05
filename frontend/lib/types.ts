@@ -2,6 +2,7 @@ export interface Measurement {
   id: string;
   locationId: string;
   locationName: string;
+  state?: string;
   resourceUuid: string;
   aqi: number | null;
   level: string;

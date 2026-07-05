@@ -54,8 +54,18 @@ export default function LocationTable({
   const [query, setQuery] = useState('');
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [levelFilter, setLevelFilter] = useState<string>('Todos');
+  const [stateFilter, setStateFilter] = useState<string>('Todos');
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>('desc');
+
+  /* Available states */
+  const availableStates = useMemo(() => {
+    const states = new Set<string>();
+    measurements.forEach((m) => {
+      if (m.state) states.add(m.state);
+    });
+    return Array.from(states).sort();
+  }, [measurements]);
 
   /* Count per level */
   const levelCounts = useMemo(() => {
@@ -96,6 +106,11 @@ export default function LocationTable({
       list = list.filter((m) => m.level === levelFilter);
     }
 
+    /* State filter */
+    if (stateFilter !== 'Todos') {
+      list = list.filter((m) => m.state === stateFilter);
+    }
+
     /* Sort */
     const sorted = [...list];
     if (sortKey) {
@@ -122,7 +137,7 @@ export default function LocationTable({
     }
 
     return sorted;
-  }, [measurements, query, levelFilter, sortKey, sortDir]);
+  }, [measurements, query, levelFilter, stateFilter, sortKey, sortDir]);
 
   const btnStyle = {
     background: 'var(--panel-2)',
@@ -189,6 +204,26 @@ export default function LocationTable({
               <option value="aqi-asc">AQI: Menor → Maior</option>
               <option value="locationName-asc">Local: A → Z</option>
               <option value="locationName-desc">Local: Z → A</option>
+            </select>
+            <select
+              value={stateFilter}
+              onChange={(e) => setStateFilter(e.target.value)}
+              style={{
+                background: 'var(--panel-2)',
+                border: '1px solid var(--border)',
+                color: 'var(--text)',
+                padding: '6px 12px',
+                borderRadius: '8px',
+                fontSize: '12px',
+                fontFamily: "'Inter', sans-serif",
+                outline: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              <option value="Todos">Todos os Estados</option>
+              {availableStates.map(st => (
+                <option key={st} value={st}>{st}</option>
+              ))}
             </select>
           </div>
           <input
@@ -281,7 +316,25 @@ export default function LocationTable({
                     }
                     onClick={() => onSelect(m)}
                   >
-                    <td style={{ fontWeight: 500 }}>{m.locationName}</td>
+                    <td style={{ fontWeight: 500 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {m.locationName}
+                        {m.state && (
+                          <span
+                            className="badge"
+                            style={{
+                              background: 'var(--panel-2)',
+                              color: 'var(--text-muted)',
+                              border: '1px solid var(--border)',
+                              fontSize: 10,
+                              padding: '2px 6px'
+                            }}
+                          >
+                            {m.state}
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td>
                       <span
                         className="aqi-pill"

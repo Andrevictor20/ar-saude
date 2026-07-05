@@ -113,16 +113,22 @@ export class MeasurementsService {
     return qb.getMany();
   }
 
-  async findLatestPerLocation(): Promise<Measurement[]> {
+  async findLatestPerLocation(): Promise<any[]> {
     const locations = await this.locationsService.getAllLocations();
     const validIds = locations.map((n) => n.id);
-    return this.repo
+    const measurements = await this.repo
       .createQueryBuilder("m")
       .where("m.locationId IN (:...validIds)", { validIds })
       .distinctOn(["m.locationId"])
       .orderBy("m.locationId", "ASC")
       .addOrderBy("m.measuredAt", "DESC")
       .getMany();
+
+    const locationMap = new Map(locations.map((loc) => [loc.id, loc.state]));
+    return measurements.map((m) => ({
+      ...m,
+      state: locationMap.get(m.locationId) || "BR",
+    }));
   }
 
   async findLatestForLocation(
