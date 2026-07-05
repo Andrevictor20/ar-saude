@@ -49,9 +49,10 @@ export default function ExportModal({ onClose, currentMeasurements }: ExportModa
         exportToXlsx(dataToExport, filename);
       } else if (format === 'pdf') {
         let pdfData = dataToExport;
-        if (scope !== 'current' && dataToExport.length > 500) {
-          pdfData = dataToExport.slice(0, 500);
-          alert('O arquivo PDF será limitado às 500 últimas medições do período selecionado para evitar travamentos. Para acessar o histórico completo, recomendamos utilizar CSV ou XLSX.');
+        if (dataToExport.length > 1000) {
+          // Ordena pelo pior AQI para garantir que os dados críticos entrem no PDF
+          pdfData = [...dataToExport].sort((a, b) => (b.aqi ?? -1) - (a.aqi ?? -1)).slice(0, 1000);
+          alert('Devido ao alto volume de dados (mais de 5000 municípios), o PDF foi limitado aos 1000 piores registros (maior AQI) para evitar travamentos.\n\nPara acessar o histórico completo, recomendamos utilizar CSV ou XLSX.');
         }
         exportToPdf(pdfData, filename, 'Relatório de Qualidade do Ar - Dados Exportados');
       }
@@ -142,9 +143,9 @@ export default function ExportModal({ onClose, currentMeasurements }: ExportModa
                 PDF
               </button>
             </div>
-            {format === 'pdf' && scope !== 'current' && (
-              <span className="warning-text">
-                Nota: Para não comprometer o arquivo, o PDF será limitado às 500 últimas medições. Para o histórico completo, use CSV ou XLSX.
+            {format === 'pdf' && (
+              <span className="warning-text" style={{ lineHeight: 1.4 }}>
+                Nota: Para evitar lentidão com os 5000+ municípios, a exportação em PDF é limitada aos 1000 registros mais críticos (maior AQI). Para obter todos os dados, utilize CSV ou XLSX.
               </span>
             )}
           </div>

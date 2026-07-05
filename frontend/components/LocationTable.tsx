@@ -151,7 +151,7 @@ export default function LocationTable({
       <div className="panel-header">
         <h2>Qualidade do ar por localidade</h2>
         <div className="toolbar">
-          <div style={{ display: 'flex', gap: '6px', marginRight: '8px' }}>
+          <div style={{ display: 'flex', gap: '6px', marginRight: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
             <button
               onClick={() => setIsExportModalOpen(true)}
               style={btnStyle}
@@ -161,13 +161,42 @@ export default function LocationTable({
             >
               📥 Exportar Dados
             </button>
+            <select
+              value={`${sortKey || 'aqi'}-${sortDir}`}
+              onChange={(e) => {
+                const [key, dir] = e.target.value.split('-');
+                if (key === 'aqi' && dir === 'desc' && sortKey === null) {
+                  setSortKey(null);
+                  setSortDir('desc');
+                } else {
+                  setSortKey(key as SortKey);
+                  setSortDir(dir as SortDir);
+                }
+              }}
+              style={{
+                background: 'var(--panel-2)',
+                border: '1px solid var(--border)',
+                color: 'var(--text)',
+                padding: '6px 12px',
+                borderRadius: '8px',
+                fontSize: '12px',
+                fontFamily: "'Inter', sans-serif",
+                outline: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              <option value="aqi-desc">AQI: Maior → Menor</option>
+              <option value="aqi-asc">AQI: Menor → Maior</option>
+              <option value="locationName-asc">Local: A → Z</option>
+              <option value="locationName-desc">Local: Z → A</option>
+            </select>
           </div>
           <input
             type="text"
             placeholder="🔍 Buscar localidade..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            style={{ minWidth: 180 }}
+            style={{ minWidth: 180, flex: 1 }}
           />
         </div>
       </div>
