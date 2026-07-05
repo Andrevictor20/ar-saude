@@ -47,13 +47,10 @@ export class CollectorService implements OnModuleInit {
   /** Configura a fila e registra o worker que processa cada bairro. */
   onModuleInit(): void {
     this.queue.configure({
-      concurrency: this.configService.get<number>('QUEUE_CONCURRENCY', 5),
+      concurrency: 5,
       maxAttempts: 5,
       retryDelayMs: 500,
-      drainTimeoutMs: this.configService.get<number>(
-        'QUEUE_DRAIN_TIMEOUT_MS',
-        10_000,
-      ),
+      drainTimeoutMs: 10000,
       rateLimitMs: 1200, // Strict limit of ~50 requests per minute to OpenWeatherMap
     });
 

@@ -56,7 +56,7 @@ export class OpenWeatherService {
 
     this.maxRetries = 5;
     this.retryBaseDelay = 500;
-    this.cacheTtlMs = this.configService.get<number>('CACHE_TTL_MS', 600_000);
+    this.cacheTtlMs = 600000;
   }
 
   /** Busca os dados de qualidade do ar via OpenWeatherMap. */
