@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { Alert, AlertSeverity } from '@/lib/types';
 import { formatDateTime, severityColor, severityLabel } from '@/lib/format';
 import { getStateUF } from '@/lib/states';
+import { exportAlertsToCsv, exportAlertsToPdf, exportAlertsToXlsx } from '@/lib/exportUtils';
 
 interface Props {
   alerts: Alert[];
@@ -130,9 +131,21 @@ export default function AlertsPanel({ alerts }: Props) {
           onChange={(e) => setSearchQuery(e.target.value)}
           style={{ minWidth: 260, flex: 1 }}
         />
-        <button className="sort-toggle" onClick={() => setSortAsc(!sortAsc)}>
-          {sortAsc ? '▲' : '▼'} Ordem: AQI {sortAsc ? 'menor → maior' : 'maior → menor'}
-        </button>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          <button className="sort-toggle" onClick={() => setSortAsc(!sortAsc)}>
+            {sortAsc ? '▲' : '▼'} Ordem: AQI {sortAsc ? 'menor → maior' : 'maior → menor'}
+          </button>
+          <div style={{ width: 1, height: 24, background: 'var(--border)', margin: '0 4px' }} />
+          <button className="btn btn-secondary" onClick={() => exportAlertsToCsv(alerts, 'alertas_ativos')}>
+            CSV
+          </button>
+          <button className="btn btn-secondary" onClick={() => exportAlertsToXlsx(alerts, 'alertas_ativos')}>
+            XLSX
+          </button>
+          <button className="btn btn-secondary" onClick={() => exportAlertsToPdf(alerts, 'alertas_ativos', 'Alertas Ativos')}>
+            PDF
+          </button>
+        </div>
       </div>
 
       <div className="panel-body">

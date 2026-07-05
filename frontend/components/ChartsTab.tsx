@@ -23,6 +23,7 @@ import {
 import { Measurement, DashboardStats, Alert } from '@/lib/types';
 import { levelColor, aqiColor } from '@/lib/format';
 import { getStateUF } from '@/lib/states';
+import { exportChartsDataToCsv, exportChartsDataToXlsx, exportChartsToPdf } from '@/lib/exportUtils';
 
 interface Props {
   measurements: Measurement[];
@@ -156,9 +157,37 @@ export default function ChartsTab({ measurements, stats, alerts }: Props) {
     return null;
   };
 
+  const handleExportData = (type: 'csv' | 'xlsx') => {
+    const datasets = {
+      'Distribuição AQI': distributionData,
+      'Média por Estado': stateData,
+      'Poluentes vs Limite': pollutantsData,
+      'Alertas por Severidade': alertsData,
+      'Top 5 Piores': topCitiesData,
+      'Top 5 Melhores': bestCitiesData,
+    };
+    if (type === 'csv') exportChartsDataToCsv(datasets, 'graficos_dados');
+    else exportChartsDataToXlsx(datasets, 'graficos_dados');
+  };
+
   return (
     <div className="charts-tab-root">
-      <div className="charts-grid">
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginBottom: 16 }}>
+        <button className="btn btn-secondary" onClick={() => handleExportData('csv')}>
+          Exportar Dados (CSV)
+        </button>
+        <button className="btn btn-secondary" onClick={() => handleExportData('xlsx')}>
+          Exportar Dados (XLSX)
+        </button>
+        <button 
+          className="btn btn-secondary" 
+          onClick={() => exportChartsToPdf('charts-export-container', 'relatorio_graficos', 'Relatório Consolidado de Gráficos')}
+        >
+          Salvar Gráficos (PDF)
+        </button>
+      </div>
+
+      <div id="charts-export-container" className="charts-grid" style={{ background: 'var(--bg)', padding: '12px' }}>
         
         {/* Chart 1 */}
         <div className="chart-card">
