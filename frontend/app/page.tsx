@@ -253,6 +253,56 @@ export default function DashboardPage() {
         </div>
       </header>
 
+      {/* Mobile Bottom Navigation */}
+      <nav className="bottom-nav mobile-only">
+        <button
+          role="tab"
+          aria-selected={activeTab === 'dashboard'}
+          className={`tab-btn${activeTab === 'dashboard' ? ' tab-active' : ''}`}
+          onClick={() => setActiveTab('dashboard')}
+        >
+          <span className="tab-icon">📈</span>
+          <span className="tab-text">Painel</span>
+        </button>
+        <button
+          role="tab"
+          aria-selected={activeTab === 'historico'}
+          className={`tab-btn${activeTab === 'historico' ? ' tab-active' : ''}`}
+          onClick={() => setActiveTab('historico')}
+        >
+          <span className="tab-icon">🕒</span>
+          <span className="tab-text">Histórico</span>
+        </button>
+        <button
+          role="tab"
+          aria-selected={activeTab === 'alertas'}
+          className={`tab-btn${activeTab === 'alertas' ? ' tab-active' : ''}`}
+          onClick={() => setActiveTab('alertas')}
+        >
+          <span className="tab-icon">🚨</span>
+          <span className="tab-text">Alertas</span>
+          {alerts.length > 0 && <span className="tab-badge">{alerts.length}</span>}
+        </button>
+        <button
+          role="tab"
+          aria-selected={activeTab === 'graficos'}
+          className={`tab-btn${activeTab === 'graficos' ? ' tab-active' : ''}`}
+          onClick={() => setActiveTab('graficos')}
+        >
+          <span className="tab-icon">📊</span>
+          <span className="tab-text">Gráficos</span>
+        </button>
+        <button
+          role="tab"
+          aria-selected={activeTab === 'mapa'}
+          className={`tab-btn${activeTab === 'mapa' ? ' tab-active' : ''}`}
+          onClick={() => setActiveTab('mapa')}
+        >
+          <span className="tab-icon">🗺️</span>
+          <span className="tab-text">Mapa</span>
+        </button>
+      </nav>
+
       {/* ─── Dashboard Tab ─── */}
       {activeTab === 'dashboard' && (
         <main>
@@ -423,33 +473,6 @@ export default function DashboardPage() {
         </main>
       )}
 
-      {/* ─── Mobile Bottom Navigation ─── */}
-      <nav className="mobile-bottom-nav">
-        <button role="tab" aria-selected={activeTab === 'dashboard'} className={`bottom-nav-btn${activeTab === 'dashboard' ? ' active' : ''}`} onClick={() => setActiveTab('dashboard')}>
-          <span className="icon">📊</span>
-          <span className="label">Painel</span>
-        </button>
-        <button role="tab" aria-selected={activeTab === 'historico'} className={`bottom-nav-btn${activeTab === 'historico' ? ' active' : ''}`} onClick={() => setActiveTab('historico')}>
-          <span className="icon">📈</span>
-          <span className="label">Evolução</span>
-        </button>
-        <button role="tab" aria-selected={activeTab === 'alertas'} className={`bottom-nav-btn${activeTab === 'alertas' ? ' active' : ''}`} onClick={() => setActiveTab('alertas')}>
-          <div style={{ position: 'relative' }}>
-            <span className="icon">🚨</span>
-            {alerts.length > 0 && <span className="mobile-nav-badge">{alerts.length}</span>}
-          </div>
-          <span className="label">Alertas</span>
-        </button>
-        <button role="tab" aria-selected={activeTab === 'graficos'} className={`bottom-nav-btn${activeTab === 'graficos' ? ' active' : ''}`} onClick={() => setActiveTab('graficos')}>
-          <span className="icon">📉</span>
-          <span className="label">Gráficos</span>
-        </button>
-        <button role="tab" aria-selected={activeTab === 'mapa'} className={`bottom-nav-btn${activeTab === 'mapa' ? ' active' : ''}`} onClick={() => setActiveTab('mapa')}>
-          <span className="icon">🗺️</span>
-          <span className="label">Mapa</span>
-        </button>
-      </nav>
-
       {/* ─── Scoped styles for tabs ─── */}
       <style>{`
         .tab-nav {
@@ -495,6 +518,89 @@ export default function DashboardPage() {
           display: flex;
           flex-direction: column;
           min-height: calc(100vh - 80px);
+        }
+        .desktop-nav {
+          display: flex;
+        }
+        .mobile-only {
+          display: none;
+        }
+        .bottom-nav {
+          position: fixed;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          background: rgba(15, 23, 42, 0.85);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          border-top: 1px solid var(--border);
+          z-index: 1000;
+          display: flex;
+          justify-content: space-around;
+          padding: 8px 4px 20px 4px; /* padding-bottom extra para safe area do iphone */
+        }
+        .bottom-nav .tab-btn {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 4px;
+          padding: 8px 4px;
+          font-size: 10px;
+          color: var(--text-muted);
+          border: none;
+          background: transparent;
+        }
+        .bottom-nav .tab-btn.tab-active {
+          color: var(--accent);
+          border: none;
+          background: transparent;
+        }
+        .bottom-nav .tab-btn.tab-active .tab-icon {
+          transform: translateY(-2px) scale(1.1);
+        }
+        .bottom-nav .tab-icon {
+          font-size: 20px;
+          transition: transform 0.2s;
+        }
+        .bottom-nav .tab-text {
+          font-weight: 600;
+        }
+        .bottom-nav .tab-badge {
+          position: absolute;
+          top: 2px;
+          right: 20%;
+          background: #ef4444;
+          color: white;
+          font-size: 9px;
+          padding: 2px 5px;
+          border-radius: 10px;
+          font-weight: bold;
+          border: 2px solid var(--panel);
+        }
+        
+        @media (max-width: 768px) {
+          .desktop-nav {
+            display: none !important;
+          }
+          .mobile-only {
+            display: flex !important;
+          }
+          .header-brand {
+            margin-bottom: 0;
+          }
+          .app-header-content {
+            padding-bottom: 16px;
+            justify-content: center;
+          }
+          /* Espaço extra no final da pagina para a bottom nav nao tampar conteudo */
+          main {
+            padding-bottom: 80px !important;
+          }
+          .mapa-main {
+            padding-bottom: 0 !important; /* Mapa tem que ocupar a tela toda */
+            height: calc(100vh - 140px); /* Ajuste de altura no mobile */
+          }
         }
       `}</style>
     </>

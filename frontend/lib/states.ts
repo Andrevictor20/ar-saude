@@ -1,4 +1,4 @@
-export const STATE_MAP: Record<string, string> = {
+export const STATE_UF_MAP: Record<string, string> = {
   '11': 'RO',
   '12': 'AC',
   '13': 'AM',
@@ -28,7 +28,17 @@ export const STATE_MAP: Record<string, string> = {
   '53': 'DF'
 };
 
-export function getStateAbbr(codeOrName: string | undefined | null): string {
-  if (!codeOrName) return 'BR';
-  return STATE_MAP[codeOrName.toString()] || codeOrName;
+/**
+ * Returns the UF acronym for a given state code (IBGE).
+ * If it's already a string like 'SP', it returns it directly.
+ * If not found, returns the original value.
+ */
+export function getStateUF(stateCode?: string | null): string {
+  if (!stateCode) return '';
+  const code = String(stateCode).trim();
+  // If it's already a 2-letter UF, return it
+  if (code.length === 2 && isNaN(Number(code))) {
+    return code.toUpperCase();
+  }
+  return STATE_UF_MAP[code] || code;
 }

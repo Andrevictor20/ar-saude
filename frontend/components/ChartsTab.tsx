@@ -21,7 +21,7 @@ import {
 } from 'recharts';
 import { Measurement, DashboardStats, Alert } from '@/lib/types';
 import { levelColor, aqiColor } from '@/lib/format';
-import { getStateAbbr } from '@/lib/states';
+import { getStateUF } from '@/lib/states';
 
 interface Props {
   measurements: Measurement[];
@@ -55,9 +55,9 @@ export default function ChartsTab({ measurements, stats, alerts }: Props) {
     const stateMap = new Map<string, { sum: number; count: number }>();
     measurements.forEach((m) => {
       if (m.state && m.aqi !== null) {
-        const abbr = getStateAbbr(m.state);
-        const current = stateMap.get(abbr) || { sum: 0, count: 0 };
-        stateMap.set(abbr, {
+        const uf = getStateUF(m.state);
+        const current = stateMap.get(uf) || { sum: 0, count: 0 };
+        stateMap.set(uf, {
           sum: current.sum + m.aqi,
           count: current.count + 1,
         });
@@ -72,7 +72,7 @@ export default function ChartsTab({ measurements, stats, alerts }: Props) {
       .sort((a, b) => b.aqi - a.aqi); // Top worst states
   }, [measurements]);
 
-  /* 3. Radar Chart: Pollutants vs WHO Limit */
+  /* 3. Horizontal Bar Chart: Pollutants vs WHO Limit */
   const pollutantsData = useMemo(() => {
     const sums = { pm2_5: 0, pm10: 0, no2: 0, ozone: 0, so2: 0, co: 0 };
     const counts = { pm2_5: 0, pm10: 0, no2: 0, ozone: 0, so2: 0, co: 0 };
@@ -93,13 +93,13 @@ export default function ChartsTab({ measurements, stats, alerts }: Props) {
     };
 
     return [
-      { subject: 'PM2.5', A: getPct('pm2_5'), fullMark: 100 },
-      { subject: 'PM10', A: getPct('pm10'), fullMark: 100 },
-      { subject: 'NO₂', A: getPct('no2'), fullMark: 100 },
-      { subject: 'O₃', A: getPct('ozone'), fullMark: 100 },
-      { subject: 'SO₂', A: getPct('so2'), fullMark: 100 },
-      { subject: 'CO', A: getPct('co'), fullMark: 100 },
-    ];
+      { subject: 'PM2.5', A: getPct('pm2_5') },
+      { subject: 'PM10', A: getPct('pm10') },
+      { subject: 'NO₂', A: getPct('no2') },
+      { subject: 'O₃', A: getPct('ozone') },
+      { subject: 'SO₂', A: getPct('so2') },
+      { subject: 'CO', A: getPct('co') },
+    ].sort((a, b) => b.A - a.A);
   }, [measurements]);
 
   /* 4. Bar Chart: Alerts by Severity */
@@ -115,6 +115,18 @@ export default function ChartsTab({ measurements, stats, alerts }: Props) {
       { name: 'Emergência', count: counts.emergencia, fill: '#a855f7' },
     ];
   }, [alerts]);
+
+  /* 5. Top 5 Worst Cities */
+  const topCitiesData = useMemo(() => {
+    const valid = measurements.filter((m) => m.aqi !== null);
+    valid.sort((a, b) => (b.aqi as number) - (a.aqi as number));
+    return valid.slice(0, 5).map(m => ({
+      name: m.locationName,
+      uf: getStateUF(m.state),
+      aqi: m.aqi,
+      fill: aqiColor(m.aqi as number)
+    }));
+  }, [measurements]);
 
   /* Custom Tooltip for Charts to match our dark/glass theme */
   const CustomTooltip = ({ active, payload, label }: any) => {
@@ -188,24 +200,35 @@ export default function ChartsTab({ measurements, stats, alerts }: Props) {
           </div>
         </div>
 
-        {/* Chart 3 */}
+        {/* Chart 3: Pollutants Bar Chart */}
         <div className="chart-card">
           <h3 className="chart-title">Perfil de Poluentes vs Limite OMS</h3>
-          <p className="chart-desc">Média nacional em relação ao limite diário recomendado (100%).</p>
+          <p className="chart-desc">Percentual de concentração média nacional comparado ao limite diário sugerido.</p>
           <div className="chart-container">
             <ResponsiveContainer width="100%" height="100%">
-              <RadarChart cx="50%" cy="50%" outerRadius="80%" data={pollutantsData}>
-                <PolarGrid stroke="var(--border)" />
-                <PolarAngleAxis dataKey="subject" tick={{ fill: 'var(--text-muted)', fontSize: 12 }} />
-                <PolarRadiusAxis angle={30} domain={[0, 150]} tick={false} axisLine={false} />
-                <Radar name="Brasil" dataKey="A" stroke="#38bdf8" fill="#38bdf8" fillOpacity={0.3} />
-                <Tooltip content={<CustomTooltip />} />
-              </RadarChart>
+              <BarChart
+                data={pollutantsData}
+                layout="vertical"
+                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={true} vertical={false} />
+                <XAxis type="number" stroke="var(--text-muted)" domain={[0, 'dataMax + 10']} />
+                <YAxis dataKey="subject" type="category" stroke="var(--text-muted)" width={50} />
+                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
+                <Bar dataKey="A" radius={[0, 4, 4, 0]}>
+                  {pollutantsData.map((entry, index) => (
+                    <Cell 
+                      key={`cell-${index}`} 
+                      fill={entry.A > 100 ? '#ef4444' : entry.A > 50 ? '#f97316' : '#38bdf8'} 
+                    />
+                  ))}
+                </Bar>
+              </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Chart 4 */}
+        {/* Chart 4: Alerts */}
         <div className="chart-card">
           <h3 className="chart-title">Alertas Ativos por Severidade</h3>
           <p className="chart-desc">Volume atual de incidentes mapeados pelo Motor de Alertas.</p>
@@ -221,6 +244,38 @@ export default function ChartsTab({ measurements, stats, alerts }: Props) {
                 <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
                 <Bar dataKey="count" radius={[4, 4, 0, 0]}>
                   {alertsData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.fill} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Chart 5: Top 5 Cities */}
+        <div className="chart-card">
+          <h3 className="chart-title">Top 5 Cidades Críticas</h3>
+          <p className="chart-desc">Municípios com os piores índices de qualidade do ar neste momento.</p>
+          <div className="chart-container">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={topCitiesData}
+                layout="vertical"
+                margin={{ top: 5, right: 30, left: 60, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={true} vertical={false} />
+                <XAxis type="number" stroke="var(--text-muted)" />
+                <YAxis 
+                  dataKey="name" 
+                  type="category" 
+                  stroke="var(--text-muted)" 
+                  width={100}
+                  tickFormatter={(val, i) => `${val} - ${topCitiesData[i]?.uf}`}
+                  style={{ fontSize: 11 }}
+                />
+                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
+                <Bar dataKey="aqi" radius={[0, 4, 4, 0]}>
+                  {topCitiesData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.fill} />
                   ))}
                 </Bar>

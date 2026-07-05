@@ -145,11 +145,11 @@ export class AlertsService {
       take: Math.min(Math.max(filters.limit ?? 100, 1), 1000),
     });
 
-    const locationMap = new Map(locations.map((loc) => [loc.id, loc.state]));
-    return alerts.map((a) => ({
-      ...a,
-      state: locationMap.get(a.locationId) || "BR",
-    })) as any;
+    const locationMap = new Map(locations.map(loc => [loc.id, loc.state]));
+    return alerts.map(alert => ({
+      ...alert,
+      state: locationMap.get(alert.locationId) || "BR",
+    })) as unknown as Alert[];
   }
 
   async findActive(): Promise<Alert[]> {
@@ -160,11 +160,11 @@ export class AlertsService {
       order: { aqi: "DESC" },
     });
 
-    const locationMap = new Map(locations.map((loc) => [loc.id, loc.state]));
-    return alerts.map((a) => ({
-      ...a,
-      state: locationMap.get(a.locationId) || "BR",
-    })) as any;
+    const locationMap = new Map(locations.map(loc => [loc.id, loc.state]));
+    return alerts.map(alert => ({
+      ...alert,
+      state: locationMap.get(alert.locationId) || "BR",
+    })) as unknown as Alert[];
   }
 
   async countActive(): Promise<number> {

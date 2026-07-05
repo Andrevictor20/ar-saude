@@ -2,9 +2,9 @@
 
 import { useMemo, useState } from 'react';
 import { Measurement } from '@/lib/types';
-import { aqiColor, formatNumber, formatTime, levelColor } from '@/lib/format';
-import { getStateAbbr } from '@/lib/states';
+import { aqiColor, levelColor, formatNumber, formatTime } from '@/lib/format';
 import ExportModal from './ExportModal';
+import { getStateUF } from '@/lib/states';
 
 interface Props {
   measurements: Measurement[];
@@ -63,7 +63,7 @@ export default function LocationTable({
   const availableStates = useMemo(() => {
     const states = new Set<string>();
     measurements.forEach((m) => {
-      if (m.state) states.add(getStateAbbr(m.state));
+      if (m.state) states.add(getStateUF(m.state));
     });
     return Array.from(states).sort();
   }, [measurements]);
@@ -109,7 +109,7 @@ export default function LocationTable({
 
     /* State filter */
     if (stateFilter !== 'Todos') {
-      list = list.filter((m) => getStateAbbr(m.state) === stateFilter);
+      list = list.filter((m) => m.state && getStateUF(m.state) === stateFilter);
     }
 
     /* Sort */
@@ -290,7 +290,7 @@ export default function LocationTable({
                   {COLUMNS.map((col) => (
                     <th
                       key={col.key}
-                      className={`sortable${sortKey === col.key ? ' sort-active' : ''}`}
+                      className={`table-desktop-only sortable${sortKey === col.key ? ' sort-active' : ''}`}
                       onClick={() => handleSort(col.key)}
                     >
                       <span
@@ -331,7 +331,7 @@ export default function LocationTable({
                               padding: '2px 6px'
                             }}
                           >
-                            {getStateAbbr(m.state)}
+                            {getStateUF(m.state)}
                           </span>
                         )}
                       </div>
@@ -344,7 +344,7 @@ export default function LocationTable({
                         {m.aqi ?? '-'}
                       </span>
                     </td>
-                    <td>
+                    <td className="table-desktop-only">
                       <span
                         className="badge"
                         style={{
@@ -356,14 +356,14 @@ export default function LocationTable({
                         {m.level}
                       </span>
                     </td>
-                    <td>{formatNumber(m.pm2_5)}</td>
-                    <td>{formatNumber(m.pm10)}</td>
-                    <td>{formatNumber(m.no2)}</td>
-                    <td>{formatNumber(m.ozone)}</td>
-                    <td>{formatNumber(m.co)}</td>
-                    <td>{formatNumber(m.so2)}</td>
-                    <td>{formatNumber(m.nh3)}</td>
-                    <td>{formatNumber(m.no)}</td>
+                    <td className="table-desktop-only">{formatNumber(m.pm2_5)}</td>
+                    <td className="table-desktop-only">{formatNumber(m.pm10)}</td>
+                    <td className="table-desktop-only">{formatNumber(m.no2)}</td>
+                    <td className="table-desktop-only">{formatNumber(m.ozone)}</td>
+                    <td className="table-desktop-only">{formatNumber(m.co)}</td>
+                    <td className="table-desktop-only">{formatNumber(m.so2)}</td>
+                    <td className="table-desktop-only">{formatNumber(m.nh3)}</td>
+                    <td className="table-desktop-only">{formatNumber(m.no)}</td>
                     <td className="muted">{formatTime(m.measuredAt)}</td>
                   </tr>
                 ))}
