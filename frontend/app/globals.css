@@ -1130,8 +1130,12 @@ body.light-mode .alert-tabs {
   }
   
   .panel {
-    border-radius: 0;
-    border-left: none;
-    border-right: none;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    border: 1px solid var(--border);
+  }
+  
+  .app-header {
+    display: none !important;
   }
 }

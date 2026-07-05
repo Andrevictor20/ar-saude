@@ -595,6 +595,7 @@ export default function DashboardPage() {
           }
           /* Espaço extra no final da pagina para a bottom nav nao tampar conteudo */
           main {
+            padding: 16px !important;
             padding-bottom: 80px !important;
           }
           .bottom-nav {
