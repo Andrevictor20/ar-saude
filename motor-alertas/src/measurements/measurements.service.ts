@@ -4,6 +4,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 
 import { Measurement } from "../entities/measurement.entity";
+import { Location } from "../entities/location.entity";
 import { IngestMeasurementDto } from "./dto/ingest-measurement.dto";
 import { LocationsService } from "../locations/locations.service";
 
@@ -233,7 +234,7 @@ export class MeasurementsService {
       .addSelect('m.locationName', 'locationName')
       .addSelect(`AVG(m.${col})`, 'avgValue')
       .addSelect('l.state', 'state')
-      .leftJoin('locations', 'l', 'l.id = m."locationId"')
+      .leftJoin(Location, 'l', 'l.id::text = m."locationId"')
       .where(`m.${col} IS NOT NULL`)
       .groupBy('m.locationId')
       .addGroupBy('m.locationName')

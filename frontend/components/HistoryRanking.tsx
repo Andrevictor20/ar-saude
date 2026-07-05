@@ -82,7 +82,7 @@ export default function HistoryRanking() {
   const unit = currentIndex?.unit || '';
 
   return (
-    <div className="panel">
+    <div className="panel" style={{ position: 'relative', zIndex: 1 }}>
       <div className="panel-header" style={{ flexWrap: 'wrap', gap: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

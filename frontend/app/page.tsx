@@ -374,7 +374,7 @@ export default function DashboardPage() {
                   borderRadius: 12,
                   border: '1px solid var(--glass-border)',
                   position: 'relative',
-                  zIndex: 20,
+                  zIndex: 50,
                 }}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -491,7 +491,7 @@ export default function DashboardPage() {
           flex: 1;
           display: flex;
           flex-direction: column;
-          min-height: calc(100vh - 80px);
+          height: calc(100vh - 80px);
         }
         .desktop-nav {
           display: flex;
@@ -514,6 +514,7 @@ export default function DashboardPage() {
           padding: 8px 4px calc(env(safe-area-inset-bottom, 0px) + 24px) 4px;
         }
         .bottom-nav .tab-btn {
+          position: relative;
           flex: 1;
           display: flex;
           flex-direction: column;

@@ -279,7 +279,7 @@ export default function MapaTab({ measurements, stats, focus }: MapaTabProps) {
           display: flex;
           flex-direction: column;
           flex: 1;
-          min-height: 0;
+          height: 100%;
           position: relative;
         }
         .mapa-container {

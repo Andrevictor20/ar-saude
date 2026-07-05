@@ -1120,6 +1120,42 @@ body.light-mode .alert-tabs {
   box-shadow: 0 4px 12px rgba(56, 189, 248, 0.1);
 }
 
+/* ─── Buttons ─── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  text-decoration: none;
+  white-space: nowrap;
+  outline: none;
+  border: 1px solid transparent;
+}
+
+.btn-secondary {
+  background: var(--panel-2);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--text-dim);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.btn-secondary:active {
+  transform: translateY(0);
+}
+
 /* Mobile Layout Overrides */
 @media (max-width: 768px) {
   /* Hide non-essential columns in tables */
