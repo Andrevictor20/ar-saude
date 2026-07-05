@@ -197,7 +197,7 @@ export default function ChartsTab({ measurements, stats, alerts }: Props) {
               <BarChart
                 data={stateData.slice(0, 10)}
                 layout="vertical"
-                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                margin={{ top: 5, right: 50, left: 20, bottom: 5 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={true} vertical={false} />
                 <XAxis type="number" stroke="var(--text-muted)" />
@@ -223,7 +223,7 @@ export default function ChartsTab({ measurements, stats, alerts }: Props) {
               <BarChart
                 data={pollutantsData}
                 layout="vertical"
-                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                margin={{ top: 5, right: 50, left: 20, bottom: 5 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={true} vertical={false} />
                 <XAxis type="number" stroke="var(--text-muted)" domain={[0, 'dataMax + 10']} />
@@ -250,7 +250,7 @@ export default function ChartsTab({ measurements, stats, alerts }: Props) {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={alertsData}
-                margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
+                margin={{ top: 20, right: 50, left: 0, bottom: 5 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                 <XAxis dataKey="name" stroke="var(--text-muted)" />
@@ -275,7 +275,7 @@ export default function ChartsTab({ measurements, stats, alerts }: Props) {
               <BarChart
                 data={topCitiesData}
                 layout="vertical"
-                margin={{ top: 5, right: 30, left: 60, bottom: 5 }}
+                margin={{ top: 5, right: 50, left: 60, bottom: 5 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={true} vertical={false} />
                 <XAxis type="number" stroke="var(--text-muted)" />
@@ -307,7 +307,7 @@ export default function ChartsTab({ measurements, stats, alerts }: Props) {
               <BarChart
                 data={bestCitiesData}
                 layout="vertical"
-                margin={{ top: 5, right: 30, left: 60, bottom: 5 }}
+                margin={{ top: 5, right: 50, left: 60, bottom: 5 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={true} vertical={false} />
                 <XAxis type="number" stroke="var(--text-muted)" />
@@ -394,6 +394,9 @@ export default function ChartsTab({ measurements, stats, alerts }: Props) {
         @media (max-width: 768px) {
           .charts-grid {
             grid-template-columns: 1fr;
+          }
+          .chart-card {
+            padding: 16px;
           }
         }
       `}</style>

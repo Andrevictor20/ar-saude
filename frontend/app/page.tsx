@@ -10,6 +10,7 @@ import PollutantsLegend from '@/components/PollutantsLegend';
 import HistoryChart from '@/components/HistoryChart';
 import HistoryRanking from '@/components/HistoryRanking';
 import ChartsTab from '@/components/ChartsTab';
+import LocationSelect from '@/components/LocationSelect';
 
 import {
   apiBaseUrl,
@@ -387,40 +388,11 @@ export default function DashboardPage() {
                 >
                   Selecionar Localidade:
                 </span>
-                <select
-                  value={selected?.id ?? ''}
-                  onChange={(e) => {
-                    const m = measurements.find(
-                      (x) => x.locationId === e.target.value,
-                    );
-                    if (m) handleSelect(m);
-                  }}
-                  style={{
-                    background: 'var(--panel-2)',
-                    color: 'var(--text)',
-                    border: '1px solid var(--border)',
-                    padding: '10px 16px',
-                    borderRadius: 8,
-                    fontSize: 14,
-                    flex: 1,
-                    outline: 'none',
-                    fontFamily: "'Inter', sans-serif",
-                    fontWeight: 500,
-                  }}
-                >
-                  <option value="" disabled>
-                    -- Escolha uma localidade --
-                  </option>
-                  {[...measurements]
-                    .sort((a, b) =>
-                      a.locationName.localeCompare(b.locationName),
-                    )
-                    .map((m) => (
-                      <option key={m.locationId} value={m.locationId}>
-                        {m.locationName}
-                      </option>
-                    ))}
-                </select>
+                <LocationSelect
+                  measurements={measurements}
+                  selectedId={selected?.id ?? ''}
+                  onSelect={handleSelect}
+                />
               </div>
               <HistoryChart
                 locationName={selected?.name ?? null}
@@ -537,7 +509,7 @@ export default function DashboardPage() {
           border-top: 1px solid var(--border);
           z-index: 1000;
           justify-content: space-around;
-          padding: 8px 4px 20px 4px;
+          padding: 8px 4px calc(env(safe-area-inset-bottom, 0px) + 24px) 4px;
         }
         .bottom-nav .tab-btn {
           flex: 1;
@@ -596,14 +568,14 @@ export default function DashboardPage() {
           /* Espaço extra no final da pagina para a bottom nav nao tampar conteudo */
           main {
             padding: 16px !important;
-            padding-bottom: 80px !important;
+            padding-bottom: 110px !important;
           }
           .bottom-nav {
             display: flex;
           }
           .mapa-main {
             padding-bottom: 0 !important; /* Mapa tem que ocupar a tela toda */
-            height: calc(100vh - 140px); /* Ajuste de altura no mobile */
+            height: calc(100vh - 170px); /* Ajuste de altura no mobile */
           }
         }
       `}</style>
