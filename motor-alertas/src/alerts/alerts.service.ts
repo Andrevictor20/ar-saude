@@ -39,7 +39,7 @@ export class AlertsService {
     private readonly configService: ConfigService,
     private readonly locationsService: LocationsService,
   ) {
-    this.threshold = Number(this.configService.get("ALERT_AQI_THRESHOLD", 61));
+    this.threshold = 61;
   }
 
   getThreshold(): number {

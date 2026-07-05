@@ -48,8 +48,8 @@ export class CollectorService implements OnModuleInit {
   onModuleInit(): void {
     this.queue.configure({
       concurrency: this.configService.get<number>('QUEUE_CONCURRENCY', 5),
-      maxAttempts: this.configService.get<number>('QUEUE_MAX_ATTEMPTS', 5),
-      retryDelayMs: this.configService.get<number>('RETRY_BASE_DELAY_MS', 1000),
+      maxAttempts: 5,
+      retryDelayMs: 500,
       drainTimeoutMs: this.configService.get<number>(
         'QUEUE_DRAIN_TIMEOUT_MS',
         10_000,
@@ -63,7 +63,7 @@ export class CollectorService implements OnModuleInit {
   }
 
   /** Cron Job principal — apenas enfileira a coleta de todas as localidades. */
-  @Cron(process.env.CRON_COLLECT_INTERVAL ?? '* * * * *', {
+  @Cron('0 */6 * * *', {
     name: 'air-quality-collection',
     timeZone: 'America/Sao_Paulo',
   })

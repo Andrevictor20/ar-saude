@@ -47,9 +47,6 @@ services:
       OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY:-313e9589d80e64758e636be87b5ab8dc}
       OPENWEATHER_BASE_URL: ${OPENWEATHER_BASE_URL:-http://api.openweathermap.org/data/2.5/air_pollution}
       MOTOR_ALERTAS_URL: http://motor-alertas:${MOTOR_PORT:-3001}
-      CRON_COLLECT_INTERVAL: ${CRON_COLLECT_INTERVAL:-*/30 * * * *}
-      MAX_RETRIES: ${MAX_RETRIES:-5}
-      RETRY_BASE_DELAY_MS: ${RETRY_BASE_DELAY_MS:-1000}
       REDIS_URL: redis://redis:6379
       API_KEY: ${API_KEY:-arsaude-secure-key-2026}
     ports:
@@ -73,9 +70,6 @@ services:
       DB_USER: ${DB_USER:-arsaude}
       DB_PASSWORD: ${DB_PASSWORD:-arsaude}
       DB_NAME: ${DB_NAME:-arsaude_alertas}
-      ALERT_AQI_THRESHOLD: ${ALERT_AQI_THRESHOLD:-61}
-      MAX_RETRIES: ${MAX_RETRIES:-5}
-      RETRY_BASE_DELAY_MS: ${RETRY_BASE_DELAY_MS:-1000}
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:${FRONTEND_PORT:-3002},https://arsaude.rasppi.cloud}
       REDIS_URL: redis://redis:6379
       API_KEY: ${API_KEY:-arsaude-secure-key-2026}

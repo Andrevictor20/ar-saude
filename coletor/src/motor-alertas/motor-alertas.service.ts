@@ -23,11 +23,8 @@ export class MotorAlertasService {
       'MOTOR_ALERTAS_URL',
       'http://motor-alertas:3001',
     );
-    this.maxRetries = this.configService.get<number>('MAX_RETRIES', 5);
-    this.retryBaseDelay = this.configService.get<number>(
-      'RETRY_BASE_DELAY_MS',
-      1000,
-    );
+    this.maxRetries = 5;
+    this.retryBaseDelay = 500;
     this.apiKey = this.configService.get<string>('API_KEY', 'default-dev-key');
   }
 
