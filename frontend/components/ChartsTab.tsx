@@ -128,6 +128,18 @@ export default function ChartsTab({ measurements, stats, alerts }: Props) {
     }));
   }, [measurements]);
 
+  /* 6. Top 5 Best Cities */
+  const bestCitiesData = useMemo(() => {
+    const valid = measurements.filter((m) => m.aqi !== null);
+    valid.sort((a, b) => (a.aqi as number) - (b.aqi as number));
+    return valid.slice(0, 5).map(m => ({
+      name: m.locationName,
+      uf: getStateUF(m.state),
+      aqi: m.aqi,
+      fill: aqiColor(m.aqi as number)
+    }));
+  }, [measurements]);
+
   /* Custom Tooltip for Charts to match our dark/glass theme */
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -276,6 +288,38 @@ export default function ChartsTab({ measurements, stats, alerts }: Props) {
                 <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
                 <Bar dataKey="aqi" radius={[0, 4, 4, 0]}>
                   {topCitiesData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.fill} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Chart 6: Top 5 Best Cities */}
+        <div className="chart-card">
+          <h3 className="chart-title">Top 5 Melhores Cidades</h3>
+          <p className="chart-desc">Municípios com o ar mais limpo do país neste momento.</p>
+          <div className="chart-container">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={bestCitiesData}
+                layout="vertical"
+                margin={{ top: 5, right: 30, left: 60, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={true} vertical={false} />
+                <XAxis type="number" stroke="var(--text-muted)" />
+                <YAxis 
+                  dataKey="name" 
+                  type="category" 
+                  stroke="var(--text-muted)" 
+                  width={100}
+                  tickFormatter={(val, i) => `${val} - ${bestCitiesData[i]?.uf}`}
+                  style={{ fontSize: 11 }}
+                />
+                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
+                <Bar dataKey="aqi" radius={[0, 4, 4, 0]}>
+                  {bestCitiesData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.fill} />
                   ))}
                 </Bar>

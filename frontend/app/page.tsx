@@ -526,6 +526,7 @@ export default function DashboardPage() {
           display: none;
         }
         .bottom-nav {
+          display: none;
           position: fixed;
           bottom: 0;
           left: 0;
@@ -535,9 +536,8 @@ export default function DashboardPage() {
           -webkit-backdrop-filter: blur(12px);
           border-top: 1px solid var(--border);
           z-index: 1000;
-          display: flex;
           justify-content: space-around;
-          padding: 8px 4px 20px 4px; /* padding-bottom extra para safe area do iphone */
+          padding: 8px 4px 20px 4px;
         }
         .bottom-nav .tab-btn {
           flex: 1;
@@ -596,6 +596,9 @@ export default function DashboardPage() {
           /* Espaço extra no final da pagina para a bottom nav nao tampar conteudo */
           main {
             padding-bottom: 80px !important;
+          }
+          .bottom-nav {
+            display: flex;
           }
           .mapa-main {
             padding-bottom: 0 !important; /* Mapa tem que ocupar a tela toda */
