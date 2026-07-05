@@ -51,8 +51,8 @@ export interface DashboardStats {
   monitoredLocations: number;
   totalMeasurements: number;
   averageAqi: number | null;
-  worst: { locationName: string; aqi: number; level: string } | null;
-  best: { locationName: string; aqi: number; level: string } | null;
+  worst: { locationName: string; state?: string; aqi: number; level: string; latitude: number | null; longitude: number | null } | null;
+  best: { locationName: string; state?: string; aqi: number; level: string; latitude: number | null; longitude: number | null } | null;
   distribution: LevelDistribution[];
   updatedAt: string;
 }
