@@ -1173,8 +1173,4 @@ body.light-mode .alert-tabs {
     margin-bottom: 16px;
     border: 1px solid var(--border);
   }
-  
-  .app-header {
-    display: none !important;
-  }
 }

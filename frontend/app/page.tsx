@@ -177,7 +177,7 @@ export default function DashboardPage() {
           </div>
 
           {/* ─── Tab navigation ─── */}
-          <nav className="tab-nav" role="tablist">
+          <nav className="tab-nav desktop-nav" role="tablist">
             <button
               role="tab"
               aria-selected={activeTab === 'dashboard'}
@@ -224,12 +224,12 @@ export default function DashboardPage() {
           </nav>
 
           <div className="header-status">
-            <span className="region-chip">Brasil</span>
-            <span className="status-dot">
+            <span className="region-chip desktop-nav">Brasil</span>
+            <span className="status-dot desktop-nav">
               <span className={`dot ${connected ? 'online' : 'offline'}`} />
               {connected ? 'Conectado ao motor de alertas' : 'Sem conexao'}
             </span>
-            <span>
+            <span className="desktop-nav">
               Atualizado:{' '}
               {updatedAt ? formatDateTime(updatedAt.toISOString()) : '-'}
             </span>
